@@ -1,0 +1,19 @@
+{
+    "name": "ongoing/inventarios",
+    "description": "Catalogos de control de inventarios",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Ongoing\\Inventarios\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Alejandro Vargas",
+            "email": "122814856+alejandro-vargas-m@users.noreply.github.com"
+        }
+    ],
+    "require": {
+        "prettus/l5-repository": "^2.9"
+    }
+}
