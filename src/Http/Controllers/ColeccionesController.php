@@ -4,10 +4,12 @@ namespace Ongoing\Inventarios\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use Log;
+
 use Ongoing\Inventarios\Repositories\ColeccionesRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\ColeccionesProductosRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\ProductosRepositoryEloquent;
-use Log;
 
 class ColeccionesController extends Controller
 {
@@ -23,12 +25,12 @@ class ColeccionesController extends Controller
         $this->colecciones = $colecciones;
         $this->coleccion_productos = $coleccion_productos;
         $this->productos = $productos;
-        $this->middleware('menu.active');
     }
 
     function index()
     {
-        return view('admin.colecciones');
+        Gate::authorize('access-granted', '/inventarios/colecciones');
+        return view('inventarios::colecciones');
     }
 
     /**

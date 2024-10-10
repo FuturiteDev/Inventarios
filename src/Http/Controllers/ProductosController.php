@@ -4,6 +4,7 @@ namespace Ongoing\Inventarios\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Storage;
 use File;
 use Log;
@@ -26,11 +27,11 @@ class ProductosController extends Controller {
         $this->productos = $productos;
         $this->productosMultimedia = $productosMultimedia;
         $this->colecciones_productos = $colecciones_productos;
-        $this->middleware('menu.active');
     }
 
     function index() {
-        return view('admin.productos');
+        Gate::authorize('access-granted', '/inventarios/productos');
+        return view('inventarios::productos');
     }
 
     /**

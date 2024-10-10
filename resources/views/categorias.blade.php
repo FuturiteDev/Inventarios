@@ -106,8 +106,8 @@
 @endsection
 
 @section('scripts')
-    <script src="assets/js/vue-tables-2.min.js"></script>
-    <script src="assets/js/vue-select2.js"></script>
+    <script src="/common_assets/js/vue-tables-2.min.js"></script>
+    {{-- <script src="common_assets/js/vue-select2.js"></script> --}}
 
     <script>
         const app = new Vue({

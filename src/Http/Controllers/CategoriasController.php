@@ -4,8 +4,10 @@ namespace Ongoing\Inventarios\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Ongoing\Inventarios\Repositories\CategoriasRepositoryEloquent;
+use Illuminate\Support\Facades\Gate;
 use Log;
+
+use Ongoing\Inventarios\Repositories\CategoriasRepositoryEloquent;
 
 class CategoriasController extends Controller
 {
@@ -15,10 +17,10 @@ class CategoriasController extends Controller
         CategoriasRepositoryEloquent $categorias
     ) {
         $this->categorias = $categorias;
-        // $this->middleware('menu.active');
     }
 
     function index() {
+        Gate::authorize('access-granted', '/inventarios/categorias');
         return view('inventarios::categorias');
     }
 

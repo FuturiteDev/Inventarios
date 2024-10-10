@@ -3,10 +3,12 @@
 namespace Ongoing\Inventarios\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Ongoing\Inventarios\Repositories\CategoriasRepositoryEloquent;
 use Illuminate\Http\Request;
-use Ongoing\Inventarios\Repositories\SubCategoriaRepositoryEloquent;
+use Illuminate\Support\Facades\Gate;
 use Log;
+
+use Ongoing\Inventarios\Repositories\CategoriasRepositoryEloquent;
+use Ongoing\Inventarios\Repositories\SubCategoriaRepositoryEloquent;
 
 class SubCategoryController extends Controller {
     protected $subCategorias;
@@ -17,12 +19,12 @@ class SubCategoryController extends Controller {
     ) {
         $this->subCategorias = $subCategorias;
         $this->categorias = $categorias;
-        $this->middleware('menu.active');
     }
     
     function index() {
+        Gate::authorize('access-granted', '/inventarios/subcategorias');
         $subCategorias = $this->getAll();
-        return view('admin.subcategorias', ['subCategorias' => $subCategorias]);
+        return view('inventarios::subcategorias', ['subCategorias' => $subCategorias]);
     }
 
     /**

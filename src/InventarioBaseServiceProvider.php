@@ -12,7 +12,7 @@ class InventarioBaseServiceProvider extends ServiceProvider {
 
     public function register(){
         $this->commands([
-            Console\DemoCommand::class
+            Console\InventariosInitCommand::class
         ]);
     }
 
@@ -24,7 +24,7 @@ class InventarioBaseServiceProvider extends ServiceProvider {
     }
 
     protected function registerRoutes(){
-        Route::group([], function(){
+        Route::group(["prefix" => "inventarios"], function(){
             $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
         });
 
