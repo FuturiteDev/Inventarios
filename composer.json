@@ -13,7 +13,13 @@
             "email": "122814856+alejandro-vargas-m@users.noreply.github.com"
         }
     ],
-    "require": {
-        "prettus/l5-repository": "^2.9"
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Ongoing\\Inventarios\\InventarioBaseServiceProvider"
+            ]
+        }
     }
 }
