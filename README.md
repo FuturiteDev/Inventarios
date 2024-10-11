@@ -1,11 +1,13 @@
-Paquete de control de Inventarios para Ongoing.
+## Paquete de control de Inventarios para Ongoing.
 
 
-Instalación:
-
+### Instalación:
+```
 composer ongoing/inventarios
+```
 
 
-Inicialización:
-
+### Inicialización:
+```
 php artisan inventarios:init
+```
