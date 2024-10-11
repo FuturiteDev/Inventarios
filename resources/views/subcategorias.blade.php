@@ -81,7 +81,7 @@
                             <label class="required fs-6 fw-bold mb-2">Características</label>
                             <div class="input-group">
                                 <input type="text" class="form-control" id="inputGroupSelect04" aria-label="Example select with button addon" v-model="caracteristica">
-                                <button class="btn btn-light-success border border-success" type="button" @click="addCaracteristica();validateCaracteristicas();">
+                                <button class="btn btn-light-success border border-success" type="button" @click.stop="addCaracteristica();validateCaracteristicas();">
                                     <i class="fa-solid fa-plus"></i> Agregar caracteristica
                                 </button>
                             </div>
@@ -127,8 +127,8 @@
 @endsection
 
 @section('scripts')
-    <script src="{{ asset('assets/js/vue-tables-2.min.js') }}"></script>
-    <script src="{{ asset('assets/js/vue-select2.js') }}"></script>
+    <script src="{{ asset('/common_assets/js/vue-tables-2.min.js') }}"></script>
+    <script src="{{ asset('/common_assets/js/vue_components/v-select.js') }}"></script>
 
     <script>
         const app = new Vue({

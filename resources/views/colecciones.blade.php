@@ -154,8 +154,7 @@
 @endsection
 
 @section('scripts')
-    <script src="assets/js/vue-tables-2.min.js"></script>
-    <script src="assets/js/vue-select2.js"></script>
+    <script src="/common_assets/js/vue-tables-2.min.js"></script>
 
     <script>
         const app = new Vue({
@@ -265,7 +264,7 @@
                 },
                 getColecciones(){
                     let vueThis = this;
-                    $.get('api/colecciones/all', res => {
+                    $.get('/api/colecciones/all', res => {
                         vueThis.colecciones = res.results;                        
                     }, 'json');
                 },

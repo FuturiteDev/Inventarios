@@ -316,7 +316,7 @@
                                         <label class="required form-label fw-bold">Archivo multimedia</label>
                                         <input class="form-control" type="file" id="formFile" name="archivo" @change="imgPreview" required>
                                         <div class="image-preview w-25 mx-auto">
-                                            <img src="{{ asset('assets/media/svg/files/blank-image.svg') }}" id="image-preview" class="img-fluid">
+                                            <img src="{{ asset('assets-1/media/svg/files/blank-image.svg') }}" id="image-preview" class="img-fluid">
                                         </div>
                                     </div>
                                     <!--end::Input group-->
@@ -356,8 +356,8 @@
 @endsection
 
 @section('scripts')
-    <script src="assets/js/vue-tables-2.min.js"></script>
-    <script src="assets/js/vue-select2.js"></script>
+    <script src="/common_assets/js/vue-tables-2.min.js"></script>
+    <script src="/common_assets/js/vue_components/v-select.js"></script>
 
     <script>
         const app = new Vue({
@@ -874,7 +874,7 @@
                             });
                         }, 500);
                     } else {
-                        $('#image-preview').attr('src', '{{ asset('assets/media/svg/files/blank-image.svg') }}');
+                        $('#image-preview').attr('src', '{{ asset('assets-1/media/svg/files/blank-image.svg') }}');
                     }
                 },
                 deleteMultimedia(idMultimedia) {
