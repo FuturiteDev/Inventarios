@@ -5,30 +5,29 @@
         <!--begin::Content-->
         <div id="kt_app_content" class="app-content">
             <!--begin::Card-->
-            <div class="card card-flush">
+            <div class="card card-flush" id="content-card">
                 <!--begin::Card header-->
                 <div class="card-header align-items-center py-5 gap-2 gap-md-5">
                     <div class="card-title flex-column">
                         <h3 class="ps-2">Listado de Categorias</h3>
                     </div>
                     <div class="card-toolbar">
-                        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_add_categoria" @click="openModalCreate">
-                            <i class="ki-outline ki-plus fs-2"></i>
-                            Crear categoria
+                        <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_add_categoria" @click="isEdit = false">
+                            <i class="ki-outline ki-plus fs-2"></i> Crear categoria
                         </a>
                     </div>
                 </div>
-                <!--end::Card toolbar-->                
+                <!--end::Card toolbar-->
 
                 <!--begin::Card body-->
                 <div class="card-body py-4">
                     <!--begin::Table-->
                     <v-client-table v-model="categorias" :columns="columns" :options="options">
-                        <div slot="acciones" slot-scope="props">                            
-                            <a href="#" class="btn btn-icon btn-sm btn-info btn-sm me-2" title="Ver/Editar Categoria" data-bs-toggle="modal" data-bs-target="#kt_modal_add_categoria" @click="selectCategoria(props.row)">
+                        <div slot="acciones" slot-scope="props">
+                            <a class="btn btn-icon btn-sm btn-info btn-sm me-2" title="Ver/Editar Categoria" data-bs-toggle="modal" data-bs-target="#kt_modal_add_categoria" @click.prevent="selectCategoria(props.row)">
                                 <i class="fas fa-pencil"></i>
                             </a>
-                            <a href="#" class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Categoria" @click="deleteCategoria(props.row.id)">
+                            <a class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Categoria" :disabled="loading" @click.prevent="deleteCategoria(props.row.id)">
                                 <i class="fas fa-trash-alt"></i>
                             </a>
                         </div>
@@ -53,9 +52,7 @@
                         <h2 class="fw-bold" v-else>Crear categoría</h2>
 
                         <!--begin::Close-->
-                        <div class="btn btn-icon btn-sm btn-active-icon-primary" data-bs-dismiss="modal">
-                            <i class="ki-outline ki-cross fs-1"></i>
-                        </div>
+                        <div class="btn btn-close" data-bs-dismiss="modal"></div>
                         <!--end::Close-->
                     </div>
                     <!--end::Modal header-->
@@ -87,8 +84,8 @@
                             <!--begin::Actions-->
                             <div class="text-end pt-15">
                                 <button type="reset" class="btn btn-light me-3" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="button" class="btn btn-info" @click="updateCategoria" :disabled="isDisabled" v-if="isEdit">Actualizar categoría</button>
-                                <button type="button" class="btn btn-info" @click="createCategoria" :disabled="isDisabled" v-else>Crear categoría</button>
+                                <button type="button" class="btn btn-secondary" @click="updateCategoria" :disabled="loading" v-if="isEdit">Actualizar categoría</button>
+                                <button type="button" class="btn btn-secondary" @click="createCategoria" :disabled="loading" v-else>Crear categoría</button>
                             </div>
                             <!--end::Actions-->
                         </form>
@@ -153,66 +150,97 @@
                     },
                 },
 
-                validator: null,
-                isEdit: false,
-                isDisabled: false,
                 idCategoria: null,
                 categoria: null,
                 descripcion: null,
                 
+                validator: null,
+                isEdit: false,
+                loading: false,
+                blockUI: null,
+                requestGet: null,
+
             }),
             mounted() {
-                this.$forceUpdate();
-                this.getCategorias();
-                this.formValidate();
+                let vm = this;
+                vm.$forceUpdate();
+
+                let container = document.querySelector('#content-card');
+                if (container) {
+                    vm.blockUI = new KTBlockUI(container);
+                }
+
+                vm.getCategorias(true);
+                vm.formValidate();
                 $("#kt_modal_add_categoria").on('hidden.bs.modal', event => {
-                    this.validator.resetForm();                    
+                    vm.validator.resetForm();
+                    vm.clearCampos();
                 });
             },
             methods: {
-                openModalCreate() {
-                    this.isEdit = false;
-                    this.clearCampos();
-                },
-                getCategorias(){
-                    let vueThis = this;
-                    $.get('/api/categorias/all', res => {
-                        vueThis.categorias = res.results;                        
-                    }, 'json');
-                },
-                selectCategoria(categoria) {
-                    let vueThis = this;
-                    vueThis.clearCampos();
-                    vueThis.isEdit = true;
+                getCategorias(showLoader) {
+                    let vm = this;
+                    if (showLoader) {
+                        if (!vm.blockUI) {
+                            let container = document.querySelector('#content-card');
+                            if (container) {
+                                vm.blockUI = new KTBlockUI(container);
+                                vm.blockUI.block();
+                            }
+                        } else {
+                            if (!vm.blockUI.isBlocked()) {
+                                vm.blockUI.block();
+                            }
+                        }
+                    }
 
-                    vueThis.idCategoria = categoria.id;
-                    vueThis.categoria = categoria.nombre;
-                    vueThis.descripcion = categoria.descripcion;                    
+                    if (vm.requestGet) {
+                        vm.requestGet.abort();
+                        vm.requestGet = null;
+                    }
+
+                    vm.loading = true;
+
+                    vm.requestGet = $.ajax({
+                        url: '/api/categorias/all',
+                        type: 'GET',
+                    }).done(function (res) {
+                        vm.categorias = res.results;
+                    }).fail(function (jqXHR, textStatus) {
+                        if (textStatus != 'abort') {
+                            console.log("Request failed getCategorias: " + textStatus, jqXHR);
+                        }
+                    }).always(function () {
+                        vm.loading = false;
+
+                        if (vm.blockUI && vm.blockUI.isBlocked()) {
+                            vm.blockUI.release();
+                        }
+                    });
                 },
                 createCategoria() {
-                    let vueThis = this;                    
-                    vueThis.isDisabled = true;
-                    if (vueThis.validator) {
-                        vueThis.validator.validate().then(function(status) {
+                    let vm = this;
+                    if (vm.validator) {
+                        vm.validator.validate().then(function(status) {
                             if (status == 'Valid') {
+                                vm.loading = true;
                                 $.ajax({
                                     method: "POST",
                                     url: "/api/categorias/save",
                                     data: {
                                         action: 1, //1 = Crear, 2 = Modificar o 3 = Eliminar
-                                        nombre: vueThis.categoria,
-                                        descripcion: vueThis.descripcion,
+                                        nombre: vm.categoria,
+                                        descripcion: vm.descripcion,
                                         estatus: 1,
                                     }
-                                })
-                                .done(function(res) {
+                                }).done(function(res) {
                                     if (res.status === true) {
                                         Swal.fire(
                                             "¡Guardado!",
                                             "Los datos de la categoria se han almacenado con éxito",
                                             "success"
                                         );
-                                        vueThis.getCategorias();
+                                        vm.getCategorias();
                                         $('#kt_modal_add_categoria').modal('hide');
                                     } else {
                                         Swal.fire(
@@ -221,60 +249,51 @@
                                             "warning"
                                         );
                                     }
-                                })
-                                .fail(function(jqXHR, textStatus) {
+                                }).fail(function(jqXHR, textStatus) {
                                     console.log("Request failed createCategoria: " + textStatus, jqXHR);
-                                    Swal.fire(
-                                        "¡Error!",
-                                        "No se pudo crear la categoria",
-                                        "warning"
-                                    );
-                                })
-                                .always(function(event, xhr, settings) {
-                                    vueThis.isDisabled = false;
+                                    Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
+                                }).always(function(event, xhr, settings) {
+                                    vm.loading = false;
                                 });
                             }
                         });
                     }
                 },
                 updateCategoria() {
-                    let vueThis = this;
-                    if (vueThis.validator) {
-                        vueThis.validator.validate().then(function(status) {
+                    let vm = this;
+                    if (vm.validator) {
+                        vm.validator.validate().then(function(status) {
                             if (status == 'Valid') {
-                                vueThis.isDisabled = true;
+                                vm.loading = true;
                                 $.ajax({
                                     method: "POST",
                                     url: "/api/categorias/save",
                                     data: {
-                                        id: vueThis.idCategoria,
+                                        id: vm.idCategoria,
                                         action: 2, //1 = Crear, 2 = Modificar o 3 = Eliminar
-                                        nombre: vueThis.categoria,
-                                        descripcion: vueThis.descripcion,
+                                        nombre: vm.categoria,
+                                        descripcion: vm.descripcion,
                                     }
-                                })
-                                .done(function(res) {
+                                }).done(function(res) {
                                     Swal.fire(
                                         "¡Guardado!",
                                         "Los datos de la categoria han sido actualizados con éxito",
                                         "success"
                                     );
-                                    vueThis.getCategorias();
+                                    vm.getCategorias();
                                     $('#kt_modal_add_categoria').modal('hide');
-                                })
-                                .fail(function(jqXHR, textStatus) {
+                                }).fail(function(jqXHR, textStatus) {
                                     console.log("Request failed createCategoria: " + textStatus, jqXHR);
-                                })
-                                .always(function(event, xhr, settings) {
-                                    vueThis.isDisabled = false;
+                                    Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
+                                }).always(function(event, xhr, settings) {
+                                    vm.loading = false;
                                 });
                             }
                         });
                     }
                 },
                 deleteCategoria(idCategoria) {
-                    let vueThis = this;
-                    vueThis.isDisabled = true;
+                    let vm = this;
                     Swal.fire({
                         title: '¿Estas seguro de que deseas eliminar el registro de la categoria?',
                         icon: 'warning',
@@ -285,6 +304,7 @@
                         cancelButtonText: 'Cancelar',
                     }).then((result) => {
                         if (result.isConfirmed) {
+                            vm.loading = true;
                             $.ajax({
                                 method: "POST",
                                 url: "/api/categorias/save",
@@ -293,38 +313,39 @@
                                     action: 3, //1 = Crear, 2 = Modificar o 3 = Eliminar
                                     estatus: 0,
                                 }
-                            })
-                            .done(function(res) {
+                            }).done(function(res) {
                                 Swal.fire(
                                     'Registro eliminado',
                                     'El registro de la categoria ha sido eliminado con éxito',
                                     'success'
                                 );
-                                vueThis.getCategorias();
-                            })
-                            .always(function(event, xhr, settings) {
-                                vueThis.isDisabled = false;
+                                vm.getCategorias();
+                            }).fail(function(jqXHR, textStatus) {
+                                console.log("Request failed deleteCategoria: " + textStatus, jqXHR);
+                                Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
+                            }).always(function(event, xhr, settings) {
+                                vm.loading = false;
                             });
                         }
                     })
                 },
-
-                clearCampos() {
-                    this.isEdit = false;                    
-                    this.isDisabled = false;
-                    this.categoria = null;
-                    this.descripcion = null;
+                selectCategoria(categoria) {
+                    let vm = this;
+                    vm.clearCampos();
+                    vm.isEdit = true;
+                    vm.idCategoria = categoria.id;
+                    vm.categoria = categoria.nombre;
+                    vm.descripcion = categoria.descripcion;
                 },
                 formValidate() {
-                    let vueThis = this;
-                    // Define form element
+                    let vm = this;
                     const form = document.getElementById('kt_modal_add_categoria_form');
-                    
-                    vueThis.validator = FormValidation.formValidation(
+
+                    vm.validator = FormValidation.formValidation(
                         form, {
                             fields: {
                                 'categoria': {
-                                    validators: {                                        
+                                    validators: {
                                         notEmpty: {
                                             message: 'Nombre de la categoria es requerido',
                                             trim: true
@@ -332,15 +353,15 @@
                                     }
                                 },
                                 'descripcion': {
-                                    validators: {                                        
+                                    validators: {
                                         notEmpty: {
                                             message: 'Descripcion es requerido',
                                             trim: true
                                         }
                                     }
-                                },                                                                
+                                },
                             },
-                                                        
+
                             plugins: {
                                 trigger: new FormValidation.plugins.Trigger(),
                                 bootstrap: new FormValidation.plugins.Bootstrap5({
@@ -350,12 +371,16 @@
                                 })
                             }
                         }
-                    );                    
-                }
+                    );
+                },
+                clearCampos() {
+                    this.isEdit = false;
+                    this.loading = false;
+                    this.categoria = null;
+                    this.descripcion = null;
+                    this.loading = false;
+                },
             },
-            computed: {
-                
-            }
         });
 
         Vue.use(VueTables.ClientTable);

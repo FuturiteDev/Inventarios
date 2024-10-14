@@ -56,7 +56,7 @@
         <!--begin::Content-->
         <div id="kt_app_content" class="app-content">
             <!--begin::Card-->
-            <div class="card card-flush">
+            <div class="card card-flush" id="content-card">
                 <!--begin::Card header-->
                 <div class="card-header align-items-center py-5 gap-2 gap-md-5">
                     <div class="card-title flex-column">
@@ -91,9 +91,8 @@
                                 data-placeholder="Filtrar por coleccion">
                             </v-select>
                         </div>
-                        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_add_producto" @click="openModalCreate">
-                            <i class="ki-outline ki-plus fs-2"></i>
-                            Agregar producto
+                        <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_add_producto" @click.prevent="isEdit = false">
+                            <i class="ki-outline ki-plus fs-2"></i> Agregar producto
                         </a>
                     </div>
                 </div>
@@ -110,13 +109,13 @@
                             [[props.row.subcategoria?.nombre ?? 'N/A']]
                         </div>
                         <div slot="acciones" slot-scope="props">
-                            <a href="#" class="btn btn-icon btn-sm btn-success btn-sm me-2" title="Ver/Editar Producto" data-bs-toggle="modal" data-bs-target="#kt_modal_add_producto" @click="selectProducto(props.row)">
+                            <a class="btn btn-icon btn-sm btn-success btn-sm me-2" title="Ver/Editar Producto" data-bs-toggle="modal" data-bs-target="#kt_modal_add_producto" @click.prevent="selectProducto(props.row)">
                                 <i class="fas fa-pencil"></i>
                             </a>
-                            <a href="#" class="btn btn-icon btn-sm btn-primary btn-sm me-2" title="Multimedia" data-bs-toggle="modal" data-bs-target="#kt_modal_producto_multimedia" @click="getMultimedia(props.row.id)" id="openMultimediaBtn">
+                            <a class="btn btn-icon btn-sm btn-primary btn-sm me-2" title="Multimedia" data-bs-toggle="modal" data-bs-target="#kt_modal_producto_multimedia" @click.prevent="getMultimedia(props.row.id, true)" id="openMultimediaBtn">
                                 <i class="fas fa-photo-film"></i>
                             </a>
-                            <a href="#" class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Producto" @click="deleteProducto(props.row.id)">
+                            <a class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Producto" @click.prevent="deleteProducto(props.row.id)">
                                 <i class="fas fa-trash-alt"></i>
                             </a>
                         </div>
@@ -141,9 +140,7 @@
                         <h2 class="fw-bold" v-else>Crear producto</h2>
 
                         <!--begin::Close-->
-                        <div class="btn btn-icon btn-sm btn-active-icon-primary" data-bs-dismiss="modal">
-                            <i class="ki-outline ki-cross fs-1"></i>
-                        </div>
+                        <div class="btn btn-close" data-bs-dismiss="modal"></div>
                         <!--end::Close-->
                     </div>
                     <!--end::Modal header-->
@@ -152,7 +149,8 @@
                         <!--begin::Form-->
                         <form id="kt_modal_add_producto_form" class="form" action="#">
                             <!--begin::Scroll-->
-                            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_user_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header"
+                            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_user_scroll" data-kt-scroll="true"
+                                data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header"
                                 data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
                                 <div class="fv-row mb-7">
@@ -169,6 +167,7 @@
                                     <label class="required fs-6 fw-bold mb-2" for="subCat_desc">Descripción</label>
                                     <textarea class="form-control" rows="3" placeholder="Descripción del producto" id="descripcion" name="descripcion" v-model="descripcion"></textarea>
                                 </div>
+
                                 <div class="fv-row mb-7">
                                     <label class="fs-6 fw-bold mb-2" for="col_id">Colecciones</label>
                                     <v-select v-if="colecciones != []"
@@ -234,7 +233,7 @@
                                     <label class="fs-6 fw-bold mb-2">Características Extras</label>
                                     <div class="input-group">
                                         <input type="text" class="form-control" v-model="extra_input" placeholder="Escribe la característica">
-                                        <button class="btn btn-light-success border border-success" type="button" @click="addExtra">
+                                        <button type="button" class="btn btn-light-success border border-success" @click="addExtra">
                                             <i class="fa-solid fa-plus"></i> Agregar característica extra
                                         </button>
                                     </div>
@@ -260,10 +259,10 @@
                             </div>
                             <!--end::Scroll-->
                             <!--begin::Actions-->
-                            <div class="text-end pt-15">
+                            <div class="text-end pt-15" v-if="!setEdit">
                                 <button type="reset" class="btn btn-light me-3" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="button" class="btn btn-info" @click="saveProducto" :disabled="isDisabled" v-if="isEdit">Actualizar producto</button>
-                                <button type="button" class="btn btn-info" @click="saveProducto" :disabled="isDisabled" v-else>Crear producto</button>
+                                <button type="button" class="btn btn-secondary" @click="saveProducto" :disabled="loading" v-if="isEdit">Actualizar producto</button>
+                                <button type="button" class="btn btn-secondary" @click="saveProducto" :disabled="loading" v-else>Crear producto</button>
                             </div>
                             <!--end::Actions-->
                         </form>
@@ -288,15 +287,13 @@
                         <h2 class="fw-bold">Multimedia producto</h2>
 
                         <!--begin::Close-->
-                        <div class="btn btn-icon btn-sm btn-active-icon-primary" data-bs-dismiss="modal">
-                            <i class="ki-outline ki-cross fs-1"></i>
-                        </div>
+                        <div class="btn btn-close" data-bs-dismiss="modal"></div>
                         <!--end::Close-->
                     </div>
                     <!--end::Modal header-->
                     <!--begin::Modal body-->
-                    <div class="modal-body scroll-y mx-5 mx-xl-10">
-                        <div class="text-center p-10" v-if="loadingMultimedia">
+                    <div class="modal-body scroll-y mx-5 mx-xl-10" id="kt_modal_producto_multimedia_body">
+                        <div class="text-center p-10" v-if="loading">
                             <span class="loader text-center"></span><br>
                             <p class="fs-5 fw-medium">Obteniendo información</p>
                         </div>
@@ -323,7 +320,7 @@
 
                                     <!--begin::Actions-->
                                     <div class="text-end pt-15">
-                                        <button type="submit" class="btn btn-sm btn-primary">Agregar multimedia</button>
+                                        <button type="submit" class="btn btn-sm btn-secondary" :disabled="loading">Agregar multimedia</button>
                                     </div>
                                 </form>
                             </div>
@@ -334,7 +331,7 @@
                                             <img :src="props.row.url" class="img-fluid" style="max-width: 100px;">
                                         </div>
                                         <div slot="acciones" slot-scope="props">
-                                            <a href="#" class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Marca" @click="deleteMultimedia(props.row.id)">
+                                            <a class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Marca" @click.prevent="deleteMultimedia(props.row.id)">
                                                 <i class="fas fa-trash-alt"></i>
                                             </a>
                                         </div>
@@ -449,11 +446,6 @@
                         columns: "Columnas",
                     },
                 },
-                validator: null,
-                isEdit: false,
-                isDisabled: false,
-                msgError: false,
-                setEdit: false,
 
                 categoriaFilter: null,
                 subcategoriaFilter: null,
@@ -473,108 +465,372 @@
                 caracteristicas_subcategoria: [],
                 extras: [],
                 extra_input: null,
-                loadingMultimedia: false,
                 formMultimedia: false,
                 multimedia: [],
+
+                setEdit: false,
+                validator: null,
+                isEdit: false,
+                msgError: false,
+                loading: false,
+                blockUI: null,
+                blockUIModal: null,
+                requestGet: null,
+                requestGetModal: null,
             }),
-            watch: {},
             mounted() {
-                this.$forceUpdate();
-                this.getProductos();
-                this.getCategorias();
-                this.getColecciones();
-                this.formValidate();
+                let vm = this;
+                vm.$forceUpdate();
+
+                let container = document.querySelector('#content-card');
+                if (container) {
+                    vm.blockUI = new KTBlockUI(container);
+                }
+
+                container = document.querySelector('#kt_modal_producto_multimedia_body');
+                if (container) {
+                    vm.blockUIModal = new KTBlockUI(container);
+                }
+
+                vm.getProductos(true);
+                vm.getCategorias();
+                vm.getColecciones();
+                vm.formValidate();
                 $("#kt_modal_add_producto").on('hidden.bs.modal', event => {
-                    this.validator?.resetForm();
+                    vm.formValidate();
+                    vm.clearCampos();
                 });
             },
             methods: {
-                openModalCreate() {
-                    this.isEdit = false;
-                    this.clearCampos();
+                initForm() {
+                    if (this.formMultimedia) {
+                        let vm = this;
+                        setTimeout(() => {
+                            $('#kt_modal_multimedia_form').submit(function(e) {
+                                e.preventDefault();
+                                var formData = new FormData(this);
+                                let datos = Object.fromEntries(formData.entries());
+                                $.ajax({
+                                    type: 'POST',
+                                    url: "/api/productos/multimedia/save",
+                                    data: formData,
+                                    cache: false,
+                                    contentType: false,
+                                    processData: false,
+                                }).done(function(res) {
+                                    if (res.status) {
+                                        Swal.fire(
+                                            "¡Guardado!",
+                                            "Se a agregado contenido multimedia al producto con éxito",
+                                            "success"
+                                        )
+                                        vm.multimedia = res.results;
+                                        vm.formMultimedia = false;
+                                    } else {
+                                        Swal.fire(
+                                            "¡Error!",
+                                            res.message,
+                                            "warning"
+                                        );
+                                    }
+                                }).fail(function(jqXHR, textStatus) {
+                                    console.log("Request failed saveMultimedia: " + textStatus, jqXHR);
+                                });
+                            });
+                        }, 500);
+                    } else {
+                        $('#image-preview').attr('src', '{{ asset('assets-1/media/svg/files/blank-image.svg') }}');
+                    }
                 },
-                getProductos() {
-                    let vueThis = this;
-                    $.get('/api/productos/all', res => {
-                        vueThis.productos = res.results;
-                    }, 'json');
+                getProductos(showLoader) {
+                    let vm = this;
+                    if (showLoader) {
+                        if (!vm.blockUI) {
+                            let container = document.querySelector('#content-card');
+                            if (container) {
+                                vm.blockUI = new KTBlockUI(container);
+                                vm.blockUI.block();
+                            }
+                        } else {
+                            if (!vm.blockUI.isBlocked()) {
+                                vm.blockUI.block();
+                            }
+                        }
+                    }
+
+                    if (vm.requestGet) {
+                        vm.requestGet.abort();
+                        vm.requestGet = null;
+                    }
+
+                    vm.loading = true;
+
+                    vm.requestGet = $.ajax({
+                        url: '/api/productos/all',
+                        type: 'GET',
+                    }).done(function (res) {
+                        vm.productos = res.results;
+                    }).fail(function (jqXHR, textStatus) {
+                        if (textStatus != 'abort') {
+                            console.log("Request failed getProductos: " + textStatus, jqXHR);
+                        }
+                    }).always(function () {
+                        vm.loading = false;
+
+                        if (vm.blockUI && vm.blockUI.isBlocked()) {
+                            vm.blockUI.release();
+                        }
+                    });
                 },
                 getColecciones() {
-                    let vueThis = this;
+                    let vm = this;
                     $.get('/api/colecciones/all', res => {
-                        vueThis.colecciones = res.results;
+                        vm.colecciones = res.results;
                     }, 'json');
                 },
                 getCategorias() {
-                    let vueThis = this;
+                    let vm = this;
                     $.get('/api/categorias/all', res => {
-                        vueThis.categorias = res.results;
+                        vm.categorias = res.results;
                     }, 'json');
                 },
                 getSubcategoriasFilter() {
-                    let vueThis = this;
-                    $.get(`/api/sub-categorias/categoria/${vueThis.categoriaFilter}`, res => {
-                        vueThis.subcategorias_filter = res.results;
+                    let vm = this;
+                    $.get(`/api/sub-categorias/categoria/${vm.categoriaFilter}`, res => {
+                        vm.subcategorias_filter = res.results;
                     }, 'json');
                 },
                 getSubcategorias() {
-                    let vueThis = this;
-                    if (vueThis.setEdit == false) {
-                        $.get(`/api/sub-categorias/categoria/${vueThis.idCategoria}`, res => {
-                            vueThis.subcategorias = res.results;
+                    let vm = this;
+                    if (vm.setEdit == false) {
+                        $.get(`/api/sub-categorias/categoria/${vm.idCategoria}`, res => {
+                            vm.subcategorias = res.results;
                         }, 'json');
                     }
                 },
-                getMultimedia(idProducto) {
-                    let vueThis = this;
-                    vueThis.idProducto = idProducto;
-                    vueThis.formMultimedia = false;
-                    vueThis.loadingMultimedia = true;
-                    $.get(`/api/productos/${idProducto}/multimedia/all`, res => {
-                        vueThis.multimedia = res.results;
-                    }, 'json').always(function(res) {
-                        vueThis.loadingMultimedia = false;
+                getMultimedia(idProducto, showLoader) {
+                    let vm = this;
+                    vm.idProducto = idProducto;
+                    vm.formMultimedia = false;
+
+                    if (showLoader) {
+                        if (!vm.blockUIModal) {
+                            let container = document.querySelector('#kt_modal_producto_multimedia_body');
+                            if (container) {
+                                vm.blockUIModal = new KTBlockUI(container);
+                                vm.blockUIModal.block();
+                            }
+                        } else {
+                            if (!vm.blockUIModal.isBlocked()) {
+                                vm.blockUIModal.block();
+                            }
+                        }
+                    }
+
+                    if (vm.requestGetModal) {
+                        vm.requestGetModal.abort();
+                        vm.requestGetModal = null;
+                    }
+
+                    vm.loading = true;
+
+                    vm.requestGetModal = $.ajax({
+                        url: `/api/productos/${idProducto}/multimedia/all`,
+                        type: 'GET',
+                    }).done(function (res) {
+                        vm.multimedia = res.results;
+                    }).fail(function (jqXHR, textStatus) {
+                        if (textStatus != 'abort') {
+                            console.log("Request failed getProductos: " + textStatus, jqXHR);
+                        }
+                    }).always(function () {
+                        vm.loading = false;
+
+                        if (vm.blockUIModal && vm.blockUIModal.isBlocked()) {
+                            vm.blockUIModal.release();
+                        }
+                    });
+                },
+                saveProducto() {
+                    let vm = this
+                    vm.formValidate();
+
+                    vm.caracteristicas_subcategoria.forEach(item => {
+                        vm.validator.addField(`caracteristica${item.etiqueta}`, {
+                            validators: {
+                                notEmpty: {
+                                    message: 'Campo requerido',
+                                    trim: true
+                                },
+                            }
+                        });
+                    });
+
+                    vm.extras?.forEach(item => {
+                        vm.validator.addField(`extra${item.etiqueta}`, {
+                            validators: {
+                                notEmpty: {
+                                    message: 'Campo requerido',
+                                    trim: true
+                                },
+                            }
+                        });
+                    });
+
+                    vm.validator.validate().then(function(status) {
+                        if (status == 'Valid') {
+                            vm.loading = true;
+                            $.ajax({
+                                method: "POST",
+                                url: "/api/productos/save",
+                                data: {
+                                    id: vm.isEdit ? vm.idProducto : null,
+                                    categoria_id: vm.idCategoria,
+                                    subcategoria_id: vm.idSubcategoria,
+                                    sku: vm.sku,
+                                    precio: vm.precio,
+                                    nombre: vm.nombre,
+                                    descripcion: vm.descripcion,
+                                    caracteristicas_json: vm.caracteristicas_subcategoria,
+                                    extras_json: vm.extras,
+                                    colecciones: vm.idColecciones,
+                                    visitas: vm.visitas,
+                                    estatus: vm.estatus,
+                                }
+                            }).done(function(res) {
+                                if (res.status === true) {
+                                    Swal.fire(
+                                        "¡Guardado!",
+                                        vm.isEdit ?
+                                        "Los datos del se han actualizado con éxito" :
+                                        "Los datos del se han almacenado con éxito",
+                                        "success"
+                                    );
+                                    vm.getProductos();
+                                    $('#kt_modal_add_producto').modal('hide');
+                                } else {
+                                    Swal.fire(
+                                        "¡Error!",
+                                        res?.message ?? "No se pudo realizar la acción",
+                                        "warning"
+                                    );
+                                }
+                            }).fail(function(jqXHR, textStatus) {
+                                console.log("Request failed saveProducto: " + textStatus, jqXHR);
+                                Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
+                            }).always(function(event, xhr, settings) {
+                                vm.loading = false;
+                            });
+                        }
+                    });
+
+                },
+                deleteProducto(idProducto) {
+                    let vm = this;
+                    Swal.fire({
+                        title: '¿Estas seguro de que deseas eliminar el registro de la producto?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Si, eliminar',
+                        cancelButtonText: 'Cancelar',
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            vm.loading = true;
+                            $.ajax({
+                                method: "POST",
+                                url: "/api/productos/delete",
+                                data: {
+                                    producto_id: idProducto
+                                }
+                            }).done(function(res) {
+                                Swal.fire(
+                                    'Registro eliminado',
+                                    'El registro del producto ha sido eliminado con éxito',
+                                    'success'
+                                );
+                                vm.getProductos();
+                            }).fail(function(jqXHR, textStatus) {
+                                console.log("Request failed deleteProducto: " + textStatus, jqXHR);
+                                Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
+                            }).always(function(event, xhr, settings) {
+                                vm.loading = false;
+                            });
+                        }
+                    })
+                },
+                deleteMultimedia(idMultimedia) {
+                    let vm = this;
+                    Swal.fire({
+                        title: '¿Estas seguro de que deseas eliminar el registro de la multimedia?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Si, eliminar',
+                        cancelButtonText: 'Cancelar',
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            vm.loading = true;
+                            $.ajax({
+                                method: "POST",
+                                url: "/api/productos/multimedia/delete",
+                                data: {
+                                    productos_multimedia_id: idMultimedia
+                                }
+                            }).done(function(res) {
+                                vm.getMultimedia(vm.idProducto);
+                                Swal.fire(
+                                    'Registro eliminado',
+                                    'El registro de la multimedia ha sido eliminado con éxito',
+                                    'success'
+                                );
+                            }).fail(function(jqXHR, textStatus) {
+                                console.log("Request failed deleteMultimedia: " + textStatus, jqXHR);
+                                Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
+                            }).always(function(event, xhr, settings) {
+                                vm.loading = false;
+                            });
+                        }
                     })
                 },
                 getCaracteristicasSubcategoria() {
-                    let vueThis = this;
-                    if (vueThis.setEdit == false) {
-                        let subcategoria = vueThis.subcategorias.find(item => item.id == vueThis.idSubcategoria);
-                        let list = [];
-                        subcategoria?.caracteristicas_json.forEach((caracteristica, index) => {
-                            list.push({
-                                etiqueta: caracteristica,
-                                valor: "",
-                            });
-                        });
+                    let vm = this;
+                    if (vm.setEdit == false) {
+                        let subcategoria = vm.subcategorias.find(item => item.id == vm.idSubcategoria);
+                        let list = subcategoria?.caracteristicas_json.map((caracteristica, index) => ({ etiqueta: caracteristica, valor: ""}) );
 
-                        vueThis.caracteristicas_subcategoria = list;
+                        vm.caracteristicas_subcategoria = list;
                     }
                 },
                 selectProducto(producto) {
-                    let vueThis = this;
-                    vueThis.clearCampos();
-                    vueThis.isEdit = true;
-                    vueThis.setEdit = true;
+                    let vm = this;
+                    vm.clearCampos();
+                    vm.isEdit = true;
+                    vm.setEdit = true;
 
-                    vueThis.idProducto = producto.id;
-                    vueThis.producto = producto;
-                    vueThis.sku = producto.sku;
-                    vueThis.nombre = producto.nombre;
-                    vueThis.descripcion = producto.descripcion;
-                    vueThis.precio = producto.precio;
+                    vm.idProducto = producto.id;
+                    vm.producto = producto;
+                    vm.sku = producto.sku;
+                    vm.nombre = producto.nombre;
+                    vm.descripcion = producto.descripcion;
+                    vm.precio = producto.precio;
                     producto.colecciones?.forEach(element => {
-                        vueThis.idColecciones.push(element.id);
+                        vm.idColecciones.push(element.id);
                     });
-                    vueThis.visitas = producto.visitas;
-                    vueThis.estatus = producto.estatus;
-                    vueThis.extras = producto.extras_json ?? [];
-                    vueThis.idCategoria = producto.categoria_id;
-                    
-                    $.get(`/api/sub-categorias/categoria/${producto.categoria_id}`, res => {
-                        vueThis.subcategorias = res.results;
-                        vueThis.$nextTick(() => {
-                            let subcategoria = vueThis.subcategorias.find(item => item.id == producto.subcategoria_id);
+                    vm.visitas = producto.visitas;
+                    vm.estatus = producto.estatus;
+                    vm.extras = producto.extras_json ?? [];
+                    vm.idCategoria = producto.categoria_id;
+
+                    $.ajax({
+                        method: 'GET',
+                        url: `/api/sub-categorias/categoria/${producto.categoria_id}`,
+                    }).done(function(res) {
+                        vm.subcategorias = res.results;
+                        vm.$nextTick(() => {
+                            let subcategoria = vm.subcategorias.find(item => item.id == producto.subcategoria_id);
                             let list = [];
                             subcategoria?.caracteristicas_json.forEach((caracteristica, index) => {
                                 const result = producto.caracteristicas_json.find((element) => element.etiqueta == caracteristica);
@@ -591,141 +847,26 @@
                                 }
                                 
                             });
-                            vueThis.caracteristicas_subcategoria = list;
+                            vm.caracteristicas_subcategoria = list;
 
-
-                            vueThis.idSubcategoria = producto.subcategoria_id;
-                            vueThis.setEdit = false;
+                            vm.idSubcategoria = producto.subcategoria_id;
                         });
-                    }, 'json');
-                },
-                saveProducto() {
-                    let vueThis = this
-                    vueThis.validator.resetForm();
-                    vueThis.validator.destroy();
-                    vueThis.formValidate();
-
-                    vueThis.caracteristicas_subcategoria.forEach(item => {
-                        vueThis.validator.addField(`caracteristica${item.etiqueta}`, {
-                            validators: {
-                                notEmpty: {
-                                    message: 'Campo requerido',
-                                    trim: true
-                                },
-                            }
+                    }).fail(function(jqXHR, textStatus) {
+                        vm.subcategorias = [];
+                    }).always(function() {
+                        vm.$nextTick(() => {
+                            vm.setEdit = false;
                         });
                     });
-
-                    vueThis.extras?.forEach(item => {
-                        vueThis.validator.addField(`extra${item.etiqueta}`, {
-                            validators: {
-                                notEmpty: {
-                                    message: 'Campo requerido',
-                                    trim: true
-                                },
-                            }
-                        });
-                    });
-
-                    vueThis.validator.validate().then(function(status) {
-                        if (status == 'Valid') {
-                            vueThis.isDisabled = true;
-                            $.ajax({
-                                    method: "POST",
-                                    url: "/api/productos/save",
-                                    data: {
-                                        id: vueThis.isEdit ? vueThis.idProducto : null,
-                                        categoria_id: vueThis.idCategoria,
-                                        subcategoria_id: vueThis.idSubcategoria,
-                                        sku: vueThis.sku,
-                                        precio: vueThis.precio,
-                                        nombre: vueThis.nombre,
-                                        descripcion: vueThis.descripcion,
-                                        caracteristicas_json: vueThis.caracteristicas_subcategoria,
-                                        extras_json: vueThis.extras,
-                                        colecciones: vueThis.idColecciones,
-                                        visitas: vueThis.visitas,
-                                        estatus: vueThis.estatus,
-                                    }
-                                })
-                                .done(function(res) {
-                                    if (res.status === true) {
-                                        Swal.fire(
-                                            "¡Guardado!",
-                                            vueThis.isEdit ?
-                                            "Los datos del se han actualizado con éxito" :
-                                            "Los datos del se han almacenado con éxito",
-                                            "success"
-                                        );
-                                        vueThis.getProductos();
-                                        $('#kt_modal_add_producto').modal('hide');
-                                    } else {
-                                        Swal.fire(
-                                            "¡Error!",
-                                            res?.message ?? "No se pudo realizar la acción",
-                                            "warning"
-                                        );
-                                    }
-                                })
-                                .fail(function(jqXHR, textStatus) {
-                                    console.log("Request failed saveProducto: " + textStatus, jqXHR);
-                                    Swal.fire(
-                                        "¡Error!",
-                                        "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.",
-                                        "warning"
-                                    );
-                                })
-                                .always(function(event, xhr, settings) {
-                                    vueThis.isDisabled = false;
-                                });
-                        }
-                    });
-
-                },
-                deleteProducto(idProducto) {
-                    let vueThis = this;
-                    vueThis.isDisabled = true;
-                    Swal.fire({
-                        title: '¿Estas seguro de que deseas eliminar el registro de la producto?',
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#3085d6',
-                        cancelButtonColor: '#d33',
-                        confirmButtonText: 'Si, eliminar',
-                        cancelButtonText: 'Cancelar',
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            $.ajax({
-                                    method: "POST",
-                                    url: "/api/productos/delete",
-                                    data: {
-                                        producto_id: idProducto
-                                    }
-                                })
-                                .done(function(res) {
-                                    Swal.fire(
-                                        'Registro eliminado',
-                                        'El registro del producto ha sido eliminado con éxito',
-                                        'success'
-                                    );
-                                    vueThis.getProductos();
-                                })
-                                .always(function(event, xhr, settings) {
-                                    vueThis.isDisabled = false;
-                                });
-                        } else {
-                            vueThis.isDisabled = false;
-                        }
-                    })
                 },
                 addExtra() {
-                    let vueThis = this;
-                    if (vueThis.extra_input) {
-                        vueThis.extras.push({
-                            etiqueta: vueThis.extra_input,
+                    let vm = this;
+                    if (vm.extra_input) {
+                        vm.extras.push({
+                            etiqueta: vm.extra_input,
                             valor: "",
                         });
-                        vueThis.extra_input = null;
+                        vm.extra_input = null;
                     }
                     if (this.extras.length > 0) {
                         this.msgError = false;
@@ -736,32 +877,28 @@
                 deleteExtra(index) {
                     this.extras.splice(index, 1);
                 },
-                clearCampos() {
-                    this.isEdit = false;
-                    this.isDisabled = false;
-                    this.msgError = false;
-
-                    this.idProducto = null;
-                    this.producto = null;
-                    this.sku = null;
-                    this.nombre = null;
-                    this.descripcion = null;
-                    this.idCategoria = null;
-                    this.idSubcategoria = null;
-                    this.precio = null;
-                    this.idColecciones = [];
-                    this.visitas = 1;
-                    this.estatus = 1;
-                    this.caracteristicas_subcategoria = [];
-                    this.extras = [];
-                    this.extra = null;
+                imgPreview() {
+                    let vm = this;
+                    let file = document.getElementById('formFile').files[0];
+                    let reader = new FileReader();
+                    reader.onloadend = function() {
+                        document.getElementById('image-preview').src = reader.result;
+                    }
+                    if (file) {
+                        reader.readAsDataURL(file);
+                    } else {
+                        document.getElementById('image-preview').src = "";
+                    }
                 },
                 formValidate() {
-                    let vueThis = this;
-                    const form = document.getElementById('kt_modal_add_producto_form');
+                    let vm = this;
+                    if(vm.validator){
+                        vm.validator.destroy();
+                        vm.validator = null;
+                    }
 
                     this.validator = FormValidation.formValidation(
-                        form, {
+                        document.getElementById('kt_modal_add_producto_form'), {
                             fields: {
                                 'cat_id': {
                                     validators: {
@@ -824,155 +961,57 @@
                         }
                     );
                 },
-                imgPreview() {
-                    let vueThis = this;
-                    let file = document.getElementById('formFile').files[0];
-                    let reader = new FileReader();
-                    reader.onloadend = function() {
-                        document.getElementById('image-preview').src = reader.result;
-                    }
-                    if (file) {
-                        reader.readAsDataURL(file);
-                    } else {
-                        document.getElementById('image-preview').src = "";
-                    }
+                clearCampos() {
+                    this.isEdit = false;
+                    this.loading = false;
+                    this.msgError = false;
+
+                    this.idProducto = null;
+                    this.producto = null;
+                    this.sku = null;
+                    this.nombre = null;
+                    this.descripcion = null;
+                    this.idCategoria = null;
+                    this.idSubcategoria = null;
+                    this.precio = null;
+                    this.idColecciones = [];
+                    this.visitas = 1;
+                    this.estatus = 1;
+                    this.caracteristicas_subcategoria = [];
+                    this.extras = [];
+                    this.extra = null;
                 },
-                initForm() {
-                    if (this.formMultimedia) {
-                        let vm = this;
-                        setTimeout(() => {
-                            $('#kt_modal_multimedia_form').submit(function(e) {
-                                e.preventDefault();
-                                var formData = new FormData(this);
-                                let datos = Object.fromEntries(formData.entries());
-                                $.ajax({
-                                    type: 'POST',
-                                    url: "/api/productos/multimedia/save",
-                                    data: formData,
-                                    cache: false,
-                                    contentType: false,
-                                    processData: false,
-                                }).done(function(res) {
-                                    if (res.status) {
-                                        Swal.fire(
-                                            "¡Guardado!",
-                                            "Se a agregado contenido multimedia al producto con éxito",
-                                            "success"
-                                        )
-                                        vm.multimedia = res.results;
-                                        vm.formMultimedia = false;
-                                    } else {
-                                        Swal.fire(
-                                            "¡Error!",
-                                            res.message,
-                                            "warning"
-                                        );
-                                    }
-                                }).fail(function(jqXHR, textStatus) {
-                                    console.log("Request failed saveMultimedia: " + textStatus, jqXHR);
-                                });
-                            });
-                        }, 500);
-                    } else {
-                        $('#image-preview').attr('src', '{{ asset('assets-1/media/svg/files/blank-image.svg') }}');
-                    }
-                },
-                deleteMultimedia(idMultimedia) {
-                    let vm = this;
-                    Swal.fire({
-                        title: '¿Estas seguro de que deseas eliminar el registro de la multimedia?',
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#3085d6',
-                        cancelButtonColor: '#d33',
-                        confirmButtonText: 'Si, eliminar',
-                        cancelButtonText: 'Cancelar',
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            $.ajax({
-                                method: "POST",
-                                url: "/api/productos/multimedia/delete",
-                                data: {
-                                    productos_multimedia_id: idMultimedia
-                                }
-                            }).done(function(res) {
-                                vm.getMultimedia(vm.idProducto);
-                                Swal.fire(
-                                    'Registro eliminado',
-                                    'El registro de la multimedia ha sido eliminado con éxito',
-                                    'success'
-                                );
-                            }).fail(function(jqXHR, textStatus) {
-                                console.log("Request failed deleteMultimedia: " + textStatus, jqXHR);
-                                Swal.fire(
-                                    "¡Error!",
-                                    "No se pudo eliminar la multimedia",
-                                    "warning"
-                                );
-                            });
-                        }
-                    })
-                }
             },
             computed: {
                 listaProductos() {
-                    let vueThis = this;
-                    if (!vueThis.categoriaFilter && !vueThis.subcategoriaFilter && !vueThis.coleccionFilter) {
-                        return vueThis.productos;
+                    let vm = this;
+                    if (!vm.categoriaFilter && !vm.subcategoriaFilter && !vm.coleccionFilter) {
+                        return vm.productos;
                     }
-                    let productos = vueThis.productos?.filter(function(e) {
+                    let productos = vm.productos?.filter(function(e) {
                         let col = e.colecciones.find(item => {
-                            return item.id == vueThis.coleccionFilter;
+                            return item.id == vm.coleccionFilter;
                         });
 
-                        let categoriaFilter = vueThis.categoriaFilter ? e.categoria_id == vueThis.categoriaFilter : true;
-                        let subcategoriaFilter = vueThis.subcategoriaFilter ? e.subcategoria_id == vueThis.subcategoriaFilter : true;
-                        let coleccionFilter = vueThis.coleccionFilter ? col != null : true;
+                        let categoriaFilter = vm.categoriaFilter ? e.categoria_id == vm.categoriaFilter : true;
+                        let subcategoriaFilter = vm.subcategoriaFilter ? e.subcategoria_id == vm.subcategoriaFilter : true;
+                        let coleccionFilter = vm.coleccionFilter ? col != null : true;
 
                         return categoriaFilter && subcategoriaFilter && coleccionFilter;
                     }) ?? [];
                     return productos;
                 },
                 listaCategorias() {
-                    let categorias = [];
-                    this.categorias.forEach(item => {
-                        categorias.push({
-                            id: item.id,
-                            text: item.nombre
-                        });
-                    });
-                    return categorias;
+                    return this.categorias.map(item => ({ id: item.id, text: item.nombre }));
                 },
                 listaSubcategoriasFilter() {
-                    let subcategorias = [];
-                    this.subcategorias_filter.forEach(item => {
-                        subcategorias.push({
-                            id: item.id,
-                            text: item.nombre
-                        });
-                    });
-                    return subcategorias;
+                    return this.subcategorias_filter.map(item => ({ id: item.id, text: item.nombre }));
                 },
                 listaSubcategorias() {
-                    let subcategorias = [];
-                    this.subcategorias.forEach(item => {
-                        subcategorias.push({
-                            id: item.id,
-                            text: item.nombre,
-                            caracteristicas: item.caracteristicas_json
-                        });
-                    });
-                    return subcategorias;
+                    return this.subcategorias.map(item => ({ id: item.id, text: item.nombre, caracteristicas: item.caracteristicas_json }));
                 },
                 listaColecciones() {
-                    let colecciones = [];
-                    this.colecciones.forEach(item => {
-                        colecciones.push({
-                            id: item.id,
-                            text: item.nombre
-                        });
-                    });
-                    return colecciones;
+                    return this.colecciones.map(item => ({ id: item.id, text: item.nombre }));
                 },
             }
         });

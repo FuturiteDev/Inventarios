@@ -10,17 +10,22 @@
 
 @section('content')
     <div id="app" class="app-content flex-column-fluid">
-        <div class="card card-flush">
+        <div class="card card-flush" id="content-card">
             <div class="card-header align-items-center py-5 gap-2 gap-md-5">
                 <div class="card-title flex-column">
                     <h3 class="mb-2">Listado de subcategorías</h3>
                 </div>
                 <div class="card-toolbar">
                     <div class="px-2">
-                        <v-select class="form-control me-3" v-model="categoriaFilter" :options="listaCategorias"
-                            data-allow-clear="true" data-placeholder="Filtrar por categoría" @change="filtrarSubcategorias(categoriaFilter)"></v-select>
+                        <v-select
+                            class="form-control me-3"
+                            v-model="categoriaFilter"
+                            :options="listaCategorias"
+                            data-allow-clear="true"
+                            data-placeholder="Filtrar por categoría">
+                        </v-select>
                     </div>
-                    <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_add_subcategory" @click="openModalCreate">
+                    <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_add_subcategory" @click.prevent="isEdit = false">
                         <i class="fa-solid fa-plus"></i> Agregar subcategoría
                     </a>
                 </div>
@@ -28,16 +33,13 @@
 
             <div class="card-body pt-0">
                 <div class="subcategories-table" id="kt_ecommerce_category_table_wrapper">
-                    <v-client-table v-model="subcategories" :columns="columns" :options="options">
-                        <div slot="categoria" slot-scope="props">
-                            <span v-text="props.row.categoria.nombre"></span>
-                        </div>
+                    <v-client-table v-model="listaSubcategorias" :columns="columns" :options="options">
+                        <div slot="categoria" slot-scope="props">[[props.row.categoria?.nombre ?? '']]</div>
                         <div slot="acciones" slot-scope="props">
-                            <a href="#" class="btn btn-icon btn-sm btn-primary" title="Editar subcategoria"
-                                data-bs-toggle="modal" data-bs-target="#kt_add_subcategory" @click="selectSubcategory(props.row)">
+                            <a class="btn btn-icon btn-sm btn-info" title="Editar subcategoria" data-bs-toggle="modal" data-bs-target="#kt_add_subcategory" @click.prevent="selectSubcategory(props.row)">
                                 <i class="fa-solid fa-pencil"></i>
                             </a>
-                            <a href="#" class="btn btn-icon btn-sm btn-danger" title="Eliminar" @click="deleteSubcategory(props.row.id)">
+                            <a class="btn btn-icon btn-sm btn-danger" title="Eliminar" @click.prevent="deleteSubcategory(props.row.id)" :disabled="loading">
                                 <i class="fa-solid fa-trash-can"></i>
                             </a>
                         </div>
@@ -54,17 +56,22 @@
                     <div class="modal-header">
                         <h5 class="modal-title" v-text="isEdit ? 'Actualizar información subcategoria' : 'Crear subcategoría'"></h5>
 
-                        <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal">
-                            <i class="ki-duotone ki-cross fs-2x"><span class="path1"></span><span class="path2"></span></i>
-                        </div>
+                        <div class="btn btn-close" data-bs-dismiss="modal"></div>
                     </div>
 
                     <div class="modal-body">
                         <div class="fv-row mb-7">
                             <label class="required fs-6 fw-bold mb-2" for="cat_id">Categoría</label>
-                            <v-select class="form-control" v-model="idCategoria" :options="listaCategorias"
-                                data-allow-clear="true" data-placeholder="Selecciona una categoría" id="cat_id" name="cat_id"
-                                data-dropdown-parent="#kt_add_subcategory"></v-select>
+                            <v-select
+                                class="form-control"
+                                v-model="idCategoria"
+                                :options="listaCategorias"
+                                data-allow-clear="true"
+                                data-placeholder="Selecciona una categoría"
+                                id="cat_id"
+                                name="cat_id"
+                                data-dropdown-parent="#kt_add_subcategory">
+                            </v-select>
                         </div>
 
                         <div class="fv-row mb-7">
@@ -117,7 +124,7 @@
 
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="button" class="btn btn-primary" v-text="isEdit ? 'Guardar cambios' : 'Crear subcategoria'" @click="updateOrCreateSubcategory"></button>
+                        <button type="button" class="btn btn-secondary" v-text="isEdit ? 'Guardar cambios' : 'Crear subcategoria'" :disabled="loading" @click="updateOrCreateSubcategory"></button>
                     </div>
                 </div>
             </div>
@@ -175,64 +182,50 @@
                         loading: "Cargando...",
                         columns: "Columnas",
                     },
-                    customFilters: [{
-                        name: 'category',
-                        callback: function(row, query) {
-                            return row.categoria_id == query;
-                        }
-                    }]
                 },
 
                 isEdit: false,
                 isCaracteristicaEdit: false,
                 idCategoria: null,
                 idSubcategoria: null,
+
                 nombre: null,
                 descripcion: null,
                 caracteristica: null,
                 inputEditCaracteristica: null,
                 caracteristicas: [],
                 caracteristicasEdit: [],
+
+                categoriaFilter: null,
                 validator: null,
                 msgError: false,
-                categoriaFilter: null,
-
+                loading: false,
             }),
             mounted() {
-                this.getCategories();
+                this.$forceUpdate();
+                this.getCategorias();
                 this.formValidate();
+
                 $("#kt_add_subcategory").on('hidden.bs.modal', event => {
                     this.validator.resetForm();
                     this.clearCampos();
                 });
-                this.$forceUpdate();
             },
             methods: {
-                getCategories() {
-                    var vm = this;
-                    $.get('/api/categorias/all', response => {
-                        vm.categorias = response.results;
+                getCategorias(){
+                    let vm = this;
+                    $.get('/api/categorias/all', res => {
+                        vm.categorias = res.results;
                     }, 'json');
                 },
-                openModalCreate() {
-                    this.isEdit = false;
-                    this.clearCampos();
-                },
-                selectSubcategory(subcategory) {
-                    this.isEdit = true;
-                    this.idCategoria = subcategory.categoria_id;
-                    this.idSubcategoria = subcategory.id;
-                    this.nombre = subcategory.nombre;
-                    this.descripcion = subcategory.descripcion;
-                    this.caracteristicas = subcategory.caracteristicas_json;
-                },
                 updateOrCreateSubcategory() {
-                    vm = this;
+                    let vm = this;
                     this.validateCaracteristicas();
 
                     if (vm.validator) {
                         vm.validator.validate().then(status => {
                             if (status == 'Valid') {
+                                vm.loading = true;
                                 $.ajax({
                                     method: 'POST',
                                     url: '/api/sub-categorias/save',
@@ -251,6 +244,7 @@
                                             "success"
                                         );
                                         vm.subcategories = res.results;
+                                        vm.getCategorias();
                                         $("#kt_add_subcategory").modal('hide');
                                     } else {
                                         Swal.fire(
@@ -261,12 +255,10 @@
                                     }
                                 }).fail(function(jqXHR, textStatus) {
                                     console.log("Request failed updateOrCreateSubcategory: " + textStatus, jqXHR);
-                                    Swal.fire(
-                                        "¡Error!",
-                                        "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.",
-                                        "warning"
-                                    );
-                                })
+                                    Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
+                                }).always(function() {
+                                    vm.loading = false;
+                                });
                             }
                         });
                     }
@@ -285,6 +277,7 @@
                         cancelButtonText: 'Cancelar',
                     }).then((result) => {
                         if (result.isConfirmed) {
+                            vm.loading = true;
                             $.post('/api/sub-categorias/save', {
                                 id: subcategory_id,
                                 estatus: 0,
@@ -297,14 +290,29 @@
                                 vm.subcategories = res.results;
                             }).fail(function(jqXHR, textStatus) {
                                 console.log("Request failed deleteSubcategory: " + textStatus, jqXHR);
-                                Swal.fire(
-                                    "¡Error!",
-                                    "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.",
-                                    "warning"
-                                );
-                            })
+                                Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
+                            }).always(function(){
+                                vm.loading = false;
+                            });
                         }
                     });
+                },
+                saveCaracteristicas() {
+                    $.post('/api/sub-categorias/save', {
+                        id: this.idSubcategoria,
+                        categoria_id: this.idCategoria,
+                        caracteristicas_json: this.caracteristicasEdit,
+                    });
+                    this.caracteristicas = this.caracteristicasEdit;
+                    this.isCaracteristicaEdit = false;
+                },
+                selectSubcategory(subcategory) {
+                    this.isEdit = true;
+                    this.idCategoria = subcategory.categoria_id;
+                    this.idSubcategoria = subcategory.id;
+                    this.nombre = subcategory.nombre;
+                    this.descripcion = subcategory.descripcion;
+                    this.caracteristicas = subcategory.caracteristicas_json;
                 },
                 addCaracteristica() {
                     if (this.caracteristica) {
@@ -321,15 +329,6 @@
                     this.caracteristicas.forEach((caracteristica, index) => {
                         this.caracteristicasEdit[index] = caracteristica;
                     });
-                },
-                saveCaracteristicas() {
-                    $.post('/api/sub-categorias/save', {
-                        id: this.idSubcategoria,
-                        categoria_id: this.idCategoria,
-                        caracteristicas_json: this.caracteristicasEdit,
-                    });
-                    this.caracteristicas = this.caracteristicasEdit;
-                    this.isCaracteristicaEdit = false;
                 },
                 formValidate() {
                     const form = document.getElementById('kt_add_subcategory');
@@ -385,26 +384,22 @@
                     this.nombre = null;
                     this.descripcion = null;
                     this.caracteristicas = [];
+                    this.loading = false;
                 },
-                filtrarSubcategorias(categoria_id) {
-                    this.categoriaFilter = categoria_id;
-                    VueTables.Event.$emit('vue-tables.filter::category', categoria_id);
-                }
             },
             computed: {
+                listaSubcategorias() {
+                    if(this.categoriaFilter) {
+                        return this.subcategories.filter(item => item.categoria_id.toString() == this.categoriaFilter);
+                    } else {
+                        return this.subcategories;
+                    }
+                },
                 listaCategorias() {
-                    let categorias = [];
-                    this.categorias.forEach(item => {
-                        categorias.push({
-                            id: item.id,
-                            text: item.nombre
-                        });
-                    });
-                    return categorias;
+                    return this.categorias.map(item => ({ id: item.id, text: item.nombre }));
                 },
             }
         });
-
 
         Vue.use(VueTables.ClientTable);
     </script>

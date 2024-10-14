@@ -5,33 +5,32 @@
         <!--begin::Content-->
         <div id="kt_app_content" class="app-content">
             <!--begin::Card-->
-            <div class="card card-flush">
+            <div class="card card-flush" id="content-card">
                 <!--begin::Card header-->
                 <div class="card-header align-items-center py-5 gap-2 gap-md-5">
                     <div class="card-title flex-column">
                         <h3 class="ps-2">Listado de Colecciones</h3>
                     </div>
                     <div class="card-toolbar">
-                        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_add_coleccion" @click="openModalCreate">
-                            <i class="ki-outline ki-plus fs-2"></i>
-                            Crear coleccion
+                        <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_add_coleccion" @click.prevent="isEdit = false">
+                            <i class="ki-outline ki-plus fs-2"></i> Crear colección
                         </a>
                     </div>
                 </div>
-                <!--end::Card toolbar-->                
+                <!--end::Card toolbar-->
 
                 <!--begin::Card body-->
                 <div class="card-body py-4">
                     <!--begin::Table-->
                     <v-client-table v-model="colecciones" :columns="columns" :options="options">
                         <div slot="acciones" slot-scope="props">
-                            <a href="#" class="btn btn-icon btn-sm btn-success btn-sm me-2" title="Ver productos" data-bs-toggle="modal" data-bs-target="#kt_modal_producto_coleccion" @click="verProductos(props.row)">
+                            <a class="btn btn-icon btn-sm btn-success btn-sm me-2" title="Ver productos" data-bs-toggle="modal" data-bs-target="#kt_modal_producto_coleccion" @click.prevent="getProductos(props.row, true)">
                                 <i class="fas fa-eye"></i>
                             </a>
-                            <a href="#" class="btn btn-icon btn-sm btn-info btn-sm me-2" title="Ver/Editar Coleccion" data-bs-toggle="modal" data-bs-target="#kt_modal_add_coleccion" @click="selectColeccion(props.row)">
+                            <a class="btn btn-icon btn-sm btn-info btn-sm me-2" title="Ver/Editar Coleccion" data-bs-toggle="modal" data-bs-target="#kt_modal_add_coleccion" @click.prevent="selectColeccion(props.row)">
                                 <i class="fas fa-pencil"></i>
                             </a>
-                            <a href="#" class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Coleccion" @click="deleteColeccion(props.row.id)">
+                            <a class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Coleccion" :disabled="loading" @click.prevent="deleteColeccion(props.row.id)">
                                 <i class="fas fa-trash-alt"></i>
                             </a>
                         </div>
@@ -56,9 +55,7 @@
                         <h2 class="fw-bold" v-else>Crear colección</h2>
 
                         <!--begin::Close-->
-                        <div class="btn btn-icon btn-sm btn-active-icon-primary" data-bs-dismiss="modal">
-                            <i class="ki-outline ki-cross fs-1"></i>
-                        </div>
+                        <div class="btn btn-close" data-bs-dismiss="modal"></div>
                         <!--end::Close-->
                     </div>
                     <!--end::Modal header-->
@@ -67,8 +64,8 @@
                         <!--begin::Form-->
                         <form id="kt_modal_add_coleccion_form" class="form" action="#">
                             <!--begin::Scroll-->
-                            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_user_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header"
-                                data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
+                            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_user_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}"
+                                data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
                                 <div class="row g-3">
                                     <div class="col-md-12">
                                         <div class="fv-row mb-7">
@@ -88,8 +85,8 @@
                             <!--begin::Actions-->
                             <div class="text-end pt-15">
                                 <button type="reset" class="btn btn-light me-3" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="button" class="btn btn-info" @click="updateColeccion" :disabled="isDisabled" v-if="isEdit">Actualizar colección</button>
-                                <button type="button" class="btn btn-info" @click="createColeccion" :disabled="isDisabled" v-else>Crear colección</button>
+                                <button type="button" class="btn btn-secondary" @click="updateColeccion" :disabled="loading" v-if="isEdit">Actualizar colección</button>
+                                <button type="button" class="btn btn-secondary" @click="createColeccion" :disabled="loading" v-else>Crear colección</button>
                             </div>
                             <!--end::Actions-->
                         </form>
@@ -114,14 +111,12 @@
                         <h2 class="fw-bold" >Productos de coleccion - [[coleccion]]</h2>
 
                         <!--begin::Close-->
-                        <div class="btn btn-icon btn-sm btn-active-icon-primary" data-bs-dismiss="modal">
-                            <i class="ki-outline ki-cross fs-1"></i>
-                        </div>
+                        <div class="btn btn-close" data-bs-dismiss="modal"></div>
                         <!--end::Close-->
                     </div>
                     <!--end::Modal header-->
                     <!--begin::Modal body-->
-                    <div class="modal-body scroll-y mx-5 mx-xl-10">
+                    <div class="modal-body scroll-y mx-5 mx-xl-10" id="kt_modal_producto_coleccion_body">
                         <!--begin::Card body-->
                         <div class="card-body py-4">
                             <!--begin::Table-->
@@ -241,73 +236,145 @@
                     },
                 },
 
-                validator: null,
-                isEdit: false,
-                isDisabled: false,
                 idColeccion: null,
                 coleccion: null,
                 descripcion: null,
-                
+
+                validator: null,
+                isEdit: false,
+                loading: false,
+                blockUI: null,
+                blockUIModal: null,
+                requestGet: null,
+                requestGetModal: null,
             }),
             mounted() {
-                this.$forceUpdate();
-                this.getColecciones();
-                this.formValidate();
+                let vm = this;
+                vm.$forceUpdate();
+
+                let container = document.querySelector('#content-card');
+                if (container) {
+                    vm.blockUI = new KTBlockUI(container);
+                }
+
+                container = document.querySelector('#kt_modal_producto_coleccion_body');
+                if (container) {
+                    vm.blockUIModal = new KTBlockUI(container);
+                }
+
+                vm.getColecciones(true);
+                vm.formValidate();
                 $("#kt_modal_add_coleccion").on('hidden.bs.modal', event => {
-                    this.validator.resetForm();                    
+                    vm.validator.resetForm();
+                    vm.clearCampos();
                 });
             },
             methods: {
-                openModalCreate() {
-                    this.isEdit = false;
-                    this.clearCampos();
-                },
-                getColecciones(){
-                    let vueThis = this;
-                    $.get('/api/colecciones/all', res => {
-                        vueThis.colecciones = res.results;                        
-                    }, 'json');
-                },
-                selectColeccion(coleccion) {
-                    let vueThis = this;
-                    vueThis.clearCampos();
-                    vueThis.isEdit = true;
+                getColecciones(showLoader){
+                    let vm = this;
+                    if (showLoader) {
+                        if (!vm.blockUI) {
+                            let container = document.querySelector('#content-card');
+                            if (container) {
+                                vm.blockUI = new KTBlockUI(container);
+                                vm.blockUI.block();
+                            }
+                        } else {
+                            if (!vm.blockUI.isBlocked()) {
+                                vm.blockUI.block();
+                            }
+                        }
+                    }
 
-                    vueThis.idColeccion = coleccion.id;
-                    vueThis.coleccion = coleccion.nombre;
-                    vueThis.descripcion = coleccion.descripcion;               
+                    if (vm.requestGet) {
+                        vm.requestGet.abort();
+                        vm.requestGet = null;
+                    }
+
+                    vm.loading = true;
+
+                    vm.requestGet = $.ajax({
+                        url: '/api/colecciones/all',
+                        type: 'GET',
+                    }).done(function (res) {
+                        vm.colecciones = res.results;
+                    }).fail(function (jqXHR, textStatus) {
+                        if (textStatus != 'abort') {
+                            console.log("Request failed getCategorias: " + textStatus, jqXHR);
+                        }
+                    }).always(function () {
+                        vm.loading = false;
+
+                        if (vm.blockUI && vm.blockUI.isBlocked()) {
+                            vm.blockUI.release();
+                        }
+                    });
                 },
-                verProductos(coleccion) {
-                    let vueThis = this;
-                    vueThis.coleccion = coleccion.nombre;
-                    vueThis.productos = [];
-                    $.get('/api/colecciones/productos/' + coleccion.id, res => {
-                        vueThis.productos = res.results;                        
-                    }, 'json');
+                getProductos(coleccion, showLoader) {
+                    let vm = this;
+                    vm.coleccion = coleccion.nombre;
+                    vm.productos = [];
+
+                    if (showLoader) {
+                        if (!vm.blockUIModal) {
+                            let container = document.querySelector('#kt_modal_producto_coleccion_body');
+                            if (container) {
+                                vm.blockUIModal = new KTBlockUI(container);
+                                vm.blockUIModal.block();
+                            }
+                        } else {
+                            if (!vm.blockUIModal.isBlocked()) {
+                                vm.blockUIModal.block();
+                            }
+                        }
+                    }
+
+                    if (vm.requestGetModal) {
+                        vm.requestGetModal.abort();
+                        vm.requestGetModal = null;
+                    }
+
+                    vm.loading = true;
+
+                    vm.requestGetModal = $.ajax({
+                        url: '/api/colecciones/productos/' + coleccion.id,
+                        type: 'GET',
+                    }).done(function (res) {
+                        vm.productos = res.results;
+                    }).fail(function (jqXHR, textStatus) {
+                        if (textStatus != 'abort') {
+                            console.log("Request failed getProductos: " + textStatus, jqXHR);
+                        }
+                    }).always(function () {
+                        vm.loading = false;
+
+                        if (vm.blockUIModal && vm.blockUIModal.isBlocked()) {
+                            vm.blockUIModal.release();
+                        }
+                    });
                 },
                 createColeccion() {
-                    let vueThis = this;                    
-                    vueThis.isDisabled = true;
-                    if (vueThis.validator) {
-                        vueThis.validator.validate().then(function(status) {
+                    let vm = this;
+                    if (vm.validator) {
+                        vm.validator.validate().then(function(status) {
                             if (status == 'Valid') {
+                                vm.loading = true;
                                 $.ajax({
                                     method: "POST",
                                     url: "/api/colecciones/save",
-                                    data: {                                        
-                                        nombre: vueThis.coleccion,
-                                        descripcion: vueThis.descripcion,
+                                    data: {
+                                        nombre: vm.coleccion,
+                                        descripcion: vm.descripcion,
                                         estatus: 1,
                                     }
-                                })
-                                .done(function(res) {
+                                }).done(function(res) {
                                     if (res.code === 200) {
                                         Swal.fire(
                                             "¡Guardado!",
                                             "Los datos de la coleccion se han almacenado con éxito",
                                             "success"
                                         );
-                                        vueThis.getColecciones();
+                                        vm.getColecciones();
                                         $('#kt_modal_add_coleccion').modal('hide');
                                     } else {
                                         Swal.fire(
@@ -316,47 +383,39 @@
                                             "warning"
                                         );
                                     }
-                                })
-                                .fail(function(jqXHR, textStatus) {
+                                }).fail(function(jqXHR, textStatus) {
                                     console.log("Request failed createColeccion: " + textStatus, jqXHR);
-                                    Swal.fire(
-                                        "¡Error!",
-                                        "No se pudo crear la coleccion",
-                                        "warning"
-                                    );
-                                })
-                                .always(function(event, xhr, settings) {
-                                    vueThis.isDisabled = false;
+                                    Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
+                                }).always(function(event, xhr, settings) {
+                                    vm.loading = false;
                                 });
                             }
                         });
                     }
                 },
                 updateColeccion() {
-                    let vueThis = this;
-                    if (vueThis.validator) {
-                        vueThis.validator.validate().then(function(status) {
+                    let vm = this;
+                    if (vm.validator) {
+                        vm.validator.validate().then(function(status) {
                             if (status == 'Valid') {
-                                vueThis.isDisabled = true;
+                                vm.loading = true;
                                 $.ajax({
                                     method: "POST",
                                     url: "/api/colecciones/save",
                                     data: {
-                                        id: vueThis.idColeccion,
-                                        nombre: vueThis.coleccion,
-                                        descripcion: vueThis.descripcion,
+                                        id: vm.idColeccion,
+                                        nombre: vm.coleccion,
+                                        descripcion: vm.descripcion,
                                         estatus: 1,
                                     }
-                                })
-                                .done(function(res) {
-                                    
+                                }).done(function(res) {
                                     if (res.code === 200) {
                                         Swal.fire(
                                             "¡Guardado!",
                                             "Los datos de la coleccion han sido actualizados con éxito",
                                             "success"
                                         );
-                                        vueThis.getColecciones();
+                                        vm.getColecciones();
                                         $('#kt_modal_add_coleccion').modal('hide');
                                     } else {
                                         Swal.fire(
@@ -365,20 +424,18 @@
                                             "warning"
                                         );
                                     }
-                                })
-                                .fail(function(jqXHR, textStatus) {
-                                    console.log("Request failed createColeccion: " + textStatus, jqXHR);
-                                })
-                                .always(function(event, xhr, settings) {
-                                    vueThis.isDisabled = false;
+                                }).fail(function(jqXHR, textStatus) {
+                                    console.log("Request failed updateColeccion: " + textStatus, jqXHR);
+                                    Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
+                                }).always(function(event, xhr, settings) {
+                                    vm.loading = false;
                                 });
                             }
                         });
                     }
                 },
                 deleteColeccion(idColeccion) {
-                    let vueThis = this;
-                    vueThis.isDisabled = true;
+                    let vm = this;
                     Swal.fire({
                         title: '¿Estas seguro de que deseas eliminar el registro de la coleccion?',
                         icon: 'warning',
@@ -389,43 +446,48 @@
                         cancelButtonText: 'Cancelar',
                     }).then((result) => {
                         if (result.isConfirmed) {
+                            vm.loading = true;
                             $.ajax({
                                 method: "POST",
                                 url: "/api/colecciones/delete",
                                 data: {
                                     coleccion_id: idColeccion,
                                 }
-                            })
-                            .done(function(res) {
+                            }).done(function(res) {
                                 Swal.fire(
                                     'Registro eliminado',
                                     'El registro de la coleccion ha sido eliminado con éxito',
                                     'success'
                                 );
-                                vueThis.getColecciones();
-                            })
-                            .always(function(event, xhr, settings) {
-                                vueThis.isDisabled = false;
+                                vm.getColecciones();
+                            }).fail(function(jqXHR, textStatus) {
+                                console.log("Request failed deleteColeccion: " + textStatus, jqXHR);
+                                Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
+                            }).always(function(event, xhr, settings) {
+                                vm.loading = false;
                             });
                         }
                     })
                 },
-                clearCampos() {
-                    this.isEdit = false;                    
-                    this.isDisabled = false;
-                    this.coleccion = null;
-                    this.descripcion = null;
+                selectColeccion(coleccion) {
+                    let vm = this;
+                    vm.clearCampos();
+                    vm.isEdit = true;
+
+                    vm.idColeccion = coleccion.id;
+                    vm.coleccion = coleccion.nombre;
+                    vm.descripcion = coleccion.descripcion;
                 },
                 formValidate() {
-                    let vueThis = this;
+                    let vm = this;
                     // Define form element
                     const form = document.getElementById('kt_modal_add_coleccion_form');
                     
-                    vueThis.validator = FormValidation.formValidation(
+                    vm.validator = FormValidation.formValidation(
                         form, {
                             fields: {
                                 'coleccion': {
-                                    validators: {                                        
+                                    validators: {
                                         notEmpty: {
                                             message: 'Nombre de la coleccion es requerido',
                                             trim: true
@@ -433,15 +495,15 @@
                                     }
                                 },
                                 'descripcion': {
-                                    validators: {                                        
+                                    validators: {
                                         notEmpty: {
                                             message: 'Descripcion es requerido',
                                             trim: true
                                         }
                                     }
-                                },                                                                
+                                },
                             },
-                                                        
+
                             plugins: {
                                 trigger: new FormValidation.plugins.Trigger(),
                                 bootstrap: new FormValidation.plugins.Bootstrap5({
@@ -451,12 +513,15 @@
                                 })
                             }
                         }
-                    );                    
-                }
+                    );
+                },
+                clearCampos() {
+                    this.isEdit = false;
+                    this.loading = false;
+                    this.coleccion = null;
+                    this.descripcion = null;
+                },
             },
-            computed: {
-                
-            }
         });
 
         Vue.use(VueTables.ClientTable);
