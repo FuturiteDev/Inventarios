@@ -3,7 +3,7 @@
 
 ### Instalación:
 ```
-composer ongoing/inventarios
+composer ongoing-erp/inventarios
 ```
 
 
