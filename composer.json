@@ -1,5 +1,5 @@
 {
-    "name": "ongoing/inventarios",
+    "name": "ongoing-erp/inventarios",
     "description": "Catalogos de control de inventarios",
     "license": "MIT",
     "autoload": {
