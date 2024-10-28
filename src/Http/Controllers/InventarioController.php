@@ -5,6 +5,7 @@ namespace Ongoing\Inventarios\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
 use Log;
+use Illuminate\Support\Facades\Validator;
 
 use Ongoing\Inventarios\Repositories\ColeccionesRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\InventarioRepositoryEloquent;
@@ -86,4 +87,57 @@ class InventarioController extends Controller
         }
     }
 
+    public function agregarInventarios(Request $request)
+    {
+        try {
+
+        // Validaciones
+        $validator = Validator::make($request->all(), [
+            'sucursal_id' => 'required|exists:sucursales,id',
+            'productos' => 'required|array',
+            'productos.*.id' => 'required|exists:productos,id',
+            'productos.*.cantidad' => 'required|integer|min:1',
+            'productos.*.fecha_caducidad' => 'required|date',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => true,
+                'message' => "Algun producto no existe en la base de datos",
+                "info" => $validator->errors(),
+            ], 400);
+        }
+
+        $sucursal_id = $request->sucursal_id;
+
+        foreach ($request->productos as $producto) {
+            $cantidad = $producto['cantidad'];
+
+            for ($i = 0; $i < $cantidad; $i++) {
+                Inventario::create([
+                    'sucursal_id' => $sucursal_id,
+                    'producto_id' => $producto['id'],
+                    'cantidad_total' => 1,
+                    'cantidad_disponible' => 1,
+                    'fecha_caducidad' => $producto['fecha_caducidad'],
+                    'estatus' => 1,
+                ]);
+            }
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => "Productos ingresados completamente"
+        ], 200);
+
+        } catch (\Exception $e) {
+            Log::info("InventarioController->agregarInventarios() | " . $e->getMessage() . " | " . $e->getLine());
+
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] InventarioController->agregarInventarios() | " . $e->getMessage() . " | " . $e->getLine(),
+                'results' => null
+            ], 500);
+        }
+    }
 }
