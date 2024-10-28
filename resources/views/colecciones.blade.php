@@ -12,9 +12,9 @@
                         <h3 class="ps-2">Listado de Colecciones</h3>
                     </div>
                     <div class="card-toolbar">
-                        <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_add_coleccion" @click.prevent="isEdit = false">
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_add_coleccion" @click="isEdit = false">
                             <i class="ki-outline ki-plus fs-2"></i> Crear colección
-                        </a>
+                        </button>
                     </div>
                 </div>
                 <!--end::Card toolbar-->
@@ -24,15 +24,16 @@
                     <!--begin::Table-->
                     <v-client-table v-model="colecciones" :columns="columns" :options="options">
                         <div slot="acciones" slot-scope="props">
-                            <a class="btn btn-icon btn-sm btn-success btn-sm me-2" title="Ver productos" data-bs-toggle="modal" data-bs-target="#kt_modal_producto_coleccion" @click.prevent="getProductos(props.row, true)">
+                            <button type="button" class="btn btn-icon btn-sm btn-primary btn-sm me-2" title="Ver productos" data-bs-toggle="modal" data-bs-target="#kt_modal_producto_coleccion" @click="getProductos(props.row, true)">
                                 <i class="fas fa-eye"></i>
-                            </a>
-                            <a class="btn btn-icon btn-sm btn-info btn-sm me-2" title="Ver/Editar Coleccion" data-bs-toggle="modal" data-bs-target="#kt_modal_add_coleccion" @click.prevent="selectColeccion(props.row)">
+                            </button>
+                            <button type="button" class="btn btn-icon btn-sm btn-success btn-sm me-2" title="Ver/Editar Coleccion" data-bs-toggle="modal" data-bs-target="#kt_modal_add_coleccion" @click="selectColeccion(props.row)">
                                 <i class="fas fa-pencil"></i>
-                            </a>
-                            <a class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Coleccion" :disabled="loading" @click.prevent="deleteColeccion(props.row.id)">
-                                <i class="fas fa-trash-alt"></i>
-                            </a>
+                            </button>
+                            <button type="button" class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Coleccion" :disabled="loading" @click="deleteColeccion(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
+                                <span class="indicator-label"><i class="fas fa-trash-alt"></i></span>
+                                <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
+                            </button>
                         </div>
                     </v-client-table>
                     <!--end::Table-->
@@ -51,8 +52,7 @@
                 <div class="modal-content">
                     <!--begin::Modal header-->
                     <div class="modal-header" id="kt_modal_add_user_header">
-                        <h2 class="fw-bold" v-if="isEdit">Actualizar colección</h2>
-                        <h2 class="fw-bold" v-else>Crear colección</h2>
+                        <h2 class="fw-bold" v-text="isEdit ? 'Actualizar colección' : 'Crear colección'"></h2>
 
                         <!--begin::Close-->
                         <div class="btn btn-close" data-bs-dismiss="modal"></div>
@@ -60,39 +60,32 @@
                     </div>
                     <!--end::Modal header-->
                     <!--begin::Modal body-->
-                    <div class="modal-body scroll-y mx-5 mx-xl-10">
+                    <div class="modal-body">
                         <!--begin::Form-->
-                        <form id="kt_modal_add_coleccion_form" class="form" action="#">
-                            <!--begin::Scroll-->
-                            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_user_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}"
-                                data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
-                                <div class="row g-3">
-                                    <div class="col-md-12">
-                                        <div class="fv-row mb-7">
-                                            <label class="required fw-semibold fs-6 mb-2 ms-2">Nombre</label>
-                                            <input type="text" required class="form-control" placeholder="Colección" v-model="coleccion" name="coleccion">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <div class="fv-row mb-7">
-                                            <label class="required fw-semibold fs-6 mb-2 ms-2">Descripcion</label>
-                                            <input type="text" required class="form-control" placeholder="Descripcion" v-model="descripcion" name="descripcion">
-                                        </div>
-                                    </div>
-                                </div>
+                        <form id="kt_modal_add_coleccion_form" class="form" action="#" @submit.prevent="">
+                            <div class="fv-row mb-7">
+                                <label class="required fw-semibold fs-6 ms-2">Nombre</label>
+                                <input type="text" required class="form-control" placeholder="Colección" v-model="coleccion" name="coleccion">
                             </div>
-                            <!--end::Scroll-->
-                            <!--begin::Actions-->
-                            <div class="text-end pt-15">
-                                <button type="reset" class="btn btn-light me-3" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="button" class="btn btn-secondary" @click="updateColeccion" :disabled="loading" v-if="isEdit">Actualizar colección</button>
-                                <button type="button" class="btn btn-secondary" @click="createColeccion" :disabled="loading" v-else>Crear colección</button>
+
+                            <div class="fv-row mb-7">
+                                <label class="required fw-semibold fs-6 ms-2">Descripcion</label>
+                                <input type="text" required class="form-control" placeholder="Descripcion" v-model="descripcion" name="descripcion">
                             </div>
-                            <!--end::Actions-->
                         </form>
                         <!--end::Form-->
                     </div>
                     <!--end::Modal body-->
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" @click="updateColeccion" :disabled="loading" :data-kt-indicator="loading ? 'on' : 'off'" v-if="isEdit">
+                            <span class="indicator-label">Actualizar</span>
+                            <span class="indicator-progress">Actualizando <span class="spinner-border spinner-border-sm align-middle"></span></span>
+                        </button>
+                        <button type="button" class="btn btn-primary" @click="createColeccion" :disabled="loading" :data-kt-indicator="loading ? 'on' : 'off'" v-else>
+                            <span class="indicator-label">Crear</span>
+                            <span class="indicator-progress">Creando <span class="spinner-border spinner-border-sm align-middle"></span></span>
+                        </button>
+                    </div>
                 </div>
                 <!--end::Modal content-->
             </div>
@@ -131,13 +124,11 @@
                             <!--end::Table-->
                         </div>
                         <!--end::Card body-->
-                        <!--begin::Actions-->
-                        <div class="text-end pt-15">
-                            <button type="reset" class="btn btn-light me-3" data-bs-dismiss="modal">Cerrar</button>
-                        </div>
-                        <!--end::Actions-->
                     </div>
                     <!--end::Modal body-->
+                    <div class="modal-footer">
+                        <button type="reset" class="btn btn-secondary me-3" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
                 </div>
                 <!--end::Modal content-->
             </div>
@@ -168,7 +159,7 @@
                     columnsClasses: {
                         id: 'align-middle px-2 ',
                         nombre: 'align-middle ',
-                        descripcion: 'align-middle text-center ',
+                        descripcion: 'align-middle ',
                         acciones: 'align-middle text-center px-2 ',
                     },
                     sortable: ['nombre', 'descripcion'],
@@ -447,6 +438,10 @@
                     }).then((result) => {
                         if (result.isConfirmed) {
                             vm.loading = true;
+                            let index = vm.colecciones.findIndex(item => item.id == idColeccion);
+                            if(index >= 0){
+                                vm.$set(vm.colecciones[index], 'eliminando', true);
+                            }
                             $.ajax({
                                 method: "POST",
                                 url: "/api/colecciones/delete",
@@ -463,6 +458,11 @@
                             }).fail(function(jqXHR, textStatus) {
                                 console.log("Request failed deleteColeccion: " + textStatus, jqXHR);
                                 Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
+
+                                index = vm.colecciones.findIndex(item => item.id == idColeccion);
+                                if(index >= 0){
+                                    vm.$set(vm.colecciones[index], 'eliminando', false);
+                                }
                             }).always(function(event, xhr, settings) {
                                 vm.loading = false;
                             });

@@ -25,9 +25,9 @@
                             data-placeholder="Filtrar por categoría">
                         </v-select>
                     </div>
-                    <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_add_subcategory" @click.prevent="isEdit = false">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_add_subcategory" @click="isEdit = false">
                         <i class="fa-solid fa-plus"></i> Agregar subcategoría
-                    </a>
+                    </button>
                 </div>
             </div>
 
@@ -36,12 +36,13 @@
                     <v-client-table v-model="listaSubcategorias" :columns="columns" :options="options">
                         <div slot="categoria" slot-scope="props">[[props.row.categoria?.nombre ?? '']]</div>
                         <div slot="acciones" slot-scope="props">
-                            <a class="btn btn-icon btn-sm btn-info" title="Editar subcategoria" data-bs-toggle="modal" data-bs-target="#kt_add_subcategory" @click.prevent="selectSubcategory(props.row)">
+                            <button type="button" class="btn btn-icon btn-sm btn-success" title="Editar subcategoria" data-bs-toggle="modal" data-bs-target="#kt_add_subcategory" @click="selectSubcategory(props.row)">
                                 <i class="fa-solid fa-pencil"></i>
-                            </a>
-                            <a class="btn btn-icon btn-sm btn-danger" title="Eliminar" @click.prevent="deleteSubcategory(props.row.id)" :disabled="loading">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </a>
+                            </button>
+                            <button type="button" class="btn btn-icon btn-sm btn-danger" title="Eliminar" @click="deleteSubcategory(props.row.id)" :disabled="loading" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
+                                <span class="indicator-label"><i class="fas fa-trash-alt"></i></span>
+                                <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
+                            </button>
                         </div>
                     </v-client-table>
                 </div>
@@ -54,77 +55,91 @@
             <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" v-text="isEdit ? 'Actualizar información subcategoria' : 'Crear subcategoría'"></h5>
+                        <h2 class="fw-bold" v-text="isEdit ? 'Actualizar información subcategoria' : 'Crear subcategoría'"></h2>
 
+                        <!--begin::Close-->
                         <div class="btn btn-close" data-bs-dismiss="modal"></div>
+                        <!--end::Close-->
                     </div>
+                    <!--begin::Modal body-->
+                    <div class="modal-body scroll-y mx-5">
+                        <form id="kt_modal_add_subcategory_form" class="form" action="#" @submit.prevent="">
+                            <!--begin::Scroll-->
+                            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_user_scroll" data-kt-scroll="true"
+                                data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header"
+                                data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
+                                <div class="fv-row mb-7">
+                                    <label class="required fw-semibold fs-6 ms-2" for="cat_id">Categoría</label>
+                                    <v-select
+                                        class="form-control"
+                                        v-model="idCategoria"
+                                        :options="listaCategorias"
+                                        data-allow-clear="true"
+                                        data-placeholder="Selecciona una categoría"
+                                        id="cat_id"
+                                        name="cat_id"
+                                        data-dropdown-parent="#kt_add_subcategory">
+                                    </v-select>
+                                </div>
 
-                    <div class="modal-body">
-                        <div class="fv-row mb-7">
-                            <label class="required fs-6 fw-bold mb-2" for="cat_id">Categoría</label>
-                            <v-select
-                                class="form-control"
-                                v-model="idCategoria"
-                                :options="listaCategorias"
-                                data-allow-clear="true"
-                                data-placeholder="Selecciona una categoría"
-                                id="cat_id"
-                                name="cat_id"
-                                data-dropdown-parent="#kt_add_subcategory">
-                            </v-select>
-                        </div>
+                                <div class="fv-row mb-7">
+                                    <label class="required fw-semibold fs-6 ms-2" for="subCat_name">Nombre</label>
+                                    <input type="text" class="form-control" placeholder="Nombre de la subcategoría" id="subCat_name" name="subCat_name" v-model="nombre">
+                                </div>
 
-                        <div class="fv-row mb-7">
-                            <label class="required fs-6 fw-bold mb-2" for="subCat_name">Nombre</label>
-                            <input type="text" class="form-control" placeholder="Nombre de la subcategoría" id="subCat_name" name="subCat_name" v-model="nombre">
-                        </div>
+                                <div class="fv-row mb-7">
+                                    <label class="required fw-semibold fs-6 ms-2" for="subCat_desc">Descripción</label>
+                                    <textarea class="form-control" rows="3" placeholder="Descripción de la subcategoría" id="subCat_desc" name="subCat_desc" v-model="descripcion"></textarea>
+                                </div>
 
-                        <div class="fv-row mb-7">
-                            <label class="required fs-6 fw-bold mb-2" for="subCat_desc">Descripción</label>
-                            <textarea class="form-control" rows="3" placeholder="Descripción de la subcategoría" id="subCat_desc" name="subCat_desc" v-model="descripcion"></textarea>
-                        </div>
-
-                        <div class="fv-row mb-7">
-                            <label class="required fs-6 fw-bold mb-2">Características</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="inputGroupSelect04" aria-label="Example select with button addon" v-model="caracteristica">
-                                <button class="btn btn-light-success border border-success" type="button" @click.stop="addCaracteristica();validateCaracteristicas();">
-                                    <i class="fa-solid fa-plus"></i> Agregar caracteristica
-                                </button>
-                            </div>
-                            <div class="row mt-5">
-                                <div class="col-lg-6 col-md-12">
-                                    <ul class="list-group">
-                                        <li class="list-group-item d-flex justify-content-between align-items-center" v-for="(caracteristica, index) in caracteristicas">
-                                            <span v-text="caracteristica" v-if="!isCaracteristicaEdit"></span>
-                                            <input type="text" v-model="caracteristicasEdit[index]" class="form-control form-control-sm me-3" v-if="isCaracteristicaEdit">
-                                            <div class="caracteristicas-acciones">
-                                                <button type="button" class="btn btn-danger btn-sm btn-icon" @click="deleteCaracteristica(index)">
-                                                    <i class="fa-solid fa-trash-can"></i>
-                                                </button>
-                                            </div>
-                                        </li>
-                                    </ul>
-                                    <div class="d-flex justify-content-end mt-3">
-                                        <button type="button" class="btn btn-primary btn-sm" @click="showEditCaracteristicas" v-if="!isCaracteristicaEdit && caracteristicas.length > 0 && isEdit">
-                                            <i class="fa-solid fa-pencil"></i> Editar
-                                        </button>
-                                        <button type="button" class="btn btn-secondary btn-sm me-2" v-if="isCaracteristicaEdit" @click="isCaracteristicaEdit=false;caracteristicasEdit=caracteristicas">
-                                            <i class="fa-solid fa-xmark"></i> Cancelar
-                                        </button>
-                                        <button type="button" class="btn btn-primary btn-sm" @click="saveCaracteristicas" v-if="isCaracteristicaEdit">
-                                            <i class="fa-solid fa-check"></i> Finalizar
+                                <div class="fv-row mb-7">
+                                    <label class="required fw-semibold fs-6 ms-2">Características</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="inputGroupSelect04" aria-label="Example select with button addon" v-model="caracteristica">
+                                        <button class="btn btn-light-success border border-success" type="button" @click.stop="addCaracteristica();validateCaracteristicas();">
+                                            <i class="fa-solid fa-plus"></i> Agregar caracteristica
                                         </button>
                                     </div>
-                                    <span class="text-danger" v-if="msgError">Debes agregar por lo menos una caracteristica</span>
+                                    <div class="row mt-5">
+                                        <div class="col-lg-6 col-md-12">
+                                            <ul class="list-group">
+                                                <li class="list-group-item d-flex justify-content-between align-items-center" v-for="(caracteristica, index) in caracteristicas">
+                                                    <span v-text="caracteristica" v-if="!isCaracteristicaEdit"></span>
+                                                    <input type="text" v-model="caracteristicasEdit[index]" class="form-control form-control-sm me-3" v-if="isCaracteristicaEdit">
+                                                    <div class="caracteristicas-acciones">
+                                                        <button type="button" class="btn btn-danger btn-sm btn-icon" @click="deleteCaracteristica(index)">
+                                                            <i class="fa-solid fa-trash-can"></i>
+                                                        </button>
+                                                    </div>
+                                                </li>
+                                            </ul>
+                                            <div class="d-flex justify-content-end mt-3">
+                                                <button type="button" class="btn btn-primary btn-sm" @click="showEditCaracteristicas" v-if="!isCaracteristicaEdit && caracteristicas.length > 0 && isEdit">
+                                                    <i class="fa-solid fa-pencil"></i> Editar
+                                                </button>
+                                                <button type="button" class="btn btn-secondary btn-sm me-2" v-if="isCaracteristicaEdit" @click="isCaracteristicaEdit=false;caracteristicasEdit=caracteristicas">
+                                                    <i class="fa-solid fa-xmark"></i> Cancelar
+                                                </button>
+                                                <button type="button" class="btn btn-primary btn-sm" @click="saveCaracteristicas" v-if="isCaracteristicaEdit">
+                                                    <i class="fa-solid fa-check"></i> Finalizar
+                                                </button>
+                                            </div>
+                                            <span class="text-danger" v-if="msgError">Debes agregar por lo menos una caracteristica</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                            <!--end::Scroll-->
+                        </form>
+                        <!--end::Form-->
                     </div>
+                    <!--end::Modal body-->
 
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="button" class="btn btn-secondary" v-text="isEdit ? 'Guardar cambios' : 'Crear subcategoria'" :disabled="loading" @click="updateOrCreateSubcategory"></button>
+                        <button type="button" class="btn btn-primary" @click="saveSubcategory" :disabled="loading" :data-kt-indicator="loading ? 'on' : 'off'">
+                            <span class="indicator-label" v-text="isEdit ? 'Actualizar' : 'Crear'"></span>
+                            <span class="indicator-progress">[[isEdit ? 'Actualizando' : 'Creando']] <span class="spinner-border spinner-border-sm align-middle"></span></span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -142,7 +157,7 @@
             el: '#app',
             delimiters: ['[[', ']]'],
             data: () => ({
-                subcategories: {!! json_encode($subCategorias->original['results']) !!},
+                subcategorias: {!! json_encode($subCategorias->original['results']) !!},
                 categorias: [],
 
                 columns: ['categoria', 'nombre', 'descripcion', 'acciones'],
@@ -157,7 +172,6 @@
                         categoria: 'align-middle px-3',
                         nombre: 'align-middle ',
                         descripcion: 'align-middle mw-325px',
-                        nutriologo: 'align-middle',
                         acciones: 'align-middle text-center px-3',
                     },
                     sortable: ['nombre', 'descripcion', 'categoria'],
@@ -218,7 +232,7 @@
                         vm.categorias = res.results;
                     }, 'json');
                 },
-                updateOrCreateSubcategory() {
+                saveSubcategory() {
                     let vm = this;
                     this.validateCaracteristicas();
 
@@ -243,7 +257,7 @@
                                             res.message,
                                             "success"
                                         );
-                                        vm.subcategories = res.results;
+                                        vm.subcategorias = res.results;
                                         vm.getCategorias();
                                         $("#kt_add_subcategory").modal('hide');
                                     } else {
@@ -254,7 +268,7 @@
                                         );
                                     }
                                 }).fail(function(jqXHR, textStatus) {
-                                    console.log("Request failed updateOrCreateSubcategory: " + textStatus, jqXHR);
+                                    console.log("Request failed saveSubcategory: " + textStatus, jqXHR);
                                     Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
                                 }).always(function() {
                                     vm.loading = false;
@@ -278,6 +292,10 @@
                     }).then((result) => {
                         if (result.isConfirmed) {
                             vm.loading = true;
+                            let index = vm.subcategorias.findIndex(item => item.id == subcategory_id);
+                            if(index >= 0){
+                                vm.$set(vm.subcategorias[index], 'eliminando', true);
+                            }
                             $.post('/api/sub-categorias/save', {
                                 id: subcategory_id,
                                 estatus: 0,
@@ -287,10 +305,15 @@
                                     'El registro de la subcategoría ha sido eliminado con éxito',
                                     'success'
                                 );
-                                vm.subcategories = res.results;
+                                vm.subcategorias = res.results;
                             }).fail(function(jqXHR, textStatus) {
                                 console.log("Request failed deleteSubcategory: " + textStatus, jqXHR);
                                 Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
+
+                                index = vm.subcategorias.findIndex(item => item.id == subcategory_id);
+                                if(index >= 0){
+                                    vm.$set(vm.subcategorias[index], 'eliminando', false);
+                                }
                             }).always(function(){
                                 vm.loading = false;
                             });
@@ -331,7 +354,7 @@
                     });
                 },
                 formValidate() {
-                    const form = document.getElementById('kt_add_subcategory');
+                    const form = document.getElementById('kt_modal_add_subcategory_form');
                     this.validator = FormValidation.formValidation(
                         form, {
                             fields: {
@@ -390,9 +413,9 @@
             computed: {
                 listaSubcategorias() {
                     if(this.categoriaFilter) {
-                        return this.subcategories.filter(item => item.categoria_id.toString() == this.categoriaFilter);
+                        return this.subcategorias.filter(item => item.categoria_id.toString() == this.categoriaFilter);
                     } else {
-                        return this.subcategories;
+                        return this.subcategorias;
                     }
                 },
                 listaCategorias() {
