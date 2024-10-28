@@ -1,56 +1,5 @@
 @extends('erp.base')
 
-@section('meta_description')
-    <style>
-        .loader {
-            display: inline-block;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            position: relative;
-            animation: rotate 1s linear infinite
-        }
-
-        .loader::before {
-            content: "";
-            box-sizing: border-box;
-            position: absolute;
-            inset: 0px;
-            border-radius: 50%;
-            border: 3px solid var(--bs-primary);
-            animation: prixClipFix 2s linear infinite;
-        }
-
-        @keyframes rotate {
-            100% {
-                transform: rotate(360deg)
-            }
-        }
-
-        @keyframes prixClipFix {
-            0% {
-                clip-path: polygon(50% 50%, 0 0, 0 0, 0 0, 0 0, 0 0)
-            }
-
-            25% {
-                clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 0, 100% 0, 100% 0)
-            }
-
-            50% {
-                clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 100% 100%, 100% 100%)
-            }
-
-            75% {
-                clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 0 100%, 0 100%)
-            }
-
-            100% {
-                clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 0 100%, 0 0)
-            }
-        }
-    </style>
-@endsection
-
 @section('content')
     <div id="app">
         <!--begin::Content-->
@@ -91,9 +40,9 @@
                                 data-placeholder="Filtrar por coleccion">
                             </v-select>
                         </div>
-                        <a class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_add_producto" @click.prevent="isEdit = false">
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_add_producto" @click="isEdit = false">
                             <i class="ki-outline ki-plus fs-2"></i> Agregar producto
-                        </a>
+                        </button>
                     </div>
                 </div>
                 <!--end::Card toolbar-->
@@ -109,15 +58,16 @@
                             [[props.row.subcategoria?.nombre ?? 'N/A']]
                         </div>
                         <div slot="acciones" slot-scope="props">
-                            <a class="btn btn-icon btn-sm btn-success btn-sm me-2" title="Ver/Editar Producto" data-bs-toggle="modal" data-bs-target="#kt_modal_add_producto" @click.prevent="selectProducto(props.row)">
+                            <button type="button" class="btn btn-icon btn-sm btn-success me-2" title="Ver/Editar Producto" data-bs-toggle="modal" data-bs-target="#kt_modal_add_producto" @click="selectProducto(props.row)">
                                 <i class="fas fa-pencil"></i>
-                            </a>
-                            <a class="btn btn-icon btn-sm btn-primary btn-sm me-2" title="Multimedia" data-bs-toggle="modal" data-bs-target="#kt_modal_producto_multimedia" @click.prevent="getMultimedia(props.row.id, true)" id="openMultimediaBtn">
+                            </button>
+                            <button type="button" class="btn btn-icon btn-sm btn-primary me-2" title="Multimedia" data-bs-toggle="modal" data-bs-target="#kt_modal_producto_multimedia" @click="getMultimedia(props.row.id, true)" id="openMultimediaBtn">
                                 <i class="fas fa-photo-film"></i>
-                            </a>
-                            <a class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Producto" @click.prevent="deleteProducto(props.row.id)">
-                                <i class="fas fa-trash-alt"></i>
-                            </a>
+                            </button>
+                            <button type="button" class="btn btn-icon btn-sm btn-danger me-2" title="Eliminar Producto" @click="deleteProducto(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
+                                <span class="indicator-label"><i class="fas fa-trash-alt"></i></span>
+                                <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
+                            </button>
                         </div>
                     </v-client-table>
                     <!--end::Table-->
@@ -136,8 +86,7 @@
                 <div class="modal-content">
                     <!--begin::Modal header-->
                     <div class="modal-header" id="kt_modal_add_user_header">
-                        <h2 class="fw-bold" v-if="isEdit">Actualizar producto</h2>
-                        <h2 class="fw-bold" v-else>Crear producto</h2>
+                        <h2 class="fw-bold" v-text="isEdit ? 'Actualizar producto' : 'Crear producto'"></h2>
 
                         <!--begin::Close-->
                         <div class="btn btn-close" data-bs-dismiss="modal"></div>
@@ -145,26 +94,26 @@
                     </div>
                     <!--end::Modal header-->
                     <!--begin::Modal body-->
-                    <div class="modal-body scroll-y mx-5 mx-xl-10">
+                    <div class="modal-body scroll-y mx-5">
                         <!--begin::Form-->
-                        <form id="kt_modal_add_producto_form" class="form" action="#">
+                        <form id="kt_modal_add_producto_form" class="form" action="#" @submit.prevent="">
                             <!--begin::Scroll-->
                             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_user_scroll" data-kt-scroll="true"
                                 data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header"
                                 data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
                                 <div class="fv-row mb-7">
-                                    <label class="required fs-6 fw-bold mb-2" for="sku">Sku</label>
+                                    <label class="required fw-semibold fs-6 ms-2" for="sku">Sku</label>
                                     <input type="text" class="form-control" placeholder="Sku" id="sku" name="sku" v-model="sku">
                                 </div>
 
                                 <div class="fv-row mb-7">
-                                    <label class="required fs-6 fw-bold mb-2" for="subCat_name">Nombre</label>
+                                    <label class="required fw-semibold fs-6 ms-2" for="subCat_name">Nombre</label>
                                     <input type="text" class="form-control" placeholder="Nombre del producto" id="nombre" name="nombre" v-model="nombre">
                                 </div>
 
                                 <div class="fv-row mb-7">
-                                    <label class="required fs-6 fw-bold mb-2" for="subCat_desc">Descripción</label>
+                                    <label class="required fw-semibold fs-6 ms-2" for="subCat_desc">Descripción</label>
                                     <textarea class="form-control" rows="3" placeholder="Descripción del producto" id="descripcion" name="descripcion" v-model="descripcion"></textarea>
                                 </div>
 
@@ -183,7 +132,7 @@
                                     </v-select>
                                 </div>
                                 <div class="fv-row mb-7">
-                                    <label class="required fs-6 fw-bold mb-2" for="cat_id">Categoría</label>
+                                    <label class="required fw-semibold fs-6 ms-2" for="cat_id">Categoría</label>
                                     <v-select v-if="categorias != []"
                                         class="form-control"
                                         v-model="idCategoria"
@@ -197,7 +146,7 @@
                                     </v-select>
                                 </div>
                                 <div class="fv-row mb-7">
-                                    <label class="required fs-6 fw-bold mb-2" for="subcat_id">Subcategoría</label>
+                                    <label class="required fw-semibold fs-6 ms-2" for="subcat_id">Subcategoría</label>
                                     <v-select v-if="!setEdit"
                                         class="form-control"
                                         v-model="idSubcategoria"
@@ -211,7 +160,7 @@
                                     </v-select>
                                 </div>
                                 <div class="fv-row mb-7">
-                                    <label class="required fs-6 fw-bold mb-2" for="precio">Precio</label>
+                                    <label class="required fw-semibold fs-6 ms-2" for="precio">Precio</label>
                                     <input type="text" class="form-control" placeholder="Precio" id="precio" name="precio" v-model="precio" onblur="formatoNumero(this)">
                                 </div>
                                 <div class="fv-row mb-7">
@@ -258,17 +207,16 @@
                                 </div>
                             </div>
                             <!--end::Scroll-->
-                            <!--begin::Actions-->
-                            <div class="text-end pt-15" v-if="!setEdit">
-                                <button type="reset" class="btn btn-light me-3" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="button" class="btn btn-secondary" @click="saveProducto" :disabled="loading" v-if="isEdit">Actualizar producto</button>
-                                <button type="button" class="btn btn-secondary" @click="saveProducto" :disabled="loading" v-else>Crear producto</button>
-                            </div>
-                            <!--end::Actions-->
                         </form>
                         <!--end::Form-->
                     </div>
                     <!--end::Modal body-->
+                    <div class="modal-footer" v-if="!setEdit">
+                        <button type="button" class="btn btn-primary" @click="saveProducto" :disabled="loading" :data-kt-indicator="loading ? 'on' : 'off'">
+                            <span class="indicator-label" v-text="isEdit ? 'Actualizar' : 'Crear'"></span>
+                            <span class="indicator-progress">[[isEdit ? 'Actualizando' : 'Creando']] <span class="spinner-border spinner-border-sm align-middle"></span></span>
+                        </button>
+                    </div>
                 </div>
                 <!--end::Modal content-->
             </div>
@@ -294,7 +242,7 @@
                     <!--begin::Modal body-->
                     <div class="modal-body scroll-y mx-5 mx-xl-10" id="kt_modal_producto_multimedia_body">
                         <div class="text-center p-10" v-if="loading">
-                            <span class="loader text-center"></span><br>
+                            <span class="text-center"></span><br>
                             <p class="fs-5 fw-medium">Obteniendo información</p>
                         </div>
                         <div class="row" v-else>
@@ -320,7 +268,7 @@
 
                                     <!--begin::Actions-->
                                     <div class="text-end pt-15">
-                                        <button type="submit" class="btn btn-sm btn-secondary" :disabled="loading">Agregar multimedia</button>
+                                        <button type="submit" class="btn btn-sm btn-primary" :disabled="loading">Agregar multimedia</button>
                                     </div>
                                 </form>
                             </div>
@@ -331,9 +279,10 @@
                                             <img :src="props.row.url" class="img-fluid" style="max-width: 100px;">
                                         </div>
                                         <div slot="acciones" slot-scope="props">
-                                            <a class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Marca" @click.prevent="deleteMultimedia(props.row.id)">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </a>
+                                            <button type="button" class="btn btn-icon btn-sm btn-danger" title="Eliminar Marca" @click.prevent="deleteMultimedia(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
+                                                <span class="indicator-label"><i class="fas fa-trash-alt"></i></span>
+                                                <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
+                                            </button>
                                         </div>
                                     </v-client-table>
                                 </div>
@@ -738,6 +687,10 @@
                     }).then((result) => {
                         if (result.isConfirmed) {
                             vm.loading = true;
+                            let index = vm.productos.findIndex(item => item.id == idProducto);
+                            if(index >= 0){
+                                vm.$set(vm.productos[index], 'eliminando', true);
+                            }
                             $.ajax({
                                 method: "POST",
                                 url: "/api/productos/delete",
@@ -754,6 +707,11 @@
                             }).fail(function(jqXHR, textStatus) {
                                 console.log("Request failed deleteProducto: " + textStatus, jqXHR);
                                 Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
+
+                                index = vm.productos.findIndex(item => item.id == idProducto);
+                                if(index >= 0){
+                                    vm.$set(vm.productos[index], 'eliminando', false);
+                                }
                             }).always(function(event, xhr, settings) {
                                 vm.loading = false;
                             });
@@ -772,7 +730,10 @@
                         cancelButtonText: 'Cancelar',
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            vm.loading = true;
+                            let index = vm.multimedia.findIndex(item => item.id == idMultimedia);
+                            if(index >= 0){
+                                vm.$set(vm.multimedia[index], 'eliminando', true);
+                            }
                             $.ajax({
                                 method: "POST",
                                 url: "/api/productos/multimedia/delete",
@@ -789,6 +750,11 @@
                             }).fail(function(jqXHR, textStatus) {
                                 console.log("Request failed deleteMultimedia: " + textStatus, jqXHR);
                                 Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
+
+                                index = vm.multimedia.findIndex(item => item.id == idMultimedia);
+                                if(index >= 0){
+                                    vm.$set(vm.multimedia[index], 'eliminando', true);
+                                }
                             }).always(function(event, xhr, settings) {
                                 vm.loading = false;
                             });
