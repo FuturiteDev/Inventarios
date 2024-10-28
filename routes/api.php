@@ -5,6 +5,7 @@ use Ongoing\Inventarios\Http\Controllers\CategoriasController;
 use Ongoing\Inventarios\Http\Controllers\SubCategoryController;
 use Ongoing\Inventarios\Http\Controllers\ColeccionesController;
 use Ongoing\Inventarios\Http\Controllers\ProductosController;
+use Ongoing\Inventarios\Http\Controllers\InventarioController;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,4 +45,5 @@ Route::prefix('productos')->group(function () {
     Route::get('/{productoId}/multimedia/all', [ProductosController::class, 'getAllMultimedia'])->name('get_all_product_multimedia');
     Route::post('/multimedia/save', [ProductosController::class, 'saveMultimedia'])->name('save_product_multimedia');
     Route::post('/multimedia/delete', [ProductosController::class, 'deleteMultimedia'])->name('delete_product_multimedia');
+    Route::post('/existencia-sucursal', [InventarioController::class, 'getProductosConExistencias'])->name('existencia_productos');
 });

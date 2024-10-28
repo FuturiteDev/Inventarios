@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Entities;
+namespace Ongoing\Inventarios\Entities;
 
 use Illuminate\Database\Eloquent\Model;
 use Prettus\Repository\Contracts\Transformable;
@@ -14,8 +14,8 @@ use Ongoing\Inventarios\Entities\Productos;
  */
 class Inventario extends Model
 {
-    use HasFactory;
-
+    use TransformableTrait;
+    protected $table = "inventario";
     protected $fillable = [
         'sucursal_id',
         'producto_id',

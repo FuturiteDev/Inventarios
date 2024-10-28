@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Repositories;
+namespace Ongoing\Inventarios\Repositories;
 
 use Prettus\Repository\Eloquent\BaseRepository;
 use Prettus\Repository\Criteria\RequestCriteria;
-use App\Repositories\InventarioRepository;
-use App\Entities\Inventario;
+use Ongoing\Inventarios\Repositories\InventarioRepository;
+use Ongoing\Inventarios\Entities\Inventario;
 use App\Validators\InventarioValidator;
 
 /**
