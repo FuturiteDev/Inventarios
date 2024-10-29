@@ -32,9 +32,12 @@
                     <div class="d-flex mb-5 justify-content-end">
                         <div class="px-2">
                             <div class="input-group" id="datepicker_wrapper">
-                                <input id="datepicker_input" type="text" class="form-control" placeholder="Fecha de caducidad" v-model="fechaFilter"/>
                                 <span class="input-group-text">
                                     <i class="ki-duotone ki-calendar fs-2"><span class="path1"></span><span class="path2"></span></i>
+                                </span>
+                                <input id="datepicker_input" type="text" class="form-control border-right-0" placeholder="Fecha de caducidad" v-model="fechaFilter"/>
+                                <span class="bg-white border-left-0 input-group-text">
+                                    <button type="button" class="btn-close" id="datepicker_clear"></button>
                                 </span>
                             </div>
                         </div>
@@ -269,9 +272,12 @@
                 $("#kt_modal_add_inventario").on('shown.bs.modal', event => {
                     vm.formValidate();
                 });
-                $("#datepicker_input").flatpickr({
+                let picker = $("#datepicker_input").flatpickr({
                     dateFormat: "d/m/Y"
                 });
+                $( "#datepicker_clear" ).on( "click", function() {
+                    picker.clear();
+                } );
 
                 vm.getSucursales(vm.sesion.sucursal);
                 vm.getProductos();
@@ -536,7 +542,7 @@
                                             };
                                         }
                                         let today = moment();
-                                        let value = moment(item.fecha_caducidad);
+                                        let value = moment(item.fecha_caducidad, "DD/MM/Y");
 
                                         if (today.isSameOrAfter(value)) {
                                             return {
