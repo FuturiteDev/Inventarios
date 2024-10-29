@@ -66,6 +66,7 @@ class InventarioController extends Controller
                 'producto' => [
                     'id' => $inventario->producto->id,
                     'nombre' => $inventario->producto->nombre,
+                    'sku' => $inventario->producto->sku,
                     'estatus' => $inventario->producto->estatus,
                 ],
             ];
