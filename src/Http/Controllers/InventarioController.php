@@ -7,12 +7,10 @@ use Illuminate\Support\Facades\Gate;
 use Log;
 use Illuminate\Support\Facades\Validator;
 
-use Ongoing\Inventarios\Repositories\ColeccionesRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\InventarioRepositoryEloquent;
 use Ongoing\Inventarios\Entities\Inventario; 
 
 use Illuminate\Http\Request;
-use Ongoing\Inventarios\Repositories\InventarioRepository;
 use Ongoing\Sucursales\Repositories\SucursalesRepositoryEloquent;
 
 class InventarioController extends Controller
@@ -20,6 +18,11 @@ class InventarioController extends Controller
     protected $inventario;
     protected $sucursales;
 
+    /**
+     * Summary of __construct
+     * @param \Ongoing\Inventarios\Repositories\InventarioRepositoryEloquent $inventario
+     * @param \Ongoing\Sucursales\Repositories\SucursalesRepositoryEloquent $sucursales
+     */
     public function __construct(
         InventarioRepositoryEloquent $inventario,
         SucursalesRepositoryEloquent $sucursales
@@ -28,12 +31,21 @@ class InventarioController extends Controller
         $this->sucursales = $sucursales;
     }
 
+    /**
+     * Summary of index
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
+     */
     function index() {
         Gate::authorize('access-granted', '/inventarios/inventario');
         return view('inventarios::inventario');
     }
 
 
+    /**
+     * Summary of getProductosConExistencias
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
     public function getProductosConExistencias(Request $request)
     {
 
@@ -88,6 +100,11 @@ class InventarioController extends Controller
         }
     }
 
+    /**
+     * Summary of agregarInventarios
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
     public function agregarInventarios(Request $request)
     {
         try {
@@ -115,7 +132,7 @@ class InventarioController extends Controller
             $cantidad = $producto['cantidad'];
 
             for ($i = 0; $i < $cantidad; $i++) {
-                Inventario::create([
+                $this->inventario->create([
                     'sucursal_id' => $sucursal_id,
                     'producto_id' => $producto['id'],
                     'cantidad_total' => 1,
@@ -126,10 +143,10 @@ class InventarioController extends Controller
             }
         }
 
-        return response()->json([
-            'status' => true,
-            'message' => "Productos ingresados completamente"
-        ], 200);
+            return response()->json([
+                'status' => true,
+                'message' => "Productos ingresados correctamente"
+            ], 200);
 
         } catch (\Exception $e) {
             Log::info("InventarioController->agregarInventarios() | " . $e->getMessage() . " | " . $e->getLine());
@@ -141,4 +158,35 @@ class InventarioController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Summary of eliminarInventarios
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
+    public function eliminarInventarios(Request $request)
+    {
+        try {
+
+            $rowInv = $this->inventario->find($request->inventario_id);
+
+            $rowInv->estatus = 0;
+            $rowInv->save();
+
+            return response()->json([
+                'status' => true,
+                'message' => "Registro eliminado correctamente"
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::info("InventarioController->eliminarInventarios() | " . $e->getMessage() . " | " . $e->getLine());
+
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] InventarioController->eliminarInventarios() | " . $e->getMessage() . " | " . $e->getLine(),
+                'results' => null
+            ], 500);
+        }
+    }
+
 }
