@@ -52,7 +52,7 @@
                         <div slot="cantidad" slot-scope="props">[[props.row.cantidad_existente]]</div>
                         <div slot="fecha_caducidad" slot-scope="props">[[props.row.fecha_caducidad | fecha]]</div>
                         <div slot="acciones" slot-scope="props">
-                            <button type="button" class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Coleccion" :disabled="loading" @click="deleteColeccion(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
+                            <button type="button" class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Inventario" :disabled="loading" @click="deleteInventario(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
                                 <span class="indicator-label"><i class="fas fa-trash-alt"></i></span>
                                 <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
                             </button>
@@ -329,7 +329,7 @@
                         vm.sucursalFilter = idSucursal;
                     }
                     vm.requestGet = $.ajax({
-                        url: '/api/productos/existencia-sucursal',
+                        url: '/api/inventarios/existencia-sucursal',
                         type: 'POST',
                         data: {
                             sucursal_id: idSucursal ?? vm.sucursalFilter
@@ -358,7 +358,7 @@
                                 vm.loading = true;
                                 $.ajax({
                                     method: "POST",
-                                    url: "/api/productos/agregar-inventario",
+                                    url: "/api/inventarios/agregar-inventario",
                                     data: vm.inventario_model
                                 }).done(function(res) {
                                     if (res.status === true) {
@@ -377,7 +377,7 @@
                                         );
                                     }
                                 }).fail(function(jqXHR, textStatus) {
-                                    console.log("Request failed createColeccion: " + textStatus, jqXHR);
+                                    console.log("Request failed addInventario: " + textStatus, jqXHR);
                                     Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
                                 }).always(function(event, xhr, settings) {
                                     vm.loading = false;
@@ -405,9 +405,9 @@
                             }
                             $.ajax({
                                 method: "POST",
-                                url: "/api/inventario/delete",
+                                url: "/api/inventarios/eliminar-inventario",
                                 data: {
-                                    coleccion_id: idInventario,
+                                    inventario_id: idInventario,
                                 }
                             }).done(function(res) {
                                 Swal.fire(
