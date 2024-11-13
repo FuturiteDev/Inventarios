@@ -48,3 +48,9 @@ Route::prefix('productos')->group(function () {
     Route::post('/existencia-sucursal', [InventarioController::class, 'getProductosConExistencias'])->name('existencia_productos');
     Route::post('/agregar-inventario', [InventarioController::class, 'agregarInventarios'])->name('agregar_inventario');
 });
+
+Route::prefix('inventarios')->group(function () {
+    Route::post('/existencia-sucursal', [InventarioController::class, 'getProductosConExistencias']);
+    Route::post('/agregar-inventario', [InventarioController::class, 'agregarInventarios']);
+    Route::post('/eliminar-inventario', [InventarioController::class, 'eliminarInventarios']);
+});

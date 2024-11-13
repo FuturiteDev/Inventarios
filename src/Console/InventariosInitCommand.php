@@ -70,6 +70,12 @@ class InventariosInitCommand extends Command
                 'url' => '/inventarios/colecciones',
                 'padre_id' => $nav_gpo->id, 
                 'permisos' => []
+            ],
+            [
+                'descripcion' => 'Inventario', 
+                'url' => '/inventarios/existencias-sucursal',
+                'padre_id' => $nav_gpo->id, 
+                'permisos' => []
             ]
         ];
 
