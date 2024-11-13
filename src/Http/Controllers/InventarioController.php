@@ -98,6 +98,7 @@ class InventarioController extends Controller
             'productos.*.id' => 'required|exists:productos,id',
             'productos.*.cantidad' => 'required|integer|min:1',
             'productos.*.fecha_caducidad' => 'required|date',
+            'productos.*.fecha_elaboracion' => 'required|date',
         ]);
 
         if ($validator->fails()) {
@@ -119,6 +120,7 @@ class InventarioController extends Controller
                     'producto_id' => $producto['id'],
                     'cantidad_total' => 1,
                     'cantidad_disponible' => 1,
+                    'fecha_elaboracion' => $producto['fecha_elaboracion'],
                     'fecha_caducidad' => $producto['fecha_caducidad'],
                     'estatus' => 1,
                 ]);
