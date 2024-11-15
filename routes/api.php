@@ -45,8 +45,6 @@ Route::prefix('productos')->group(function () {
     Route::get('/{productoId}/multimedia/all', [ProductosController::class, 'getAllMultimedia'])->name('get_all_product_multimedia');
     Route::post('/multimedia/save', [ProductosController::class, 'saveMultimedia'])->name('save_product_multimedia');
     Route::post('/multimedia/delete', [ProductosController::class, 'deleteMultimedia'])->name('delete_product_multimedia');
-    Route::post('/existencia-sucursal', [InventarioController::class, 'getProductosConExistencias'])->name('existencia_productos');
-    Route::post('/agregar-inventario', [InventarioController::class, 'agregarInventarios'])->name('agregar_inventario');
 });
 
 Route::prefix('inventarios')->group(function () {

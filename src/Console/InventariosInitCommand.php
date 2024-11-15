@@ -72,7 +72,13 @@ class InventariosInitCommand extends Command
                 'permisos' => []
             ],
             [
-                'descripcion' => 'Inventario', 
+                'descripcion' => 'Producto terminado', 
+                'url' => '/inventarios/producto-terminado',
+                'padre_id' => $nav_gpo->id, 
+                'permisos' => []
+            ],
+            [
+                'descripcion' => 'Inventario por sucursal', 
                 'url' => '/inventarios/existencias-sucursal',
                 'padre_id' => $nav_gpo->id, 
                 'permisos' => []
