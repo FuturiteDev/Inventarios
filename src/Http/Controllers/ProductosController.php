@@ -13,7 +13,10 @@ use Ongoing\Inventarios\Repositories\ProductosMultimediaRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\ProductosRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\ColeccionesProductosRepositoryEloquent;
 
-class ProductosController extends Controller {
+use function PHPUnit\Framework\isEmpty;
+
+class ProductosController extends Controller
+{
     protected $productos;
     protected $productosMultimedia;
     protected $colecciones_productos;
@@ -29,7 +32,8 @@ class ProductosController extends Controller {
         $this->colecciones_productos = $colecciones_productos;
     }
 
-    function index() {
+    function index()
+    {
         Gate::authorize('access-granted', '/inventarios/productos');
         return view('inventarios::productos');
     }
@@ -45,8 +49,8 @@ class ProductosController extends Controller {
     {
         try {
             $productos = $this->productos
-            ->with(["categoria", "subcategoria", "colecciones"])
-            ->where(['estatus' => 1])->get();
+                ->with(["categoria", "subcategoria", "colecciones"])
+                ->where(['estatus' => 1])->get();
 
             return response()->json([
                 'status' => true,
@@ -76,16 +80,16 @@ class ProductosController extends Controller {
             $input = $request->except(['colecciones']);
             $sku = $request->sku;
             $productoId = $request->id;
-        
+
             // SKU Validación
             if (!empty($sku)) {
 
                 // Buscar el producto por su SKU
                 $productoExistente = $this->productos
-                ->where('sku', $sku)
-                ->where("estatus", 1)
-                ->first();
-        
+                    ->where('sku', $sku)
+                    ->where("estatus", 1)
+                    ->first();
+
                 if ($productoExistente) {
                     // SKU existe y no recibe ID de producto, retornar error
                     if (empty($productoId)) {
@@ -126,9 +130,9 @@ class ProductosController extends Controller {
                 $this->colecciones_productos->where([
                     'producto_id' => $producto->id,
                 ])->delete();
-        
+
                 $colecciones = $request->colecciones;
-                if(!empty($colecciones)){
+                if (!empty($colecciones)) {
                     foreach ($colecciones as $c_id) {
                         $this->colecciones_productos->updateOrCreate([
                             "coleccion_id" => $c_id,
@@ -138,7 +142,7 @@ class ProductosController extends Controller {
                         ]);
                     }
                 }
-        
+
                 return response()->json([
                     'status' => true,
                     'message' => "Producto guardado.",
@@ -157,7 +161,6 @@ class ProductosController extends Controller {
                 'message' => "[ERROR] ProductosController->save() | " . $e->getMessage() . " | " . $e->getLine(),
             ], 500);
         }
-        
     }
 
     /**
@@ -167,7 +170,8 @@ class ProductosController extends Controller {
      *
      * @return JSON
      **/
-    public function delete(Request $request) {
+    public function delete(Request $request)
+    {
         try {
 
             $this->productos->where('id', $request->producto_id)->update(['estatus' => 0]);
@@ -194,7 +198,8 @@ class ProductosController extends Controller {
      *
      * @return JSON
      **/
-    public function getAllMultimedia($productoId) {
+    public function getAllMultimedia($productoId)
+    {
         try {
 
             $productosMultimedia = $this->productosMultimedia->where(['estatus' => 1, 'producto_id' => $productoId])->get();
@@ -203,7 +208,6 @@ class ProductosController extends Controller {
                 'status' => true,
                 'results' => $productosMultimedia
             ], 200);
-
         } catch (\Exception $e) {
             Log::info("ProductosController->getAllMultimedia() | " . $e->getMessage() . " | " . $e->getLine());
 
@@ -222,11 +226,12 @@ class ProductosController extends Controller {
      *
      * @return JSON
      **/
-    public function saveMultimedia(Request $request){
+    public function saveMultimedia(Request $request)
+    {
         try {
 
             $file = $request->file('archivo');
-            $fileName = md5(date("H:i:s"))."_image.".$file->getClientOriginalExtension();
+            $fileName = md5(date("H:i:s")) . "_image." . $file->getClientOriginalExtension();
             Storage::disk('local')->putFileAs('public/productos/multimedia', $request->file('archivo'), $fileName);
 
 
@@ -243,10 +248,10 @@ class ProductosController extends Controller {
                 'results' => $this->productosMultimedia->where(['estatus' => 1, 'producto_id' => $request->producto_id])->get()
             ], 200);
         } catch (\Exception $e) {
-            Log::info("ProductosController->saveMultimedia() | " . $e->getMessage(). " | " . $e->getLine());
+            Log::info("ProductosController->saveMultimedia() | " . $e->getMessage() . " | " . $e->getLine());
             return response()->json([
                 'status' => false,
-                'message' => "[ERROR] ProductosController->saveMultimedia() | " . $e->getMessage(). " | " . $e->getLine(),
+                'message' => "[ERROR] ProductosController->saveMultimedia() | " . $e->getMessage() . " | " . $e->getLine(),
                 'results' => null
             ], 500);
         }
@@ -273,6 +278,75 @@ class ProductosController extends Controller {
             return response()->json([
                 'status' => false,
                 'message' => "[ERROR] ProductosController->deleteMultimedia() | " . $e->getMessage() . " | " . $e->getLine(),
+                'results' => null
+            ], 500);
+        }
+    }
+
+    /**
+     * /api/productos/{productoId}/multimedia/all
+     *
+     * Lista todas los archivos multimedia activos de un producto
+     *
+     * @return JSON
+     **/
+    public function getProductsSubcategory($subcategory_id)
+    {
+        try {
+
+            $products = $this->productos
+                ->where(['estatus' => 1, 'subcategoria_id' => $subcategory_id])
+                ->select(['id', 'nombre', 'categoria_id', 'subcategoria_id'])
+                ->get();
+
+            return response()->json([
+                'status' => true,
+                'results' => $products
+            ], 200);
+        } catch (\Exception $e) {
+            Log::info("ProductosController->getAllMultimedia() | " . $e->getMessage() . " | " . $e->getLine());
+
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] ProductosController->getAllMultimedia() | " . $e->getMessage() . " | " . $e->getLine(),
+                'results' => null
+            ], 500);
+        }
+    }
+
+    public function searchProducts(Request $request)
+    {
+        try {
+            if (empty($request->sku) && empty($request->nombre)) {
+                $products = $this->productos
+                    ->where('estatus', 1)
+                    ->select(['id', 'nombre', 'categoria_id', 'subcategoria_id'])
+                    ->take(10)
+                    ->get();
+            } else {
+                $products = $this->productos
+                    ->where(['estatus' => 1, 'sku' => $request->sku, 'nombre' => $request->nombre])
+                    ->select(['id', 'nombre', 'categoria_id', 'subcategoria_id'])
+                    ->get();
+            }
+
+            if ($products->isEmpty()) {
+                return response()->json([
+                    'status' => false,
+                    'results' => "Producto no encontrado"
+                ], 200);
+            }
+
+            return response()->json([
+                'status' => true,
+                'results' => $products
+            ], 200);
+        } catch (\Exception $e) {
+            Log::info("ProductosController->searchProducts() | " . $e->getMessage() . " | " . $e->getLine());
+
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] ProductosController->searchProducts() | " . $e->getMessage() . " | " . $e->getLine(),
                 'results' => null
             ], 500);
         }

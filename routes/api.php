@@ -23,6 +23,7 @@ Route::prefix('sub-categorias')->group(function () {
     Route::get('/one/{id}', [SubCategoryController::class, 'getOne'])->name('get_subcategory_by_id');
     Route::get('/categoria/{id}', [SubCategoryController::class, 'getByCategory'])->name('get_subcategories_by_category');
     Route::post('/save', [SubCategoryController::class, 'save'])->name('save_subcategories');
+    Route::get('/{subcategory_id}/productos', [ProductosController::class, 'getProductsSubcategory'])->name('get_products_subcategory');
 });
 
 Route::prefix('categorias')->group(function () {
@@ -45,6 +46,9 @@ Route::prefix('productos')->group(function () {
     Route::get('/{productoId}/multimedia/all', [ProductosController::class, 'getAllMultimedia'])->name('get_all_product_multimedia');
     Route::post('/multimedia/save', [ProductosController::class, 'saveMultimedia'])->name('save_product_multimedia');
     Route::post('/multimedia/delete', [ProductosController::class, 'deleteMultimedia'])->name('delete_product_multimedia');
+
+    Route::post('/buscar', [ProductosController::class, 'searchProducts'])->name('search_products_sku_name');
+
 });
 
 Route::prefix('inventarios')->group(function () {
