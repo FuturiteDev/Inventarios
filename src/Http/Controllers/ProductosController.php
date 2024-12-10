@@ -12,6 +12,7 @@ use Log;
 use Ongoing\Inventarios\Repositories\ProductosMultimediaRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\ProductosRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\ColeccionesProductosRepositoryEloquent;
+use Ongoing\Inventarios\Repositories\ProductosPendientesTraspasoRepositoryEloquent;
 
 use function PHPUnit\Framework\isEmpty;
 
@@ -20,16 +21,19 @@ class ProductosController extends Controller
     protected $productos;
     protected $productosMultimedia;
     protected $colecciones_productos;
+    protected $productosPendientesTraspaso;
 
 
     public function __construct(
         ProductosRepositoryEloquent $productos,
         ProductosMultimediaRepositoryEloquent $productosMultimedia,
-        ColeccionesProductosRepositoryEloquent $colecciones_productos
+        ColeccionesProductosRepositoryEloquent $colecciones_productos,
+        ProductosPendientesTraspasoRepositoryEloquent $productosPendientesTraspaso
     ) {
         $this->productos = $productos;
         $this->productosMultimedia = $productosMultimedia;
         $this->colecciones_productos = $colecciones_productos;
+        $this->productosPendientesTraspaso = $productosPendientesTraspaso;
     }
 
     function index()
@@ -351,4 +355,46 @@ class ProductosController extends Controller
             ], 500);
         }
     }
+
+    public function registrarProductosTraspaso(Request $request)
+    {
+        try {
+
+            // Verificar si ya existe un registro con el mismo producto_id y sucursal_id
+            $existe = $this->productosPendientesTraspaso->where('producto_id', $request->producto_id)
+            ->where('sucursal_id', $request->sucursal_id)
+            ->exists();
+
+            if ($existe) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Ya existe un registro pendiente para este producto y sucursal.',
+                ], 400);
+            }
+
+            $input = [
+                'producto_id' => $request->producto_id,
+                'sucursal_id' => $request->sucursal_id,
+                'cantidad' => $request->cantidad,
+                'estatus' => 1,
+            ];
+
+            $productoPendiente = $this->productosPendientesTraspaso->create($input);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Producto registrado en lista de pendientes.',
+                'data' => $productoPendiente
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error("ProductosController->registrarProductosTraspaso() | " . $e->getMessage() . " | " . $e->getLine());
+
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] ProductosController->registrarProductosTraspaso() | " . $e->getMessage() . " | " . $e->getLine(),
+            ], 500);
+        }
+    }
+
 }

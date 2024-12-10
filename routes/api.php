@@ -48,6 +48,8 @@ Route::prefix('productos')->group(function () {
     Route::post('/multimedia/delete', [ProductosController::class, 'deleteMultimedia'])->name('delete_product_multimedia');
 
     Route::post('/buscar', [ProductosController::class, 'searchProducts'])->name('search_products_sku_name');
+    Route::post('/registrar-traspaso', [ProductosController::class, 'registrarProductosTraspaso'])->name('registrar_productos_traspaso');
+
 
 });
 
