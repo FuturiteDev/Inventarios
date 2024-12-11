@@ -6,7 +6,7 @@ use Ongoing\Inventarios\Http\Controllers\SubCategoryController;
 use Ongoing\Inventarios\Http\Controllers\ColeccionesController;
 use Ongoing\Inventarios\Http\Controllers\ProductosController;
 use Ongoing\Inventarios\Http\Controllers\InventarioController;
-
+use Ongoing\Inventarios\Http\Controllers\TraspasosController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -57,4 +57,8 @@ Route::prefix('inventarios')->group(function () {
     Route::post('/existencia-sucursal', [InventarioController::class, 'getProductosConExistencias']);
     Route::post('/agregar-inventario', [InventarioController::class, 'agregarInventarios']);
     Route::post('/eliminar-inventario', [InventarioController::class, 'eliminarInventarios']);
+});
+
+Route::prefix('traspasos')->group(function () {
+    Route::post('/save', [TraspasosController::class, 'saveTraspaso']);
 });
