@@ -57,6 +57,8 @@ Route::prefix('inventarios')->group(function () {
     Route::post('/existencia-sucursal', [InventarioController::class, 'getProductosConExistencias']);
     Route::post('/agregar-inventario', [InventarioController::class, 'agregarInventarios']);
     Route::post('/eliminar-inventario', [InventarioController::class, 'eliminarInventarios']);
+
+    Route::get('/revision/sucursal/{sucursal_id}', [InventarioController::class, 'revisionSucursal']);
 });
 
 Route::prefix('traspasos')->group(function () {

@@ -11,6 +11,7 @@ use Ongoing\Inventarios\Repositories\InventarioRepositoryEloquent;
 use Ongoing\Inventarios\Entities\Inventario;
 
 use Illuminate\Http\Request;
+use Ongoing\Sucursales\Entities\Sucursales;
 use Ongoing\Sucursales\Repositories\SucursalesRepositoryEloquent;
 
 class InventarioController extends Controller
@@ -190,6 +191,56 @@ class InventarioController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => "[ERROR] InventarioController->eliminarInventarios() | " . $e->getMessage() . " | " . $e->getLine(),
+                'results' => null
+            ], 500);
+        }
+    }
+
+    public function revisionSucursal($sucursalId)
+    {
+        try {
+            $sucursal = Sucursales::find($sucursalId);
+
+            if (!$sucursal) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Sucursal no encontrada.'
+                ], 404);
+            }
+
+            $productos = Inventario::with(['producto.categoria', 'producto.subcategoria'])
+                ->where('sucursal_id', $sucursalId)
+                ->where('estatus', 1)
+                ->get()
+                ->groupBy('producto_id')
+                ->map(function ($items) {
+                    $primerRegistro = $items->first();
+
+                    return [
+                        'id' => $primerRegistro->producto->id,
+                        'sku' => $primerRegistro->producto->sku,
+                        'nombre' => $primerRegistro->producto->nombre,
+                        'categoria' => $primerRegistro->producto->categoria,
+                        'subcategoria' => $primerRegistro->producto->subcategoria,
+                        'total_existencias' => $items->sum('cantidad_disponible'),
+                    ];
+                })->values();
+
+            return response()->json([
+                'status' => true,
+                'results' => [
+                    'sucursal_id' => $sucursal->id,
+                    'nombre' => $sucursal->nombre,
+                    'productos' => $productos,
+                ],
+                'message' => 'Lista de productos activos con existencias en la sucursal.'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::info("InventarioController->revisionSucursal() | " . $e->getMessage() . " | " . $e->getLine());
+
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] InventarioController->revisionSucursal() | " . $e->getMessage() . " | " . $e->getLine(),
                 'results' => null
             ], 500);
         }

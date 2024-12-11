@@ -280,4 +280,5 @@ class TraspasosController extends Controller
             ], 500);
         }
     }
+
 }
