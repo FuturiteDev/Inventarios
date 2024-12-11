@@ -23,6 +23,28 @@ class TraspasosController extends Controller
         $this->traspasosProductos = $traspasosProductos;
     }
 
+    public function getTraspaso($traspaso_id) 
+    {
+        try {
+           
+            $traspaso = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos'])->find($traspaso_id);
+        
+            return response()->json([
+                'status' => true,
+                'results' => $traspaso
+            ], 200);
+        
+        } catch (\Exception $e) {
+            Log::info("TraspasosController->getTraspaso() | " . $e->getMessage() . " | " . $e->getLine());
+        
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] TraspasosController->getTraspaso() | " . $e->getMessage() . " | " . $e->getLine(),
+                'results' => null
+            ], 500);
+        }
+    }
+
     public function saveTraspaso(Request $request)
     {
         try {
