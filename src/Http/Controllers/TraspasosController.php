@@ -11,6 +11,8 @@ use Ongoing\Inventarios\Entities\TraspasosProductos;
 use Ongoing\Inventarios\Repositories\TraspasosProductosRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\TraspasosRepositoryEloquent;
 use Ongoing\Inventarios\Entities\Productos;
+use Ongoing\Sucursales\Entities\Sucursales;
+use Illuminate\Support\Facades\DB;
 
 class TraspasosController extends Controller
 {
@@ -155,12 +157,12 @@ class TraspasosController extends Controller
             $productosRecibidos = [];
             foreach ($request->productos as $productoData) {
                 $producto = Productos::find($productoData['id']);
-            
+
                 if (!$producto) {
                     $productosInexistentes[] = $productoData['id'];
-                    continue; 
+                    continue;
                 }
-            
+
                 $productoTraspaso = $this->traspasosProductos->create([
                     'traspaso_id' => $traspaso->id,
                     'producto_id' => $producto->id,
@@ -168,13 +170,13 @@ class TraspasosController extends Controller
                     'cantidad_recibida' => $productoData['cantidad_recibida'],
                     'foto' => isset($productoData['foto']) ? $productoData['foto']->store('traspasos/fotos', 'public') : null
                 ]);
-            
+
                 $productosRecibidos[] = $productoTraspaso;
-            
+
                 $inventario = Inventario::where('sucursal_id', $traspaso->sucursal_destino_id)
-                                        ->where('producto_id', $producto->id)
-                                        ->first();
-            
+                    ->where('producto_id', $producto->id)
+                    ->first();
+
                 if ($inventario) {
                     $inventario->cantidad_disponible += $productoData['cantidad_recibida'];
                     $inventario->cantidad_total += $productoData['cantidad_recibida'];
@@ -208,6 +210,72 @@ class TraspasosController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => "[ERROR] TraspasosController->recibirTraspaso() | " . $e->getMessage() . " | " . $e->getLine(),
+                'results' => null
+            ], 500);
+        }
+    }
+
+
+    public function traspasosPendientes($sucursalId)
+    {
+
+        try {
+
+            $sucursal = Sucursales::find($sucursalId);
+
+            if (!$sucursal) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Sucursal no existe.'
+                ], 404);
+            }
+
+            $productosPendientes = $this->traspasosProductos->with('producto')
+                ->whereHas('traspaso', function ($query) use ($sucursalId) {
+                    $query->where('sucursal_origen_id', $sucursalId)
+                        ->where('estatus', 1);
+                })
+                ->select('producto_id', DB::raw('COUNT(*) as cantidad'))
+                ->groupBy('producto_id')
+                ->get();
+
+            if ($productosPendientes->isEmpty()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Traspaso recibido o no existente.'
+                ], 404);
+            }
+
+            $productos = $productosPendientes->map(function ($productoPendiente) {
+                if (!$productoPendiente->producto) {
+                    return null;
+                }
+
+                return [
+                    'id' => $productoPendiente->producto->id,
+                    'nombre' => $productoPendiente->producto->nombre,
+                    'sku' => $productoPendiente->producto->sku,
+                    'categoria' => $productoPendiente->producto->categoria,
+                    'subcategoria' => $productoPendiente->producto->subcategoria,
+                    'cantidad' => $productoPendiente->cantidad
+                ];
+            })->filter();
+
+            return response()->json([
+                'status' => true,
+                'results' => [
+                    'sucursal_id' => $sucursal->id,
+                    'nombre' => $sucursal->nombre,
+                    'productos' => $productos
+                ],
+                'message' => 'Productos pendientes.'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::info("TraspasosController->traspasosPendientes() | " . $e->getMessage() . " | " . $e->getLine());
+
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] TraspasosController->traspasosPendientes() | " . $e->getMessage() . " | " . $e->getLine(),
                 'results' => null
             ], 500);
         }
