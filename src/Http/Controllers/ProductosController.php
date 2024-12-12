@@ -417,7 +417,7 @@ class ProductosController extends Controller
             $inventarios = Inventario::with('producto')
                 ->where('sucursal_id', $sucursalId)
                 ->where('producto_id', $productoId)
-                ->where('estatus', 1) // Solo registros activos
+                ->where('estatus', 1)
                 ->get();
     
             if ($inventarios->isEmpty()) {
@@ -427,7 +427,6 @@ class ProductosController extends Controller
                 ], 404);
             }
     
-            // Agrupar el inventario por fecha de caducidad
             $inventarioAgrupado = $inventarios->groupBy('fecha_caducidad')->map(function ($items, $fechaCaducidad) {
                 return [
                     'fecha_caducidad' => $fechaCaducidad,
@@ -435,7 +434,6 @@ class ProductosController extends Controller
                 ];
             })->values();
     
-            // Obtener el producto principal
             $producto = $inventarios->first()->producto;
     
             $respuesta = [

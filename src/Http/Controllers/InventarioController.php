@@ -2,9 +2,11 @@
 
 namespace Ongoing\Inventarios\Http\Controllers;
 
+use Log;
+
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
-use Log;
 use Illuminate\Support\Facades\Validator;
 
 use Ongoing\Inventarios\Repositories\InventarioRepositoryEloquent;
@@ -13,6 +15,8 @@ use Ongoing\Inventarios\Entities\Inventario;
 use Illuminate\Http\Request;
 use Ongoing\Sucursales\Entities\Sucursales;
 use Ongoing\Sucursales\Repositories\SucursalesRepositoryEloquent;
+use App\Mail\SendBrevoMail;
+use Ongoing\Empleados\Entities\Empleado;
 
 class InventarioController extends Controller
 {
@@ -245,4 +249,123 @@ class InventarioController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Summary of registrarInventario
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function registrarInventario(Request $request)
+{
+    try {
+        $sucursal_id = $request->sucursal_id;
+        $producto_id = $request->producto_id;
+        $cantidad = $request->cantidad;
+        $fecha_caducidad = $request->fecha_caducidad;
+        $numero_empleado = $request->numero_empleado;
+        $comentarios = $request->comentarios;
+
+        $inventarioActual = $this->inventario
+        ->where('sucursal_id', $sucursal_id)
+        ->where('producto_id', $producto_id)
+        ->where('fecha_caducidad', $fecha_caducidad)
+        ->where('cantidad_disponible', 1)
+        ->get();
+
+        $empleado = Empleado::with('jefe')->where('no_empleado', $numero_empleado)->first();
+
+        $cantidadActual = 0;
+
+        if ($inventarioActual->count() > 0) {
+            $cantidadActual = $inventarioActual->sum('cantidad_total'); 
+            $diferencia = $cantidad - $cantidadActual;
+
+            if ($diferencia < 0) {
+                $registros = $inventarioActual->take(abs($diferencia));
+
+                foreach ($registros as $registro) {
+                    $registro->cantidad_disponible = 0;
+                    $registro->save();
+                }
+
+                $destinatarios = ["to" => []];
+
+                if ($empleado && $empleado->jefe) {
+                    $destinatarios["to"][] = (object)[
+                        'email' => $empleado->jefe->email,
+                        'name' => $empleado->jefe->nombre_completo,
+                    ];
+                }
+
+                $arrData = [
+                    'comentarios' => $comentarios,
+                    'subject' => "Notificación de ajuste en inventario",
+                    'view' => 'mail.recovery_password',
+                ];
+
+                SendBrevoMail::send($destinatarios, $arrData);
+            } elseif ($diferencia > 0) {
+                for ($i = 0; $i < $diferencia; $i++) {
+                    $this->inventario->create([
+                        'sucursal_id' => $sucursal_id,
+                        'producto_id' => $producto_id,
+                        'cantidad_total' => 1,
+                        'cantidad_disponible' => 1,
+                        'fecha_caducidad' => $fecha_caducidad,
+                        'estatus' => 1,
+                    ]);
+                }
+            }
+        } else {
+            for ($i = 0; $i < $cantidad; $i++) {
+                $this->inventario->create([
+                    'sucursal_id' => $sucursal_id,
+                    'producto_id' => $producto_id,
+                    'cantidad_total' => 1,
+                    'cantidad_disponible' => 1,
+                    'fecha_caducidad' => $fecha_caducidad,
+                    'estatus' => 1,
+                ]);
+            }
+        }
+
+        $cantidadReal = $this->inventario
+            ->where('sucursal_id', $sucursal_id)
+            ->where('producto_id', $producto_id)
+            ->where('fecha_caducidad', $fecha_caducidad)
+            ->where('cantidad_disponible', 1)
+            ->sum('cantidad_total');
+
+        DB::table('log_registro_inventarios')->insert([
+            'sucursal_id' => $sucursal_id,
+            'producto_id' => $producto_id,
+            'existencia_actual' => $cantidadActual,
+            'existencia_real' => $cantidadReal,
+            'empleado_id' => $empleado->id,
+            'comentarios' => $comentarios,
+        ]);
+
+        $detalleInventario = $this->inventario
+            ->where('sucursal_id', $sucursal_id)
+            ->where('producto_id', $producto_id)
+            ->where('cantidad_disponible', 1)
+            ->select('fecha_caducidad', DB::raw('SUM(cantidad_total) as cantidad_total'))
+            ->groupBy('fecha_caducidad')
+            ->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => "Inventario registrado correctamente",
+            'detalle' => $detalleInventario,
+        ], 200);
+        
+    } catch (\Exception $e) {
+        Log::error("InventarioController->registrarInventario() | " . $e->getMessage() . " | " . $e->getLine());
+        return response()->json([
+            'status' => false,
+            'message' => "[ERROR] InventarioController->registrarInventario() | " . $e->getMessage(),
+        ], 500);
+    }
+}
+
 }
