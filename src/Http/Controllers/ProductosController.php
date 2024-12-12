@@ -8,11 +8,13 @@ use Illuminate\Support\Facades\Gate;
 use Storage;
 use File;
 use Log;
-
+use Ongoing\Inventarios\Entities\Inventario;
 use Ongoing\Inventarios\Repositories\ProductosMultimediaRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\ProductosRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\ColeccionesProductosRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\ProductosPendientesTraspasoRepositoryEloquent;
+use Ongoing\Inventarios\Repositories\InventarioRepositoryEloquent;
+use Ongoing\Sucursales\Entities\Sucursales;
 
 use function PHPUnit\Framework\isEmpty;
 
@@ -393,6 +395,71 @@ class ProductosController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => "[ERROR] ProductosController->registrarProductosTraspaso() | " . $e->getMessage() . " | " . $e->getLine(),
+            ], 500);
+        }
+    }
+
+    public function detallesProducto(Request $request)
+    {
+        try {
+
+            $sucursalId = $request->sucursal_id;
+            $productoId = $request->producto_id;
+    
+            $sucursal = Sucursales::find($sucursalId);
+            if (!$sucursal) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Sucursal no encontrada.'
+                ], 404);
+            }
+    
+            $inventarios = Inventario::with('producto')
+                ->where('sucursal_id', $sucursalId)
+                ->where('producto_id', $productoId)
+                ->where('estatus', 1) // Solo registros activos
+                ->get();
+    
+            if ($inventarios->isEmpty()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'No hay existencias para el producto en esta sucursal.'
+                ], 404);
+            }
+    
+            // Agrupar el inventario por fecha de caducidad
+            $inventarioAgrupado = $inventarios->groupBy('fecha_caducidad')->map(function ($items, $fechaCaducidad) {
+                return [
+                    'fecha_caducidad' => $fechaCaducidad,
+                    'total_existencias' => $items->sum('cantidad_disponible'),
+                ];
+            })->values();
+    
+            // Obtener el producto principal
+            $producto = $inventarios->first()->producto;
+    
+            $respuesta = [
+                'id' => $producto->id,
+                'sku' => $producto->sku,
+                'nombre' => $producto->nombre,
+                'imagen' => $producto->imagen,
+                'descripcion' => $producto->descripcion,
+                'total_existencias_sucursal' => $inventarios->sum('cantidad_disponible'),
+                'inventario' => $inventarioAgrupado,
+            ];
+    
+            return response()->json([
+                'status' => true,
+                'results' => $respuesta,
+                'message' => 'Inventario del producto en la sucursal obtenido con éxito.'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::info("ProductosController->detallesProducto() | " . $e->getMessage() . " | " . $e->getLine());
+    
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] ProductosController->detallesProducto() | " . $e->getMessage() . " | " . $e->getLine(),
+                'results' => null
             ], 500);
         }
     }

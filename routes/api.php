@@ -49,6 +49,7 @@ Route::prefix('productos')->group(function () {
 
     Route::post('/buscar', [ProductosController::class, 'searchProducts'])->name('search_products_sku_name');
     Route::post('/registrar-traspaso', [ProductosController::class, 'registrarProductosTraspaso'])->name('registrar_productos_traspaso');
+    Route::post('/detalles', [ProductosController::class, 'detallesProducto'])->name('detalles_de_producto');
 
 
 });
