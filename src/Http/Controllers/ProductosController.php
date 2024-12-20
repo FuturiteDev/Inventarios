@@ -323,29 +323,16 @@ class ProductosController extends Controller
     public function searchProducts(Request $request)
     {
         try {
-            if (empty($request->sku) && empty($request->nombre)) {
-                $products = $this->productos
-                    ->where('estatus', 1)
-                    ->select(['id', 'nombre', 'categoria_id', 'subcategoria_id'])
-                    ->take(10)
-                    ->get();
-            } else {
-                $products = $this->productos
-                    ->where(['estatus' => 1, 'sku' => $request->sku, 'nombre' => $request->nombre])
-                    ->select(['id', 'nombre', 'categoria_id', 'subcategoria_id'])
-                    ->get();
-            }
-
-            if ($products->isEmpty()) {
-                return response()->json([
-                    'status' => false,
-                    'results' => "Producto no encontrado"
-                ], 200);
-            }
+            
+            $producto = $this->productos
+            ->where('sku', $request->param)
+            ->orWhere('nombre', $request->param)
+            ->with(['categoria', 'subcategoria'])
+            ->first();
 
             return response()->json([
                 'status' => true,
-                'results' => $products
+                'results' => $producto
             ], 200);
         } catch (\Exception $e) {
             Log::info("ProductosController->searchProducts() | " . $e->getMessage() . " | " . $e->getLine());
@@ -442,6 +429,8 @@ class ProductosController extends Controller
                 'nombre' => $producto->nombre,
                 'imagen' => $producto->imagen,
                 'descripcion' => $producto->descripcion,
+                'categoria' => $producto->categoria,
+                'subcategoria' => $producto->subcategoria,
                 'total_existencias_sucursal' => $inventarios->sum('cantidad_disponible'),
                 'inventario' => $inventarioAgrupado,
             ];

@@ -256,56 +256,68 @@ class InventarioController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function registrarInventario(Request $request)
-{
-    try {
-        $sucursal_id = $request->sucursal_id;
-        $producto_id = $request->producto_id;
-        $cantidad = $request->cantidad;
-        $fecha_caducidad = $request->fecha_caducidad;
-        $numero_empleado = $request->numero_empleado;
-        $comentarios = $request->comentarios;
+    {
+        try {
+            $sucursal_id = $request->sucursal_id;
+            $producto_id = $request->producto_id;
+            $cantidad = $request->cantidad;
+            $fecha_caducidad = $request->fecha_caducidad;
+            $numero_empleado = $request->numero_empleado;
+            $comentarios = $request->comentarios;
 
-        $inventarioActual = $this->inventario
-        ->where('sucursal_id', $sucursal_id)
-        ->where('producto_id', $producto_id)
-        ->where('fecha_caducidad', $fecha_caducidad)
-        ->where('cantidad_disponible', 1)
-        ->get();
+            $inventarioActual = $this->inventario
+                ->where('sucursal_id', $sucursal_id)
+                ->where('producto_id', $producto_id)
+                ->where('fecha_caducidad', $fecha_caducidad)
+                ->where('cantidad_disponible', 1)
+                ->get();
 
-        $empleado = Empleado::with('jefe')->where('no_empleado', $numero_empleado)->first();
+            $empleado = Empleado::with('jefe')->where('no_empleado', $numero_empleado)->first();
 
-        $cantidadActual = 0;
+            $cantidadActual = 0;
 
-        if ($inventarioActual->count() > 0) {
-            $cantidadActual = $inventarioActual->sum('cantidad_total'); 
-            $diferencia = $cantidad - $cantidadActual;
+            if ($inventarioActual->count() > 0) {
+                $cantidadActual = $inventarioActual->sum('cantidad_total');
+                $diferencia = $cantidad - $cantidadActual;
 
-            if ($diferencia < 0) {
-                $registros = $inventarioActual->take(abs($diferencia));
+                if ($diferencia < 0) {
+                    $registros = $inventarioActual->take(abs($diferencia));
 
-                foreach ($registros as $registro) {
-                    $registro->cantidad_disponible = 0;
-                    $registro->save();
-                }
+                    foreach ($registros as $registro) {
+                        $registro->cantidad_disponible = 0;
+                        $registro->save();
+                    }
 
-                $destinatarios = ["to" => []];
+                    $destinatarios = ["to" => []];
 
-                if ($empleado && $empleado->jefe) {
-                    $destinatarios["to"][] = (object)[
-                        'email' => $empleado->jefe->email,
-                        'name' => $empleado->jefe->nombre_completo,
+                    if ($empleado && $empleado->jefe) {
+                        $destinatarios["to"][] = (object)[
+                            'email' => $empleado->jefe->email,
+                            'name' => $empleado->jefe->nombre_completo,
+                        ];
+                    }
+
+                    $arrData = [
+                        'comentarios' => $comentarios,
+                        'subject' => "Notificación de ajuste en inventario",
+                        'view' => 'mail.recovery_password',
                     ];
+
+                    SendBrevoMail::send($destinatarios, $arrData);
+                } elseif ($diferencia > 0) {
+                    for ($i = 0; $i < $diferencia; $i++) {
+                        $this->inventario->create([
+                            'sucursal_id' => $sucursal_id,
+                            'producto_id' => $producto_id,
+                            'cantidad_total' => 1,
+                            'cantidad_disponible' => 1,
+                            'fecha_caducidad' => $fecha_caducidad,
+                            'estatus' => 1,
+                        ]);
+                    }
                 }
-
-                $arrData = [
-                    'comentarios' => $comentarios,
-                    'subject' => "Notificación de ajuste en inventario",
-                    'view' => 'mail.recovery_password',
-                ];
-
-                SendBrevoMail::send($destinatarios, $arrData);
-            } elseif ($diferencia > 0) {
-                for ($i = 0; $i < $diferencia; $i++) {
+            } else {
+                for ($i = 0; $i < $cantidad; $i++) {
                     $this->inventario->create([
                         'sucursal_id' => $sucursal_id,
                         'producto_id' => $producto_id,
@@ -316,56 +328,116 @@ class InventarioController extends Controller
                     ]);
                 }
             }
-        } else {
-            for ($i = 0; $i < $cantidad; $i++) {
-                $this->inventario->create([
-                    'sucursal_id' => $sucursal_id,
-                    'producto_id' => $producto_id,
-                    'cantidad_total' => 1,
-                    'cantidad_disponible' => 1,
-                    'fecha_caducidad' => $fecha_caducidad,
-                    'estatus' => 1,
-                ]);
-            }
+
+            $cantidadReal = $this->inventario
+                ->where('sucursal_id', $sucursal_id)
+                ->where('producto_id', $producto_id)
+                ->where('fecha_caducidad', $fecha_caducidad)
+                ->where('cantidad_disponible', 1)
+                ->sum('cantidad_total');
+
+            DB::table('log_registro_inventarios')->insert([
+                'sucursal_id' => $sucursal_id,
+                'producto_id' => $producto_id,
+                'existencia_actual' => $cantidadActual,
+                'existencia_real' => $cantidadReal,
+                'empleado_id' => $empleado->id,
+                'comentarios' => $comentarios,
+            ]);
+
+            $detalleInventario = $this->inventario
+                ->where('sucursal_id', $sucursal_id)
+                ->where('producto_id', $producto_id)
+                ->where('cantidad_disponible', 1)
+                ->select('fecha_caducidad', DB::raw('SUM(cantidad_total) as cantidad_total'))
+                ->groupBy('fecha_caducidad')
+                ->get();
+
+            return response()->json([
+                'status' => true,
+                'message' => "Inventario registrado correctamente",
+                'detalle' => $detalleInventario,
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error("InventarioController->registrarInventario() | " . $e->getMessage() . " | " . $e->getLine());
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] InventarioController->registrarInventario() | " . $e->getMessage(),
+            ], 500);
         }
-
-        $cantidadReal = $this->inventario
-            ->where('sucursal_id', $sucursal_id)
-            ->where('producto_id', $producto_id)
-            ->where('fecha_caducidad', $fecha_caducidad)
-            ->where('cantidad_disponible', 1)
-            ->sum('cantidad_total');
-
-        DB::table('log_registro_inventarios')->insert([
-            'sucursal_id' => $sucursal_id,
-            'producto_id' => $producto_id,
-            'existencia_actual' => $cantidadActual,
-            'existencia_real' => $cantidadReal,
-            'empleado_id' => $empleado->id,
-            'comentarios' => $comentarios,
-        ]);
-
-        $detalleInventario = $this->inventario
-            ->where('sucursal_id', $sucursal_id)
-            ->where('producto_id', $producto_id)
-            ->where('cantidad_disponible', 1)
-            ->select('fecha_caducidad', DB::raw('SUM(cantidad_total) as cantidad_total'))
-            ->groupBy('fecha_caducidad')
-            ->get();
-
-        return response()->json([
-            'status' => true,
-            'message' => "Inventario registrado correctamente",
-            'detalle' => $detalleInventario,
-        ], 200);
-        
-    } catch (\Exception $e) {
-        Log::error("InventarioController->registrarInventario() | " . $e->getMessage() . " | " . $e->getLine());
-        return response()->json([
-            'status' => false,
-            'message' => "[ERROR] InventarioController->registrarInventario() | " . $e->getMessage(),
-        ], 500);
     }
-}
 
+    public function revisionInventario(Request $request)
+    {
+        try {
+            $empleado_id = $request->empleado_id;
+            $sucursal_id = $request->sucursal_id;
+            $productos = $request->productos;
+            $comentarios = $request->comentarios;
+
+            foreach ($productos as $producto) {
+                $id_producto = $producto['id_producto'];
+                $cantidad_real = $producto['cantidad_real'];
+                $cantidad_reportada = $producto['cantidad_reportada'];
+
+                DB::table('inventarios')->updateOrInsert(
+                    [
+                        'sucursal_id' => $sucursal_id,
+                        'producto_id' => $id_producto
+                    ],
+                    [
+                        'cantidad_actual' => $cantidad_real,
+                        'cantidad_disponible' => $cantidad_real
+                    ]
+                );
+
+                $diferencia = $cantidad_real !== $cantidad_reportada;
+
+                if ($diferencia) {
+                    $empleado = Empleado::where('id', $empleado_id)->with('jefe')->first();
+
+                    // Guardar en base de datos
+                    DB::table('log_revision_inventarios')->insert([
+                        'empleado_id' => $empleado_id,
+                        'sucursal_id' => $sucursal_id,
+                        'producto_id' => $id_producto,
+                        'existencia_actual' => $cantidad_real,
+                        'existencia_real' => $cantidad_reportada,
+                        'comentarios' => $comentarios
+                    ]);
+
+                    // O enviar correo, falta confirmacion
+                    if ($empleado) {
+                        $destinatarios = [
+                            "to" => [
+                                (object) [
+                                    'email' => $empleado->jefe->email,
+                                    'name' => $empleado->jefe->nombre_completo
+                                ]
+                            ]
+                        ];
+
+                        $arrData = [
+                            'comentarios' => "Revision",
+                            'subject' => "Notificación de ajuste en inventario",
+                            'view' => 'mail.recovery_password',
+                        ];
+
+                        SendBrevoMail::send($destinatarios, $arrData);
+                    }
+                }
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => "Revisión de inventario registrada correctamente."
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error("InventarioController->guardarRevisionInventario() | " . $e->getMessage() . " | " . $e->getLine());
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] InventarioController->guardarRevisionInventario() | " . $e->getMessage()
+            ], 500);
+        }
+    }
 }
