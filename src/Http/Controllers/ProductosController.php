@@ -323,12 +323,19 @@ class ProductosController extends Controller
     public function searchProducts(Request $request)
     {
         try {
-            
+
             $producto = $this->productos
-            ->where('sku', $request->param)
-            ->orWhere('nombre', $request->param)
-            ->with(['categoria', 'subcategoria'])
-            ->first();
+                ->where('sku', 'like', '%' . $request->param . '%')
+                ->orWhere('nombre', 'like', '%' . $request->param . '%')
+                ->with([
+                    'categoria' => function ($query) {
+                        $query->select('id', 'nombre', 'descripcion');
+                    },
+                    'subcategoria' => function ($query) {
+                        $query->select('id', 'categoria_id', 'nombre', 'descripcion');
+                    }
+                ])
+                ->get();
 
             return response()->json([
                 'status' => true,
@@ -351,8 +358,8 @@ class ProductosController extends Controller
 
             // Verificar si ya existe un registro con el mismo producto_id y sucursal_id
             $existe = $this->productosPendientesTraspaso->where('producto_id', $request->producto_id)
-            ->where('sucursal_id', $request->sucursal_id)
-            ->exists();
+                ->where('sucursal_id', $request->sucursal_id)
+                ->exists();
 
             if ($existe) {
                 return response()->json([
@@ -375,7 +382,6 @@ class ProductosController extends Controller
                 'message' => 'Producto registrado en lista de pendientes.',
                 'data' => $productoPendiente
             ], 200);
-
         } catch (\Exception $e) {
             Log::error("ProductosController->registrarProductosTraspaso() | " . $e->getMessage() . " | " . $e->getLine());
 
@@ -392,7 +398,7 @@ class ProductosController extends Controller
 
             $sucursalId = $request->sucursal_id;
             $productoId = $request->producto_id;
-    
+
             $sucursal = Sucursales::find($sucursalId);
             if (!$sucursal) {
                 return response()->json([
@@ -400,29 +406,29 @@ class ProductosController extends Controller
                     'message' => 'Sucursal no encontrada.'
                 ], 404);
             }
-    
+
             $inventarios = Inventario::with('producto')
                 ->where('sucursal_id', $sucursalId)
                 ->where('producto_id', $productoId)
                 ->where('estatus', 1)
                 ->get();
-    
+
             if ($inventarios->isEmpty()) {
                 return response()->json([
                     'status' => false,
                     'message' => 'No hay existencias para el producto en esta sucursal.'
                 ], 404);
             }
-    
+
             $inventarioAgrupado = $inventarios->groupBy('fecha_caducidad')->map(function ($items, $fechaCaducidad) {
                 return [
                     'fecha_caducidad' => $fechaCaducidad,
                     'total_existencias' => $items->sum('cantidad_disponible'),
                 ];
             })->values();
-    
+
             $producto = $inventarios->first()->producto;
-    
+
             $respuesta = [
                 'id' => $producto->id,
                 'sku' => $producto->sku,
@@ -434,7 +440,7 @@ class ProductosController extends Controller
                 'total_existencias_sucursal' => $inventarios->sum('cantidad_disponible'),
                 'inventario' => $inventarioAgrupado,
             ];
-    
+
             return response()->json([
                 'status' => true,
                 'results' => $respuesta,
@@ -442,7 +448,7 @@ class ProductosController extends Controller
             ], 200);
         } catch (\Exception $e) {
             Log::info("ProductosController->detallesProducto() | " . $e->getMessage() . " | " . $e->getLine());
-    
+
             return response()->json([
                 'status' => false,
                 'message' => "[ERROR] ProductosController->detallesProducto() | " . $e->getMessage() . " | " . $e->getLine(),
@@ -450,5 +456,4 @@ class ProductosController extends Controller
             ], 500);
         }
     }
-
 }
