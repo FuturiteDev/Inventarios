@@ -68,7 +68,3 @@ Route::prefix('traspasos')->group(function () {
     Route::get('/sucursal/{sucursal_id}', [TraspasosController::class, 'getTraspasoSucursal']);
     Route::get('/sucursal/pendientes/{sucursal_id}', [TraspasosController::class, 'traspasosPendientes']);
 });
-
-Route::prefix('shopify')->group(function(){
-    Route::get('/productos', [App\Http\Controllers\ShopifyController::class, 'shopifyProducts']);
-});

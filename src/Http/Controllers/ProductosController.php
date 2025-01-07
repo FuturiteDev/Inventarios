@@ -394,13 +394,6 @@ class ProductosController extends Controller
                 ->where('estatus', 1)
                 ->get();
 
-            if ($inventarios->isEmpty()) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'No hay existencias para el producto en esta sucursal.'
-                ], 404);
-            }
-
             $inventarioAgrupado = $inventarios->groupBy('fecha_caducidad')->map(function ($items, $fechaCaducidad) {
                 return [
                     'fecha_caducidad' => $fechaCaducidad,
@@ -408,7 +401,7 @@ class ProductosController extends Controller
                 ];
             })->values();
 
-            $producto = $inventarios->first()->producto;
+            $producto = $this->productos->with(['categoria', 'subcategoria'])->find($productoId);
 
             $respuesta = [
                 'id' => $producto->id,
