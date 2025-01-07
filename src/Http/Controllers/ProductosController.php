@@ -401,13 +401,13 @@ class ProductosController extends Controller
                 ];
             })->values();
 
-            $producto = $this->productos->with(['categoria', 'subcategoria'])->find($productoId);
+            $producto = $this->productos->with(['categoria', 'subcategoria', 'multimedia'])->find($productoId);
 
             $respuesta = [
                 'id' => $producto->id,
                 'sku' => $producto->sku,
                 'nombre' => $producto->nombre,
-                'imagen' => $producto->imagen,
+                'imagen' => !empty($producto->multimedia) ?  $producto->multimedia[0]->url : null,
                 'descripcion' => $producto->descripcion,
                 'categoria' => $producto->categoria,
                 'subcategoria' => $producto->subcategoria,

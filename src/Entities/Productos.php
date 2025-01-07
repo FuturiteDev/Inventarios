@@ -52,7 +52,7 @@ class Productos extends Model implements Transformable
 
     public function multimedia()
     {
-        return $this->hasMany(ProductosMultimedia::class, 'producto_id');
+        return $this->hasMany(ProductosMultimedia::class, 'producto_id')->where('estatus', 1);
     }
 
     public function productosPendientesTraspaso()
