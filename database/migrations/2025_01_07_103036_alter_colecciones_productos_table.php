@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddFechaElaboracionToInventariosTable extends Migration
+class AlterColeccionesProductosTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,10 +13,10 @@ class AddFechaElaboracionToInventariosTable extends Migration
      */
     public function up()
     {
-        Schema::table('inventario', function (Blueprint $table) {
-            $table->date('fecha_elaboracion')->nullable()->after('cantidad_disponible');
+        Schema::table('colecciones_productos', function (Blueprint $table) {
+            $table->dropColumn('estatus');
         });
-    }   
+    }
 
     /**
      * Reverse the migrations.
@@ -25,8 +25,8 @@ class AddFechaElaboracionToInventariosTable extends Migration
      */
     public function down()
     {
-        Schema::table('inventario', function (Blueprint $table) {
-            $table->dropColumn('fecha_elaboracion');
+        Schema::table('colecciones_productos', function (Blueprint $table) {
+            $table->integer('estatus')->default(1);
         });
     }
 }

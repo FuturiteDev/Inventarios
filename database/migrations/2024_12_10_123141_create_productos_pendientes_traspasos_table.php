@@ -15,8 +15,8 @@ return new class extends Migration
 		Schema::create('productos_pendientes_traspaso', function(Blueprint $table) {
             $table->increments('id');
 
-			$table->unsignedBigInteger('sucursal_id')->nullable();
-            $table->unsignedBigInteger('producto_id')->nullable();
+			$table->unsignedInteger('sucursal_id')->nullable();
+            $table->unsignedInteger('producto_id')->nullable();
             $table->integer('cantidad')->nullable();
 			$table->integer('estatus')->default(1);
             $table->softDeletes();

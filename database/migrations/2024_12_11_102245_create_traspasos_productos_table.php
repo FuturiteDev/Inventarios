@@ -15,7 +15,7 @@ return new class extends Migration
 		Schema::create('traspasos_productos', function(Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('traspaso_id');
-			$table->unsignedBigInteger('producto_id');
+			$table->unsignedInteger('producto_id');
             $table->float('cantidad');
             $table->float('cantidad_recibida');
             $table->string('foto')->nullable();

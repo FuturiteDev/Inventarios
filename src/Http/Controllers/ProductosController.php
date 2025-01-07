@@ -11,9 +11,7 @@ use Log;
 use Ongoing\Inventarios\Entities\Inventario;
 use Ongoing\Inventarios\Repositories\ProductosMultimediaRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\ProductosRepositoryEloquent;
-use Ongoing\Inventarios\Repositories\ColeccionesProductosRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\ProductosPendientesTraspasoRepositoryEloquent;
-use Ongoing\Inventarios\Repositories\InventarioRepositoryEloquent;
 use Ongoing\Sucursales\Entities\Sucursales;
 
 use function PHPUnit\Framework\isEmpty;
@@ -22,19 +20,16 @@ class ProductosController extends Controller
 {
     protected $productos;
     protected $productosMultimedia;
-    protected $colecciones_productos;
     protected $productosPendientesTraspaso;
 
 
     public function __construct(
         ProductosRepositoryEloquent $productos,
         ProductosMultimediaRepositoryEloquent $productosMultimedia,
-        ColeccionesProductosRepositoryEloquent $colecciones_productos,
         ProductosPendientesTraspasoRepositoryEloquent $productosPendientesTraspaso
     ) {
         $this->productos = $productos;
         $this->productosMultimedia = $productosMultimedia;
-        $this->colecciones_productos = $colecciones_productos;
         $this->productosPendientesTraspaso = $productosPendientesTraspaso;
     }
 
@@ -132,22 +127,8 @@ class ProductosController extends Controller
                     }
                 }
 
-                //Se agregan o eliminan Colecciones
-                $this->colecciones_productos->where([
-                    'producto_id' => $producto->id,
-                ])->delete();
-
-                $colecciones = $request->colecciones;
-                if (!empty($colecciones)) {
-                    foreach ($colecciones as $c_id) {
-                        $this->colecciones_productos->updateOrCreate([
-                            "coleccion_id" => $c_id,
-                            "producto_id" => $producto->id,
-                        ], [
-                            "estatus" => 1
-                        ]);
-                    }
-                }
+                $colecciones = $request->colecciones ?? [];
+                $producto->colecciones()->sync($colecciones);
 
                 return response()->json([
                     'status' => true,

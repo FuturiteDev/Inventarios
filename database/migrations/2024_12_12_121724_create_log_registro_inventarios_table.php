@@ -14,8 +14,8 @@ return new class extends Migration
 	{
 		Schema::create('log_registro_inventarios', function(Blueprint $table) {
 			$table->id();
-            $table->unsignedBigInteger('sucursal_id');
-            $table->unsignedBigInteger('producto_id');
+            $table->unsignedInteger('sucursal_id');
+            $table->unsignedInteger('producto_id');
             $table->unsignedBigInteger('empleado_id');
             $table->integer('existencia_actual');
             $table->integer('existencia_real');

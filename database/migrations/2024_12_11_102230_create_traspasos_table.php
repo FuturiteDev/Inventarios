@@ -14,8 +14,8 @@ return new class extends Migration
 	{
 		Schema::create('traspasos', function(Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('sucursal_origen_id');
-            $table->unsignedBigInteger('sucursal_destino_id');
+            $table->unsignedInteger('sucursal_origen_id');
+            $table->unsignedInteger('sucursal_destino_id');
             $table->unsignedBigInteger('empleado_id');
             $table->integer('tipo');
             $table->text('comentarios')->nullable();

@@ -50,6 +50,11 @@ class Productos extends Model implements Transformable
         return $this->belongsToMany(Colecciones::class, 'colecciones_productos', 'producto_id', 'coleccion_id')->where('colecciones.estatus', 1);
     }
 
+    public function multimedia()
+    {
+        return $this->hasMany(ProductosMultimedia::class, 'producto_id');
+    }
+
     public function productosPendientesTraspaso()
     {
         return $this->hasMany(ProductosPendientesTraspaso::class);
