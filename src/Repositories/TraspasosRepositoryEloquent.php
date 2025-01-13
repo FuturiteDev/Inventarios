@@ -4,7 +4,7 @@ namespace Ongoing\Inventarios\Repositories;
 
 use Prettus\Repository\Eloquent\BaseRepository;
 use Prettus\Repository\Criteria\RequestCriteria;
-use Ongoing\Inventarios\Repositories\traspasosRepository;
+use Ongoing\Inventarios\Repositories\TraspasosRepository;
 use Ongoing\Inventarios\Entities\Traspasos;
 use App\Validators\TraspasosValidator;
 
