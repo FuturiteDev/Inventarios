@@ -116,7 +116,11 @@ class TraspasosController extends Controller
                 $inputProdTraspasos['cantidad_recibida'] = $producto['cantidad_recibida'];
 
                 $this->traspasosProductos->create($inputProdTraspasos);
+
+                // productos_pendientes_traspaso eliminar los registros que coincidan (sucursal_origen, sucurasl_destino, id del producto)
             }
+
+            // Al 
 
             $traspasoConDetalle = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos'])->find($traspaso->id);
 
@@ -239,10 +243,15 @@ class TraspasosController extends Controller
             }
 
             $productosPendientes = $this->productosPendientes->with('producto')
+                // cambiar sucursla_id por sucurasl origen
                 ->where('sucursal_id', $sucursal->id)
+                // cambiar count por SUM para cantidad total de producto
                 ->select('producto_id', DB::raw('COUNT(*) as cantidad'))
                 ->groupBy('producto_id')
                 ->get();
+
+                //renombrar sucursa_id por sucursal_origen
+                //agregar columna sucursal_destino
 
             $productos = $productosPendientes->map(function ($productoPendiente) {
                 if (!$productoPendiente->producto) {
