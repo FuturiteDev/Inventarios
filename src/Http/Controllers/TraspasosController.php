@@ -301,4 +301,38 @@ class TraspasosController extends Controller
             ], 500);
         }
     }
+
+
+    public function registrarPendientesTraspaso(Request $request) {
+        try {
+
+            $sucursal_origen = $request->sucursal_origen_id;
+            $sucursal_destino = $request->sucursal_destino_id;
+            $producto_id = $request->producto_id;
+            $cantidad = $request->cantidad;
+            
+            $pendienteRegistrado = $this->productosPendientes->updateOrCreate(
+                ['id' => $request->id],
+                [
+                    'sucursal_origen' => $sucursal_origen,
+                    'sucursal_destino' => $sucursal_destino,
+                    'producto_id' => $producto_id,
+                    'cantidad' => $cantidad,
+                ]
+            );
+
+            return response()->json([
+                'status' => true,
+                'results' => $pendienteRegistrado,
+            ], 200);
+        } catch (\Exception $e) {
+            Log::info("TraspasosController->saveTraspaso() | " . $e->getMessage() . " | " . $e->getLine());
+
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] TraspasosController->saveTraspaso() | " . $e->getMessage() . " | " . $e->getLine(),
+                'results' => null
+            ], 500);
+        }
+    }
 }
