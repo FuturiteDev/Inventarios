@@ -66,5 +66,5 @@ Route::prefix('traspasos')->group(function () {
     Route::get('/get/{traspaso_id}', [TraspasosController::class, 'getTraspaso']);
     Route::post('/recibir', [TraspasosController::class, 'recibirTraspaso']);
     Route::get('/sucursal/{sucursal_id}', [TraspasosController::class, 'getTraspasoSucursal']);
-    Route::get('/sucursal/pendientes/{sucursal_id}', [TraspasosController::class, 'traspasosPendientes']);
+    Route::get('/sucursal/pendientes/{sucursal_id}', [TraspasosController::class, 'productosPendientesTraspaso']);
 });

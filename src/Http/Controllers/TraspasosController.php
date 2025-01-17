@@ -7,9 +7,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Log;
 use Ongoing\Inventarios\Entities\Inventario;
-use Ongoing\Inventarios\Entities\TraspasosProductos;
 use Ongoing\Inventarios\Repositories\TraspasosProductosRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\TraspasosRepositoryEloquent;
+use Ongoing\Inventarios\Repositories\ProductosPendientesTraspasoRepositoryEloquent;
 use Ongoing\Inventarios\Entities\Productos;
 use Ongoing\Sucursales\Entities\Sucursales;
 use Illuminate\Support\Facades\DB;
@@ -18,13 +18,16 @@ class TraspasosController extends Controller
 {
     protected $traspasos;
     protected $traspasosProductos;
+    protected $productosPendientes;
 
     public function __construct(
         TraspasosRepositoryEloquent $traspasos,
-        TraspasosProductosRepositoryEloquent $traspasosProductos
+        TraspasosProductosRepositoryEloquent $traspasosProductos,
+        ProductosPendientesTraspasoRepositoryEloquent $productosPendientes,
     ) {
         $this->traspasos = $traspasos;
         $this->traspasosProductos = $traspasosProductos;
+        $this->productosPendientes = $productosPendientes;
     }
 
     public function getTraspaso($traspaso_id)
@@ -216,7 +219,12 @@ class TraspasosController extends Controller
     }
 
 
-    public function traspasosPendientes($sucursalId)
+    /**
+     * Summary of productosPendientesTraspaso
+     * @param mixed $sucursalId
+     * @return mixed
+     */
+    public function productosPendientesTraspaso($sucursalId)
     {
 
         try {
@@ -230,21 +238,11 @@ class TraspasosController extends Controller
                 ], 404);
             }
 
-            $productosPendientes = $this->traspasosProductos->with('producto')
-                ->whereHas('traspaso', function ($query) use ($sucursalId) {
-                    $query->where('sucursal_origen_id', $sucursalId)
-                        ->where('estatus', 1);
-                })
+            $productosPendientes = $this->productosPendientes->with('producto')
+                ->where('sucursal_id', $sucursal->id)
                 ->select('producto_id', DB::raw('COUNT(*) as cantidad'))
                 ->groupBy('producto_id')
                 ->get();
-
-            if ($productosPendientes->isEmpty()) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Traspaso recibido o no existente.'
-                ], 404);
-            }
 
             $productos = $productosPendientes->map(function ($productoPendiente) {
                 if (!$productoPendiente->producto) {
