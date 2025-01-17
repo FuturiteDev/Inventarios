@@ -270,7 +270,7 @@ class TraspasosController extends Controller
                     'sku' => $productoPendiente->producto->sku,
                     'categoria' => $productoPendiente->producto->categoria,
                     'subcategoria' => $productoPendiente->producto->subcategoria,
-                    'cantidad' => $productoPendiente->cantidad,
+                    'cantidad' => $productoPendiente->total_cantidad,
                     'sucursal_origen' => [
                         'id' => $productoPendiente->sucursalOrigen->id ?? null,
                         'nombre' => $productoPendiente->sucursalOrigen->nombre ?? null,
