@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Prettus\Repository\Contracts\Transformable;
 use Prettus\Repository\Traits\TransformableTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Ongoing\Sucursales\Entities\Sucursales;
 
 /**
@@ -17,6 +18,7 @@ class ProductosPendientesTraspaso extends Model implements Transformable
 {
     use HasFactory;
     use TransformableTrait;
+    use SoftDeletes;
 
     // Definir la tabla
     protected $table = 'productos_pendientes_traspaso';

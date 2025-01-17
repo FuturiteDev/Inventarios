@@ -86,13 +86,17 @@ class TraspasosController extends Controller
     public function saveTraspaso(Request $request)
     {
         try {
+
+            $sucursal_origen_id = $request->sucursal_origen_id;
+            $sucursal_destino_id = $request->sucursal_destino_id;
+
             $inputTraspasos = [];
             $inputProdTraspasos = [];
             $productosInexistentes = [];
             $productosTraspasados = [];
 
-            $inputTraspasos['sucursal_origen_id'] = $request->sucursal_origen_id;
-            $inputTraspasos['sucursal_destino_id'] = $request->sucursal_destino_id;
+            $inputTraspasos['sucursal_origen_id'] = $sucursal_origen_id;
+            $inputTraspasos['sucursal_destino_id'] = $sucursal_destino_id;
             $inputTraspasos['tipo'] = $request->tipo;
             $inputTraspasos['empleado_id'] = $request->empleado_id;
             $inputTraspasos['comentarios'] = $request->comentarios;
@@ -104,6 +108,7 @@ class TraspasosController extends Controller
                     $productosInexistentes[] = $producto['producto_id'];
                 } else {
                     $productosTraspasados[] = $producto;
+                    $productosTraspasadosDelete[] = $producto['producto_id'];
                 }
             }
 
@@ -116,11 +121,17 @@ class TraspasosController extends Controller
                 $inputProdTraspasos['cantidad_recibida'] = $producto['cantidad_recibida'];
 
                 $this->traspasosProductos->create($inputProdTraspasos);
-
-                // productos_pendientes_traspaso eliminar los registros que coincidan (sucursal_origen, sucurasl_destino, id del producto)
             }
 
-            // Al 
+            if (!empty($productosTraspasadosDelete)) {
+                $this->productosPendientes
+                    ->where('sucursal_origen', $sucursal_origen_id)
+                    ->where('sucursal_destino', $sucursal_destino_id)
+                    ->whereIn('producto_id', $productosTraspasadosDelete)
+                    ->delete();
+            } else {
+                Log::info('No existen productos existentes en productosPendientes.');
+            }   
 
             $traspasoConDetalle = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos'])->find($traspaso->id);
 
@@ -228,12 +239,11 @@ class TraspasosController extends Controller
      * @param mixed $sucursalId
      * @return mixed
      */
-    public function productosPendientesTraspaso($sucursalId)
+    public function productosPendientesTraspaso($sucursal_origen)
     {
-
         try {
 
-            $sucursal = Sucursales::find($sucursalId);
+            $sucursal = Sucursales::find($sucursal_origen);
 
             if (!$sucursal) {
                 return response()->json([
@@ -243,15 +253,10 @@ class TraspasosController extends Controller
             }
 
             $productosPendientes = $this->productosPendientes->with('producto')
-                // cambiar sucursla_id por sucurasl origen
-                ->where('sucursal_id', $sucursal->id)
-                // cambiar count por SUM para cantidad total de producto
-                ->select('producto_id', DB::raw('COUNT(*) as cantidad'))
+                ->where('sucursal_origen', $sucursal->id)
+                ->select('producto_id', DB::raw('SUM(cantidad) as total_cantidad'))
                 ->groupBy('producto_id')
                 ->get();
-
-                //renombrar sucursa_id por sucursal_origen
-                //agregar columna sucursal_destino
 
             $productos = $productosPendientes->map(function ($productoPendiente) {
                 if (!$productoPendiente->producto) {
@@ -271,7 +276,7 @@ class TraspasosController extends Controller
             return response()->json([
                 'status' => true,
                 'results' => [
-                    'sucursal_id' => $sucursal->id,
+                    'sucursal_origen' => $sucursal->id,
                     'nombre' => $sucursal->nombre,
                     'productos' => $productos
                 ],
