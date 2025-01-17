@@ -25,19 +25,23 @@ class ProductosPendientesTraspaso extends Model implements Transformable
 
     // Campos que son asignables masivamente
     protected $fillable = [
-        'sucursal_id',
+        'sucursal_origen',
+        'sucursal_destino',
         'producto_id',
         'cantidad',
         'estatus',
     ];
 
-    // Relación con la tabla de sucursales
-    public function sucursal()
+    public function sucursalOrigen()
     {
-        return $this->belongsTo(Sucursales::class);
+        return $this->belongsTo(Sucursales::class, 'sucursal_origen');
     }
 
-    // Relación con la tabla de productos
+    public function sucursalDestino()
+    {
+        return $this->belongsTo(Sucursales::class, 'sucursal_destino');
+    }
+
     public function producto()
     {
         return $this->belongsTo(Productos::class);

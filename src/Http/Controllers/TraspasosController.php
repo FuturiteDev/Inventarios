@@ -131,7 +131,7 @@ class TraspasosController extends Controller
                     ->delete();
             } else {
                 Log::info('No existen productos existentes en productosPendientes.');
-            }   
+            }
 
             $traspasoConDetalle = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos'])->find($traspaso->id);
 
@@ -252,10 +252,11 @@ class TraspasosController extends Controller
                 ], 404);
             }
 
-            $productosPendientes = $this->productosPendientes->with('producto')
+            $productosPendientes = $this->productosPendientes
                 ->where('sucursal_origen', $sucursal->id)
-                ->select('producto_id', DB::raw('SUM(cantidad) as total_cantidad'))
-                ->groupBy('producto_id')
+                ->select('producto_id', 'sucursal_origen', 'sucursal_destino', DB::raw('SUM(cantidad) as total_cantidad'))
+                ->with(['sucursalOrigen', 'sucursalDestino', 'producto.categoria', 'producto.subcategoria'])
+                ->groupBy('producto_id', 'sucursal_origen', 'sucursal_destino')
                 ->get();
 
             $productos = $productosPendientes->map(function ($productoPendiente) {
@@ -269,7 +270,15 @@ class TraspasosController extends Controller
                     'sku' => $productoPendiente->producto->sku,
                     'categoria' => $productoPendiente->producto->categoria,
                     'subcategoria' => $productoPendiente->producto->subcategoria,
-                    'cantidad' => $productoPendiente->cantidad
+                    'cantidad' => $productoPendiente->cantidad,
+                    'sucursal_origen' => [
+                        'id' => $productoPendiente->sucursalOrigen->id ?? null,
+                        'nombre' => $productoPendiente->sucursalOrigen->nombre ?? null,
+                    ],
+                    'sucursal_destino' => [
+                        'id' => $productoPendiente->sucursalDestino->id ?? null,
+                        'nombre' => $productoPendiente->sucursalDestino->nombre ?? null,
+                    ],
                 ];
             })->filter();
 
@@ -292,5 +301,4 @@ class TraspasosController extends Controller
             ], 500);
         }
     }
-
 }
