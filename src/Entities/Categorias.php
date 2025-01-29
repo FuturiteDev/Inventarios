@@ -20,10 +20,18 @@ class Categorias extends Model implements Transformable
      *
      * @var array
      */
-    protected $fillable = ['nombre', 'descripcion', 'estatus'];
+    protected $fillable = ['nombre', 'descripcion', 'imagen', 'estatus'];
 
     public function banner(): HasOne
     {
         return $this->hasOne(Banners::class, "categoria_id");
+    }
+
+    public function getImagenUrlAttribute(){
+        if(!empty($this->imagen)){
+            return asset('storage/categorias/'.$this->imagen);
+        }else{
+            return asset('assets-1/media/avatars/blank.png');
+        }
     }
 }
