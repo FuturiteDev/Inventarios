@@ -421,6 +421,11 @@
                         descripcion: null,
                         imagen_path: null,
                     };
+
+                    $('#imagen').val("");
+                    $('#preview').attr('src', "");
+                    $('#preview_original').removeClass("d-none");
+                    $('#preview').addClass("d-none");
                 },
                 onInput(event){
                     $('#preview').attr('src', window.URL.createObjectURL(event.target.files[0]));
