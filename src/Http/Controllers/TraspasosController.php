@@ -157,7 +157,6 @@ class TraspasosController extends Controller
             ->first();
             
             if (!$usuarioAutorizado) {
-                Log::info("No se encontró un usuario autorizado para la sucursal destino ID: " . $sucursal_destino_id);
                 return response()->json([
                     'status' => false,
                     'message' => "No se encontró un usuario autorizado para la sucursal destino.",
@@ -167,14 +166,13 @@ class TraspasosController extends Controller
 
             $usuario_id = $usuarioAutorizado->user_id;
 
-
             $traspasoConDetalle = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos'])->find($traspaso->id);
 
             $notificacion = [
                 'usuario_id' => $usuario_id,
                 'traspaso_id' => $traspasoConDetalle->id,
-                'titulo' => "Traspaso creado correctamente",
-                'mensaje' => "Se ha creado correctamente el traspaso con el ID: " . $traspasoConDetalle->id . ", ignorar este mensaje de texto."
+                'titulo' => "Nuevo traspaso desde sucursal " . $traspaso->sucursalOrigen->nombre,
+                'mensaje' => "Se ha creado correctamente el traspaso con el ID: " . $traspasoConDetalle->id
             ];
             $this->sendNotification($notificacion);
 
