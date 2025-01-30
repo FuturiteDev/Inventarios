@@ -11,6 +11,8 @@ use Ongoing\Inventarios\Entities\Inventario;
 use Ongoing\Inventarios\Repositories\TraspasosProductosRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\TraspasosRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\ProductosPendientesTraspasoRepositoryEloquent;
+use App\Repositories\UsuariosautorizadosRepositoryEloquent;
+
 use Ongoing\Inventarios\Entities\Productos;
 use Ongoing\Sucursales\Entities\Sucursales;
 use App\Repositories\UsuarioRepositoryEloquent;
@@ -30,19 +32,22 @@ class TraspasosController extends Controller
     protected $traspasosProductos;
     protected $productosPendientes;
     protected $notificaciones;
+    protected $usuariosAutorizados;
 
     public function __construct(
         UsuarioRepositoryEloquent $usuarios,
         TraspasosRepositoryEloquent $traspasos,
         TraspasosProductosRepositoryEloquent $traspasosProductos,
         ProductosPendientesTraspasoRepositoryEloquent $productosPendientes,
-        NotificacionesRepositoryEloquent $notificaciones
+        NotificacionesRepositoryEloquent $notificaciones,
+        UsuariosautorizadosRepositoryEloquent $usuariosAutorizados
     ) {
         $this->usuarios = $usuarios;
         $this->traspasos = $traspasos;
         $this->traspasosProductos = $traspasosProductos;
         $this->productosPendientes = $productosPendientes;
         $this->notificaciones = $notificaciones;
+        $this->usuariosAutorizados = $usuariosAutorizados;
     }
 
     public function getTraspaso($traspaso_id)
@@ -147,20 +152,31 @@ class TraspasosController extends Controller
                 Log::info('No existen productos existentes en productosPendientes.');
             }
 
-            $traspasoConDetalle = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos'])->find($traspaso->id);            
+            $usuarioAutorizado = $this->usuariosAutorizados 
+            ->whereJsonContains('configuracion->sucursales', (int) $sucursal_destino_id)
+            ->first();
+            
+            if (!$usuarioAutorizado) {
+                Log::info("No se encontró un usuario autorizado para la sucursal destino ID: " . $sucursal_destino_id);
+                return response()->json([
+                    'status' => false,
+                    'message' => "No se encontró un usuario autorizado para la sucursal destino.",
+                    'results' => null
+                ], 404);
+            }
+
+            $usuario_id = $usuarioAutorizado->user_id;
+
+
+            $traspasoConDetalle = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos'])->find($traspaso->id);
 
             $notificacion = [
-                'usuario_id' => $request->usuario_id,
+                'usuario_id' => $usuario_id,
                 'traspaso_id' => $traspasoConDetalle->id,
                 'titulo' => "Traspaso creado correctamente",
                 'mensaje' => "Se ha creado correctamente el traspaso con el ID: " . $traspasoConDetalle->id . ", ignorar este mensaje de texto."
             ];
             $this->sendNotification($notificacion);
-
-            Log::info('Traspaso con detalle: ' . $traspasoConDetalle);
-            Log::info('Notificacion: ' . json_encode($notificacion) );
-
-
 
             return response()->json([
                 'status' => true,
@@ -372,7 +388,7 @@ class TraspasosController extends Controller
     public function sendNotification($request)
     {
         try {
-            
+
             $this->notificaciones->create([
                 'usuario_id' => $request['usuario_id'],
                 'trapaso_id' => $request['traspaso_id'],
@@ -384,12 +400,9 @@ class TraspasosController extends Controller
             $FcmToken = $this->usuarios->whereNotNull('device_token')->where('id', $request['usuario_id'])->first();
 
             if ($FcmToken) {
-                Log::info('Entro a lo de FCM TOKEN');
                 $firebase = (new Factory)->withServiceAccount(storage_path() . '/app/apetit-60f6a-firebase-adminsdk-fbsvc-cb77effb73.json');
-                Log::info('Despues de Firebase');
-                
+
                 $messaging = $firebase->createMessaging();
-                Log::info('Despues de Messaging');
                 $message = CloudMessage::withTarget('token', $FcmToken->device_token)
                     ->withNotification(["title" => $request['titulo'], "body" => $request['mensaje']])
                     ->withAndroidConfig(
@@ -404,9 +417,6 @@ class TraspasosController extends Controller
                     );
 
                 $messaging->send($message);
-
-                Log::info('Final despues de message final');
-
             }
 
             return ['success' => true];
