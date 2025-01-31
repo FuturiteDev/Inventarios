@@ -25,6 +25,7 @@ class ProductosMultimedia extends Model implements Transformable
         'file_name',
         'path',
         'url',
+        'portada',
         'estatus'
     ];
 
