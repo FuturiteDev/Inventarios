@@ -54,8 +54,16 @@ class TraspasosController extends Controller
     {
         try {
 
-            $traspaso = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos'])->find($traspaso_id);
+            $traspaso = $this->traspasos
+            ->with([
+                'sucursalOrigen',
+                'sucursalDestino',
+                'empleado:id,nombre,no_empleado',
+                'empleadoAsignado:id,nombre,no_empleado',
+                'traspasoProductos'
+            ])
 
+            ->find($traspaso_id);
             return response()->json([
                 'status' => true,
                 'results' => $traspaso
@@ -118,6 +126,7 @@ class TraspasosController extends Controller
             $inputTraspasos['sucursal_destino_id'] = $sucursal_destino_id;
             $inputTraspasos['tipo'] = $request->tipo;
             $inputTraspasos['empleado_id'] = $request->empleado_id;
+            $inputTraspasos['asignado_a'] = $request->asignado_a;
             $inputTraspasos['comentarios'] = $request->comentarios;
 
             foreach ($request->productos as $producto) {
