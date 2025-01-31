@@ -396,21 +396,21 @@ class InventarioController extends Controller
                 $cantidad_real = $producto['cantidad_real'];
                 $cantidad_reportada = $producto['cantidad_reportada'];
 
-                $this->inventario->updateOrCreate(
-                    ['sucursal_id' => $sucursal_id, 'producto_id' => $id_producto],
-                    ['cantidad_total' => $cantidad_real, 'cantidad_disponible' => $cantidad_real]
-                );
+                // $this->inventario->updateOrCreate(
+                //     ['sucursal_id' => $sucursal_id, 'producto_id' => $id_producto],
+                //     ['cantidad_total' => $cantidad_real, 'cantidad_disponible' => $cantidad_real]
+                // );
 
                 if ($cantidad_reportada < $cantidad_real) {
-                    DB::table('log_registro_inventarios')->insert([
-                        'empleado_id' => $empleado_id,
-                        'sucursal_id' => $sucursal_id,
-                        'producto_id' => $id_producto,
-                        'existencia_actual' => $cantidad_real,
-                        'existencia_real' => $cantidad_reportada,
-                        'comentarios' => $comentarios,
-                        'created_at' => now(),
-                    ]);
+                    // DB::table('log_registro_inventarios')->insert([
+                    //     'empleado_id' => $empleado_id,
+                    //     'sucursal_id' => $sucursal_id,
+                    //     'producto_id' => $id_producto,
+                    //     'existencia_actual' => $cantidad_real,
+                    //     'existencia_real' => $cantidad_reportada,
+                    //     'comentarios' => $comentarios,
+                    //     'created_at' => now(),
+                    // ]);
 
                     $productoInfo = $this->productos->find($id_producto);
                     $productosConDiferencias[] = [
@@ -422,12 +422,15 @@ class InventarioController extends Controller
                 }
             }
 
+            Log::info("Empleado: " . $empleado);
+            Log::info("Jefe: " . $empleado->jefe);
+
             if (!empty($productosConDiferencias)) {
                 $destinatarios = [
                     "to" => [
                         [
-                            'email' => $empleado->jefe->email,
-                            'name' => $empleado->jefe->nombre_completo
+                            'email' => $empleado->jefe->email ?? 'N/A',
+                            'name' => $empleado->jefe->nombre_completo ?? 'N/A'
                         ],
                         // Correos fijos
                         [
