@@ -3,6 +3,7 @@
 namespace Ongoing\Inventarios\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Repositories\NotificacionesRepositoryEloquent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Log;
@@ -10,32 +11,59 @@ use Ongoing\Inventarios\Entities\Inventario;
 use Ongoing\Inventarios\Repositories\TraspasosProductosRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\TraspasosRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\ProductosPendientesTraspasoRepositoryEloquent;
+use App\Repositories\UsuariosautorizadosRepositoryEloquent;
+
 use Ongoing\Inventarios\Entities\Productos;
 use Ongoing\Sucursales\Entities\Sucursales;
+use App\Repositories\UsuarioRepositoryEloquent;
 use Illuminate\Support\Facades\DB;
+
+use stdClass;
+
+use Kreait\Firebase\Factory;
+use Kreait\Firebase\Messaging\CloudMessage;
+use Kreait\Firebase\Messaging\AndroidConfig;
+use Kreait\Firebase\Messaging\ApnsConfig;
 
 class TraspasosController extends Controller
 {
+    protected $usuarios;
     protected $traspasos;
     protected $traspasosProductos;
     protected $productosPendientes;
+    protected $notificaciones;
+    protected $usuariosAutorizados;
 
     public function __construct(
+        UsuarioRepositoryEloquent $usuarios,
         TraspasosRepositoryEloquent $traspasos,
         TraspasosProductosRepositoryEloquent $traspasosProductos,
         ProductosPendientesTraspasoRepositoryEloquent $productosPendientes,
+        NotificacionesRepositoryEloquent $notificaciones,
+        UsuariosautorizadosRepositoryEloquent $usuariosAutorizados
     ) {
+        $this->usuarios = $usuarios;
         $this->traspasos = $traspasos;
         $this->traspasosProductos = $traspasosProductos;
         $this->productosPendientes = $productosPendientes;
+        $this->notificaciones = $notificaciones;
+        $this->usuariosAutorizados = $usuariosAutorizados;
     }
 
     public function getTraspaso($traspaso_id)
     {
         try {
 
-            $traspaso = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos.producto'])->find($traspaso_id);
+            $traspaso = $this->traspasos
+            ->with([
+                'sucursalOrigen',
+                'sucursalDestino',
+                'empleado:id,nombre,no_empleado',
+                'empleadoAsignado:id,nombre,no_empleado',
+                'traspasoProductos.producto'
+            ])
 
+            ->find($traspaso_id);
             return response()->json([
                 'status' => true,
                 'results' => $traspaso
@@ -86,7 +114,6 @@ class TraspasosController extends Controller
     public function saveTraspaso(Request $request)
     {
         try {
-
             $sucursal_origen_id = $request->sucursal_origen_id;
             $sucursal_destino_id = $request->sucursal_destino_id;
 
@@ -99,6 +126,7 @@ class TraspasosController extends Controller
             $inputTraspasos['sucursal_destino_id'] = $sucursal_destino_id;
             $inputTraspasos['tipo'] = $request->tipo;
             $inputTraspasos['empleado_id'] = $request->empleado_id;
+            $inputTraspasos['asignado_a'] = $request->asignado_a;
             $inputTraspasos['comentarios'] = $request->comentarios;
 
             foreach ($request->productos as $producto) {
@@ -133,7 +161,29 @@ class TraspasosController extends Controller
                 Log::info('No existen productos existentes en productosPendientes.');
             }
 
+            $usuarioAutorizado = $this->usuariosAutorizados 
+            ->whereJsonContains('configuracion->sucursales', (int) $sucursal_destino_id)
+            ->first();
+            
+            if (!$usuarioAutorizado) {
+                return response()->json([
+                    'status' => false,
+                    'message' => "No se encontró un usuario autorizado para la sucursal destino.",
+                    'results' => null
+                ], 404);
+            }
+
+            $usuario_id = $usuarioAutorizado->user_id;
+
             $traspasoConDetalle = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos'])->find($traspaso->id);
+
+            $notificacion = [
+                'usuario_id' => $usuario_id,
+                'traspaso_id' => $traspasoConDetalle->id,
+                'titulo' => "Nuevo traspaso desde sucursal " . $traspaso->sucursalOrigen->nombre,
+                'mensaje' => "Se ha creado correctamente el traspaso con el ID: " . $traspasoConDetalle->id
+            ];
+            $this->sendNotification($notificacion);
 
             return response()->json([
                 'status' => true,
@@ -270,7 +320,7 @@ class TraspasosController extends Controller
                     'sku' => $productoPendiente->producto->sku,
                     'categoria' => $productoPendiente->producto->categoria,
                     'subcategoria' => $productoPendiente->producto->subcategoria,
-                    'cantidad' => $productoPendiente->cantidad,
+                    'cantidad' => $productoPendiente->total_cantidad,
                     'sucursal_origen' => [
                         'id' => $productoPendiente->sucursalOrigen->id ?? null,
                         'nombre' => $productoPendiente->sucursalOrigen->nombre ?? null,
@@ -299,6 +349,89 @@ class TraspasosController extends Controller
                 'message' => "[ERROR] TraspasosController->traspasosPendientes() | " . $e->getMessage() . " | " . $e->getLine(),
                 'results' => null
             ], 500);
+        }
+    }
+
+
+    public function registrarPendientesTraspaso(Request $request)
+    {
+        try {
+
+            $sucursal_origen = $request->sucursal_origen_id;
+            $sucursal_destino = $request->sucursal_destino_id;
+            $producto_id = $request->producto_id;
+            $cantidad = $request->cantidad;
+
+            $pendienteRegistrado = $this->productosPendientes->updateOrCreate(
+                ['id' => $request->id],
+                [
+                    'sucursal_origen' => $sucursal_origen,
+                    'sucursal_destino' => $sucursal_destino,
+                    'producto_id' => $producto_id,
+                    'cantidad' => $cantidad,
+                ]
+            );
+
+            return response()->json([
+                'status' => true,
+                'results' => $pendienteRegistrado,
+            ], 200);
+        } catch (\Exception $e) {
+            Log::info("TraspasosController->saveTraspaso() | " . $e->getMessage() . " | " . $e->getLine());
+
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] TraspasosController->saveTraspaso() | " . $e->getMessage() . " | " . $e->getLine(),
+                'results' => null
+            ], 500);
+        }
+    }
+
+    /**
+     * Write code on Method
+     *
+     * @return mixed
+     */
+    public function sendNotification($request)
+    {
+        try {
+
+            $this->notificaciones->create([
+                'usuario_id' => $request['usuario_id'],
+                'trapaso_id' => $request['traspaso_id'],
+                'titulo' => $request['titulo'],
+                'mensaje' => $request['mensaje'],
+                'leido' => $request['leido'] ?? 0
+            ]);
+
+            $FcmToken = $this->usuarios->whereNotNull('device_token')->where('id', $request['usuario_id'])->first();
+
+            if ($FcmToken) {
+                $firebase = (new Factory)->withServiceAccount(storage_path() . '/app/apetit-60f6a-firebase-adminsdk-fbsvc-cb77effb73.json');
+
+                $messaging = $firebase->createMessaging();
+                $message = CloudMessage::withTarget('token', $FcmToken->device_token)
+                    ->withNotification(["title" => $request['titulo'], "body" => $request['mensaje']])
+                    ->withAndroidConfig(
+                        AndroidConfig::fromArray(['notification' => ["title" => $request['titulo'], "body" => $request['mensaje'], 'channel_id' => 'general']])
+                            ->withSound('cash.mp3')
+                    )
+                    ->withApnsConfig(
+                        ApnsConfig::new()
+                            ->withApsField('alert', ["title" => $request['titulo'], "body" => $request['mensaje']])
+                            ->withSound('cash.aiff')
+                            ->withBadge(1)
+                    );
+
+                $messaging->send($message);
+            }
+
+            return ['success' => true];
+        } catch (\Throwable $e) {
+            Log::info("[TraspasosController-sendNotification] - ERROR " . $e->getMessage());
+            report($e);
+
+            return ['success' => false];
         }
     }
 }

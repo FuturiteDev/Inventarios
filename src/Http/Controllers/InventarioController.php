@@ -15,6 +15,7 @@ use Ongoing\Inventarios\Entities\Inventario;
 use Illuminate\Http\Request;
 use Ongoing\Sucursales\Entities\Sucursales;
 use Ongoing\Sucursales\Repositories\SucursalesRepositoryEloquent;
+use Ongoing\Inventarios\Repositories\ProductosRepositoryEloquent;
 use App\Mail\SendBrevoMail;
 use Ongoing\Empleados\Entities\Empleado;
 
@@ -22,6 +23,7 @@ class InventarioController extends Controller
 {
     protected $inventario;
     protected $sucursales;
+    protected $productos;
 
     /**
      * Summary of __construct
@@ -30,10 +32,12 @@ class InventarioController extends Controller
      */
     public function __construct(
         InventarioRepositoryEloquent $inventario,
-        SucursalesRepositoryEloquent $sucursales
+        SucursalesRepositoryEloquent $sucursales,
+        ProductosRepositoryEloquent $productos
     ) {
         $this->inventario = $inventario;
         $this->sucursales = $sucursales;
+        $this->productos = $productos;
     }
 
     /**
@@ -373,59 +377,91 @@ class InventarioController extends Controller
             $empleado_id = $request->empleado_id;
             $sucursal_id = $request->sucursal_id;
             $productos = $request->productos;
-            $comentarios = $request->comentarios;
+            $comentarios = $request->comentarios ?? null;
+
+            $empleado = Empleado::where('id', $empleado_id)->with('jefe')->first();
+            $sucursal = Sucursales::find($sucursal_id);
+
+            if (!$empleado || !$sucursal) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Empleado o sucursal no encontrados.'
+                ], 400);
+            }
+
+            $productosConDiferencias = [];
 
             foreach ($productos as $producto) {
                 $id_producto = $producto['id_producto'];
                 $cantidad_real = $producto['cantidad_real'];
                 $cantidad_reportada = $producto['cantidad_reportada'];
 
-                DB::table('inventarios')->updateOrInsert(
-                    [
-                        'sucursal_id' => $sucursal_id,
-                        'producto_id' => $id_producto
-                    ],
-                    [
-                        'cantidad_actual' => $cantidad_real,
-                        'cantidad_disponible' => $cantidad_real
-                    ]
-                );
+                // $this->inventario->updateOrCreate(
+                //     ['sucursal_id' => $sucursal_id, 'producto_id' => $id_producto],
+                //     ['cantidad_total' => $cantidad_real, 'cantidad_disponible' => $cantidad_real]
+                // );
 
-                $diferencia = $cantidad_real !== $cantidad_reportada;
+                if ($cantidad_reportada < $cantidad_real) {
+                    // DB::table('log_registro_inventarios')->insert([
+                    //     'empleado_id' => $empleado_id,
+                    //     'sucursal_id' => $sucursal_id,
+                    //     'producto_id' => $id_producto,
+                    //     'existencia_actual' => $cantidad_real,
+                    //     'existencia_real' => $cantidad_reportada,
+                    //     'comentarios' => $comentarios,
+                    //     'created_at' => now(),
+                    // ]);
 
-                if ($diferencia) {
-                    $empleado = Empleado::where('id', $empleado_id)->with('jefe')->first();
-
-                    // Guardar en base de datos
-                    DB::table('log_revision_inventarios')->insert([
-                        'empleado_id' => $empleado_id,
-                        'sucursal_id' => $sucursal_id,
-                        'producto_id' => $id_producto,
-                        'existencia_actual' => $cantidad_real,
-                        'existencia_real' => $cantidad_reportada,
-                        'comentarios' => $comentarios
-                    ]);
-
-                    // O enviar correo, falta confirmacion
-                    if ($empleado) {
-                        $destinatarios = [
-                            "to" => [
-                                (object) [
-                                    'email' => $empleado->jefe->email,
-                                    'name' => $empleado->jefe->nombre_completo
-                                ]
-                            ]
-                        ];
-
-                        $arrData = [
-                            'comentarios' => "Revision",
-                            'subject' => "Notificación de ajuste en inventario",
-                            'view' => 'mail.recovery_password',
-                        ];
-
-                        SendBrevoMail::send($destinatarios, $arrData);
-                    }
+                    $productoInfo = $this->productos->find($id_producto);
+                    $productosConDiferencias[] = [
+                        'codigo' => $productoInfo->sku ?? 'N/A',
+                        'nombre' => $productoInfo->nombre ?? 'N/A',
+                        'cantidad_sistema' => $cantidad_real,
+                        'cantidad_reportada' => $cantidad_reportada
+                    ];
                 }
+            }
+
+            Log::info("Empleado: " . $empleado);
+            Log::info("Jefe: " . $empleado->jefe);
+
+            if (!empty($productosConDiferencias)) {
+                $destinatarios = [
+                    "to" => [
+                        [
+                            'email' => $empleado->jefe->email ?? 'N/A',
+                            'name' => $empleado->jefe->nombre_completo ?? 'N/A'
+                        ],
+                        // Correos fijos
+                        [
+                            'email' => "betina@apetit.com.mx",
+                            'name' => "Betina"
+                        ],
+                        [
+                            'email' => "queta@apetit.com.mx",
+                            'name' => "Queta"
+                        ]
+                    ]
+                ];
+
+                Log::info('Productos con diferencias:', $productosConDiferencias);
+
+
+                $arrData = [
+                    'title' => "Inconsistencia en revisión de inventario",
+                    'subject' => "Notificación de ajuste en inventario",
+                    'view' => 'mail.notificaciones_inventarios',
+                    'data' => [
+                        'sucursal_id' => $sucursal->id,
+                        'sucursal_nombre' => $sucursal->nombre,
+                        'fecha' => now()->format('Y-m-d H:i:s'),
+                        'empleado_id' => $empleado->id,
+                        'empleado_nombre' => $empleado->nombre_completo,
+                        'productos' => $productosConDiferencias
+                    ]
+                ];
+
+                SendBrevoMail::send($destinatarios, $arrData);
             }
 
             return response()->json([
@@ -433,10 +469,10 @@ class InventarioController extends Controller
                 'message' => "Revisión de inventario registrada correctamente."
             ], 200);
         } catch (\Exception $e) {
-            Log::error("InventarioController->guardarRevisionInventario() | " . $e->getMessage() . " | " . $e->getLine());
+            Log::error("InventarioController->revisionInventario() | " . $e->getMessage() . " | Línea: " . $e->getLine());
             return response()->json([
                 'status' => false,
-                'message' => "[ERROR] InventarioController->guardarRevisionInventario() | " . $e->getMessage()
+                'message' => "[ERROR] InventarioController->revisionInventario() | " . $e->getMessage()
             ], 500);
         }
     }

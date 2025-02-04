@@ -61,12 +61,20 @@
                         <!--begin::Form-->
                         <form id="kt_modal_add_categoria_form" class="form" action="#" @submit.prevent="">
                             <div class="fv-row mb-7">
+                                <label class="required fw-semibold fs-6 ms-2">Imagen:</label>
+                                <input type="file" class="form-control" name="imagen" id="imagen" accept="image/png, image/jpeg" @input="onInput"/>
+                                <div class="text-center w-100">
+                                    <img id="preview_original" style="margin: 0 auto;" class="mw-100 mh-250px" :src="categoria_model.imagen_path"/>
+                                    <img id="preview" style="margin: 0 auto;" class="mw-100 mh-250px d-none"/>
+                                </div>
+                            </div>
+                            <div class="fv-row mb-7">
                                 <label class="required fw-semibold fs-6 ms-2">Categoría</label>
-                                <input type="text" required class="form-control" placeholder="Categoría" v-model="categoria" name="categoria">
+                                <input type="text" required class="form-control" placeholder="Categoría" v-model="categoria_model.nombre" name="nombre">
                             </div>
                             <div class="fv-row mb-7">
                                 <label class="required fw-semibold fs-6 ms-2">Descripcion</label>
-                                <input type="text" required class="form-control" placeholder="Descripcion" v-model="descripcion" name="descripcion">
+                                <input type="text" required class="form-control" placeholder="Descripcion" v-model="categoria_model.descripcion" name="descripcion">
                             </div>
                         </form>
                         <!--end::Form-->
@@ -94,7 +102,6 @@
 
 @section('scripts')
     <script src="/common_assets/js/vue-tables-2.min.js"></script>
-    {{-- <script src="common_assets/js/vue-select2.js"></script> --}}
 
     <script>
         const app = new Vue({
@@ -140,10 +147,13 @@
                     },
                 },
 
-                idCategoria: null,
-                categoria: null,
-                descripcion: null,
-                
+                categoria_model: {
+                    idCategoria: null,
+                    nombre: null,
+                    descripcion: null,
+                    imagen_path: null,
+                },
+
                 validator: null,
                 isEdit: false,
                 loading: false,
@@ -214,15 +224,22 @@
                         vm.validator.validate().then(function(status) {
                             if (status == 'Valid') {
                                 vm.loading = true;
+                                let form = document.querySelector("#kt_modal_add_categoria_form");
+                                let data = new FormData(form);
+                                if($('#imagen').val().trim() == ""){
+                                    data.delete("imagen");
+                                }
+
+                                data.set("action", 1); //1 = Crear, 2 = Modificar o 3 = Eliminar
+                                data.set("estatus", 1);
+
                                 $.ajax({
                                     method: "POST",
                                     url: "/api/categorias/save",
-                                    data: {
-                                        action: 1, //1 = Crear, 2 = Modificar o 3 = Eliminar
-                                        nombre: vm.categoria,
-                                        descripcion: vm.descripcion,
-                                        estatus: 1,
-                                    }
+                                    data: data,
+                                    processData: false,
+                                    contentType: false,
+                                    dataType: "JSON"
                                 }).done(function(res) {
                                     if (res.status === true) {
                                         Swal.fire(
@@ -255,15 +272,22 @@
                         vm.validator.validate().then(function(status) {
                             if (status == 'Valid') {
                                 vm.loading = true;
+                                let form = document.querySelector("#kt_modal_add_categoria_form");
+                                let data = new FormData(form);
+                                if($('#imagen').val().trim() == ""){
+                                    data.delete("imagen");
+                                }
+
+                                data.set("action", 2); //1 = Crear, 2 = Modificar o 3 = Eliminar
+                                data.set("id", vm.categoria_model.idCategoria);
+
                                 $.ajax({
                                     method: "POST",
                                     url: "/api/categorias/save",
-                                    data: {
-                                        id: vm.idCategoria,
-                                        action: 2, //1 = Crear, 2 = Modificar o 3 = Eliminar
-                                        nombre: vm.categoria,
-                                        descripcion: vm.descripcion,
-                                    }
+                                    data: data,
+                                    processData: false,
+                                    contentType: false,
+                                    dataType: "JSON"
                                 }).done(function(res) {
                                     Swal.fire(
                                         "¡Guardado!",
@@ -332,9 +356,12 @@
                     let vm = this;
                     vm.clearCampos();
                     vm.isEdit = true;
-                    vm.idCategoria = categoria.id;
-                    vm.categoria = categoria.nombre;
-                    vm.descripcion = categoria.descripcion;
+                    vm.categoria_model = {
+                        idCategoria: categoria.id,
+                        nombre: categoria.nombre,
+                        descripcion: categoria.descripcion,
+                        imagen_path: categoria.imagen_path,
+                    };
                 },
                 formValidate() {
                     let vm = this;
@@ -343,7 +370,7 @@
                     vm.validator = FormValidation.formValidation(
                         form, {
                             fields: {
-                                'categoria': {
+                                'nombre': {
                                     validators: {
                                         notEmpty: {
                                             message: 'Nombre de la categoria es requerido',
@@ -357,6 +384,19 @@
                                             message: 'Descripcion es requerido',
                                             trim: true
                                         }
+                                    }
+                                },
+                                'imagen': {
+                                    validators: {
+                                        notEmpty: {
+                                            message: 'Imagen requerida',
+                                            trim: true
+                                        },
+                                        file: {
+                                        extension: 'jpg,jpeg,png',
+                                        type: 'image/jpeg,image/png',
+                                        message: 'El archivo no es válido'
+                                    },
                                     }
                                 },
                             },
@@ -375,10 +415,23 @@
                 clearCampos() {
                     this.isEdit = false;
                     this.loading = false;
-                    this.categoria = null;
-                    this.descripcion = null;
-                    this.loading = false;
+                    this.categoria_model = {
+                        idCategoria: null,
+                        nombre: null,
+                        descripcion: null,
+                        imagen_path: null,
+                    };
+
+                    $('#imagen').val("");
+                    $('#preview').attr('src', "");
+                    $('#preview_original').removeClass("d-none");
+                    $('#preview').addClass("d-none");
                 },
+                onInput(event){
+                    $('#preview').attr('src', window.URL.createObjectURL(event.target.files[0]));
+                    $('#preview').removeClass("d-none");
+                    $('#preview_original').addClass("d-none");
+                }
             },
         });
 

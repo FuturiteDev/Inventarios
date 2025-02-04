@@ -50,6 +50,7 @@ Route::prefix('productos')->group(function () {
     Route::post('/buscar', [ProductosController::class, 'searchProducts'])->name('search_products_sku_name');
     Route::post('/registrar-traspaso', [ProductosController::class, 'registrarProductosTraspaso'])->name('registrar_productos_traspaso');
     Route::post('/detalles', [ProductosController::class, 'detallesProducto'])->name('detalles_de_producto');
+    Route::post('/establecer-portada', [ProductosController::class, 'establecerPortada']);
 });
 
 Route::prefix('inventarios')->group(function () {
@@ -67,4 +68,5 @@ Route::prefix('traspasos')->group(function () {
     Route::post('/recibir', [TraspasosController::class, 'recibirTraspaso']);
     Route::get('/sucursal/{sucursal_id}', [TraspasosController::class, 'getTraspasoSucursal']);
     Route::get('/sucursal/pendientes/{sucursal_id}', [TraspasosController::class, 'productosPendientesTraspaso']);
+    Route::post('/pendientes/registrar', [TraspasosController::class, 'registrarPendientesTraspaso']);
 });

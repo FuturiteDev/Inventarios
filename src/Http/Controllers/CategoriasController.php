@@ -19,7 +19,8 @@ class CategoriasController extends Controller
         $this->categorias = $categorias;
     }
 
-    function index() {
+    function index()
+    {
         Gate::authorize('access-granted', '/inventarios/categorias');
         return view('inventarios::categorias');
     }
@@ -69,6 +70,13 @@ class CategoriasController extends Controller
     {
         try {
             $info = $request->except(['id']);
+
+            if ($request->file('imagen')) {
+                $file = $request->file('imagen');
+                $path = $file->store('categorias');
+                $info['imagen'] = $path;
+            }
+
 
             switch ($request->action) {
                 case 1:

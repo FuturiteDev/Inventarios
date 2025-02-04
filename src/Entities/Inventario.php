@@ -15,6 +15,7 @@ use Ongoing\Inventarios\Entities\Productos;
 class Inventario extends Model
 {
     use TransformableTrait;
+
     protected $table = "inventario";
     protected $fillable = [
         'sucursal_id',

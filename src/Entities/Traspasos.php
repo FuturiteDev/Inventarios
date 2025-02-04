@@ -28,6 +28,7 @@ class Traspasos extends Model implements Transformable
         'sucursal_origen_id',
         'sucursal_destino_id',
         'empleado_id',
+        'asignado_a',
         'tipo',
         'comentarios',
         'estatus',
@@ -54,7 +55,12 @@ class Traspasos extends Model implements Transformable
      */
     public function empleado()
     {
-        return $this->belongsTo(Empleado::class);
+        return $this->belongsTo(Empleado::class, 'empleado_id');
+    }
+
+    public function empleadoAsignado()
+    {
+        return $this->belongsTo(Empleado::class, 'asignado_a');
     }
 
     /**

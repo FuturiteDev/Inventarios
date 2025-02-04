@@ -376,7 +376,6 @@ class ProductosController extends Controller
     public function detallesProducto(Request $request)
     {
         try {
-
             $sucursalId = $request->sucursal_id;
             $productoId = $request->producto_id;
 
@@ -403,11 +402,14 @@ class ProductosController extends Controller
 
             $producto = $this->productos->with(['categoria', 'subcategoria', 'multimedia'])->find($productoId);
 
+            $imagenPortada = $producto->multimedia->firstWhere('portada', 1);
+            $imagenUrl = $imagenPortada ? $imagenPortada->url : ($producto->multimedia->first() ? $producto->multimedia->first()->url : null);
+
             $respuesta = [
                 'id' => $producto->id,
                 'sku' => $producto->sku,
                 'nombre' => $producto->nombre,
-                'imagen' => !empty($producto->multimedia) ?  $producto->multimedia[0]->url : null,
+                'imagen' => $imagenUrl,
                 'descripcion' => $producto->descripcion,
                 'categoria' => $producto->categoria,
                 'subcategoria' => $producto->subcategoria,
@@ -426,6 +428,36 @@ class ProductosController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => "[ERROR] ProductosController->detallesProducto() | " . $e->getMessage() . " | " . $e->getLine(),
+                'results' => null
+            ], 500);
+        }
+    }
+
+
+    public function establecerPortada(Request $request)
+    {
+        try {
+
+            $imagen = $this->productosMultimedia->find($request->imagen_id);
+            $producto_id = $imagen->producto_id;
+
+            $this->productosMultimedia->where('producto_id', $producto_id)->update(['portada' => 0]);
+            $imagen->portada = 1;
+            $imagen->save();
+
+            $imagenes = $this->productosMultimedia->where('producto_id', $producto_id)->get();
+
+            return response()->json([
+                'status' => true,
+                'imagenes' => $imagenes,
+                'message' => 'La imagen ha sido establecida como portada.'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::info("ProductosController->establecerProductos() | " . $e->getMessage() . " | " . $e->getLine());
+
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] ProductosController->establecerProductos() | " . $e->getMessage() . " | " . $e->getLine(),
                 'results' => null
             ], 500);
         }
