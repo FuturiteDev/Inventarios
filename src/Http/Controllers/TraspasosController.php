@@ -60,7 +60,7 @@ class TraspasosController extends Controller
                 'sucursalDestino',
                 'empleado:id,nombre,no_empleado',
                 'empleadoAsignado:id,nombre,no_empleado',
-                'traspasoProductos'
+                'traspasoProductos.producto'
             ])
 
             ->find($traspaso_id);
@@ -390,7 +390,7 @@ class TraspasosController extends Controller
     /**
      * Write code on Method
      *
-     * @return response()
+     * @return mixed
      */
     public function sendNotification($request)
     {

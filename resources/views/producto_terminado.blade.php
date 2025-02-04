@@ -9,7 +9,7 @@
                 <!--begin::Card header-->
                 <div class="card-header align-items-center py-5 gap-2 gap-md-5">
                     <div class="card-title flex-column">
-                        <h3 class="ps-2">Existencias por Sucursal</h3>
+                        <h3 class="ps-2">Productos Terminados</h3>
                     </div>
                     <div class="card-toolbar">
                         <div class="px-2 min-w-200px">

@@ -116,7 +116,7 @@ class InventarioController extends Controller
 
 
     /**
-     * Summary of agregarInventarios
+     * Registro de inventarios de productos terminados
      * @param \Illuminate\Http\Request $request
      * @return mixed|\Illuminate\Http\JsonResponse
      */
@@ -130,8 +130,8 @@ class InventarioController extends Controller
                 'productos' => 'required|array',
                 'productos.*.id' => 'required|exists:productos,id',
                 'productos.*.cantidad' => 'required|integer|min:1',
-                'productos.*.fecha_caducidad' => 'required|date',
-                'productos.*.fecha_elaboracion' => 'required|date',
+                // 'productos.*.fecha_caducidad' => 'required|date',
+                // 'productos.*.fecha_elaboracion' => 'required|date',
             ]);
 
             if ($validator->fails()) {
@@ -255,7 +255,7 @@ class InventarioController extends Controller
     }
 
     /**
-     * Summary of registrarInventario
+     * Actualizar el inventario de un producto en especifico
      * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\JsonResponse
      */
