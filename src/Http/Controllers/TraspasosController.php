@@ -34,7 +34,7 @@ class TraspasosController extends Controller
     {
         try {
 
-            $traspaso = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos'])->find($traspaso_id);
+            $traspaso = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos.producto'])->find($traspaso_id);
 
             return response()->json([
                 'status' => true,
