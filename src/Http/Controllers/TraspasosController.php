@@ -434,4 +434,36 @@ class TraspasosController extends Controller
             return ['success' => false];
         }
     }
+
+    public function listTraspasos()
+    {
+        try {
+
+            $traspasos = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino'])
+                ->where('estatus', 1)
+                ->get();
+
+            if ($traspasos->isEmpty()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'No se encontraron traspasos.'
+                ], 200);
+            }
+
+            return response()->json([
+                'status' => true,
+                'results' => $traspasos,
+                'message' => 'Traspasos obtenidos correctamente.',
+            ], 200);
+        } catch (\Exception $e) {
+            Log::info("TraspasosController->getTraspasoSucursal() | " . $e->getMessage() . " | " . $e->getLine());
+
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] TraspasosController->getTraspasoSucursal() | " . $e->getMessage() . " | " . $e->getLine(),
+                'results' => null
+            ], 500);
+        }
+    }
+
 }
