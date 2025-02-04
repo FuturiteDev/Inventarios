@@ -1,9 +1,9 @@
 @extends('erp.base')
 
 @section('content')
-    <div id="app">
+    <div id="app" class="col-12 py-4">
         <!--begin::Content-->
-        <div id="kt_app_content" class="app-content">
+        <div id="kt_app_content" class="app-content container-xxl">
             <!--begin::Card-->
             <div class="card card-flush" id="content-card">
                 <!--begin::Card header-->
@@ -11,166 +11,104 @@
                     <div class="card-title flex-column">
                         <h3 class="ps-2">Productos Terminados</h3>
                     </div>
-                    <div class="card-toolbar">
-                        <div class="px-2 min-w-200px">
-                            <v-select 
-                                v-model="sucursalFilter"
-                                :options="listaSucursales"
-                                data-allow-clear="false"
-                                data-placeholder="Filtrar por sucursal">
-                            </v-select>
-                        </div>
-                        <button type="button" class="btn btn-icon btn-primary" @click="getInventario(true)">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                        </button>
-                    </div>
                 </div>
                 <!--end::Card header-->
 
                 <!--begin::Card body-->
                 <div class="card-body py-4">
-                    <div class="d-flex mb-5 justify-content-end">
-                        <div class="px-2">
-                            <div class="input-group" id="datepicker_wrapper">
-                                <span class="input-group-text">
-                                    <i class="ki-duotone ki-calendar fs-2"><span class="path1"></span><span class="path2"></span></i>
-                                </span>
-                                <input id="datepicker_input" type="text" class="form-control border-right-0" placeholder="Fecha de caducidad" v-model="fechaFilter"/>
-                                <span class="bg-white border-left-0 input-group-text">
-                                    <button type="button" class="btn-close" id="datepicker_clear"></button>
-                                </span>
+                    <!--begin::Form-->
+                    <form id="kt_modal_add_inventario_form" class="form" action="#" @submit.prevent="">
+                        <div class="row fv-row mb-7">
+                            <div class="col-12">
+                                <label class="form-label">Sucursal</label>
+                                <div class="form-control">[[inventario_model.sucursal_nombre]]</div>
                             </div>
                         </div>
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_add_inventario">
-                            <i class="ki-outline ki-plus fs-2"></i> Agregar Inventario
-                        </button>
-                    </div>
-                    <!--begin::Table-->
-                    <v-client-table v-model="listaInventario" :columns="columns" :options="options">
-                        <div slot="nombre" slot-scope="props">[[props.row.producto.nombre]]</div>
-                        <div slot="sku" slot-scope="props">[[props.row.producto.sku]]</div>
-                        <div slot="cantidad" slot-scope="props">[[props.row.cantidad_existente]]</div>
-                        <div slot="fecha_caducidad" slot-scope="props">[[props.row.fecha_caducidad | fecha]]</div>
-                        <div slot="acciones" slot-scope="props">
-                            <button type="button" class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Inventario" :disabled="loading" @click="deleteInventario(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
-                                <span class="indicator-label"><i class="fas fa-trash-alt"></i></span>
-                                <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
-                            </button>
+                        <div class="row fv-row mb-7">
+                            <div class="col-10">
+                                <label class="required form-label">Productos</label>
+                                <v-select-extra
+                                    v-model="selected_producto"
+                                    name="productos"
+                                    data-placeholder="Agregar producto"
+                                    :options="listaProductos"
+                                    data-allow-clear="true">
+                                </v-select-extra>
+                            </div>
+                            <div class="col-2 align-content-end">
+                                <button type="button" class="btn btn-light-success border border-success ms-5" @click="addProducto"><i class="fa-solid fa-plus"></i> Agregar</button>
+                            </div>
                         </div>
-                    </v-client-table>
-                    <!--end::Table-->
+                        <div class="row mb-7">
+                            <label class="form-label">Productos agregados</label>
+                            <table class="table table-row-dashed table-row-gray-300 no-footer" v-if="inventario_model.productos.length>0">
+                                <thead>
+                                    <tr>
+                                        <th tabindex="0" class="VueTables__heading text-center align-middle">Producto</th>
+                                        <th tabindex="0" class="VueTables__heading text-center align-middle">SKU</th>
+                                        <th tabindex="0" class="VueTables__heading text-center align-middle">Cantidad</th>
+                                        <th tabindex="0" class="VueTables__heading text-center align-middle">Fecha de elaboración</th>
+                                        <th tabindex="0" class="VueTables__heading text-center align-middle">Días anaquel</th>
+                                        <th tabindex="0" class="VueTables__heading text-center align-middle">Fecha de caducidad</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="p in inventario_model.productos" :key="'p_' + p.id">
+                                        <td>
+                                            <span v-text="p.nombre" class="form-control form-control-solid"></span>
+                                        </td>
+                                        <td>
+                                            <span v-text="p.sku" class="form-control form-control-solid"></span>
+                                        </td>
+                                        <td>
+                                            <span class="fv-row">
+                                                <input type="number" v-model="p.cantidad" class="form-control" placeholder="Cantidad" :name="`p_cantidad_${p.id}`">
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="fv-row">
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control" placeholder="Fecha de elaboración" v-model="p.fecha_elaboracion" :name="`p_fecha_${p.id}`" :id="`p_fecha_${p.id}`"/>
+                                                    <span class="input-group-text">
+                                                        <i class="ki-duotone ki-calendar fs-2"><span class="path1"></span><span class="path2"></span></i>
+                                                    </span>
+                                                </div>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span v-text="p.configuracion_json?.dias_anaquel" class="form-control form-control-solid"></span>
+                                        </td>
+                                        <td>
+                                            <span v-text="p.fecha_caducidad" class="form-control form-control-solid"></span>
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-icon btn-danger" @click="removeProducto(p.id)"><i class="fa-solid fa-trash-alt"></i></button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </form>
+                    <!--end::Form-->
                 </div>
                 <!--end::Card body-->
+                <div class="card-footer text-center">
+                    <button type="button" class="btn btn-primary" @click="addInventario" :disabled="loading" :data-kt-indicator="loading ? 'on' : 'off'">
+                        <span class="indicator-label">Guardar inventario</span>
+                        <span class="indicator-progress">Guardando <span class="spinner-border spinner-border-sm align-middle"></span></span>
+                    </button>
+                </div>
             </div>
             <!--end::Card-->
         </div>
         <!--end::Content-->
-
-        <!--begin::Modal - Add task-->
-        <div class="modal fade" id="kt_modal_add_inventario" tabindex="-1" aria-hidden="true">
-            <!--begin::Modal dialog-->
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <!--begin::Modal content-->
-                <div class="modal-content">
-                    <!--begin::Modal header-->
-                    <div class="modal-header" id="kt_modal_add_user_header">
-                        <h2 class="fw-bold">Agregar Inventario</h2>
-
-                        <!--begin::Close-->
-                        <div class="btn btn-close" data-bs-dismiss="modal"></div>
-                        <!--end::Close-->
-                    </div>
-                    <!--end::Modal header-->
-                    <!--begin::Modal body-->
-                    <div class="modal-body">
-                        <!--begin::Form-->
-                        <form id="kt_modal_add_inventario_form" class="form" action="#" @submit.prevent="">
-                            <div class="fv-row mb-7">
-                                <label class="required fw-semibold fs-6 ms-2">Sucursal</label>
-                                <v-select 
-                                    v-model="inventario_model.sucursal_id"
-                                    :options="listaSucursales"
-                                    name="sucursal"
-                                    data-allow-clear="false"
-                                    data-placeholder="Seleccionar sucursal">
-                                </v-select>
-                            </div>
-
-                            <div class="mb-7">
-                                <label class="required fw-semibold fs-6 ms-2">Productos</label>
-                                <div class="d-flex mb-5 p-5">
-                                    <div class="fv-row min-w-25">
-                                        <v-select
-                                            v-model="selected_producto"
-                                            :options="listaProductos"
-                                            name="productos"
-                                            data-allow-clear="true"
-                                            data-placeholder="Agregar producto">
-                                        </v-select>
-                                    </div>
-                                    <button type="button" class="btn btn-icon btn-light-success border border-success ms-5" @click="addProducto"><i class="fa-solid fa-plus"></i></button>
-                                </div>
-
-                                <label class="fw-semibold fs-7 ms-2">Productos agregados</label>
-                                <table class="table table-row-dashed table-row-gray-300 no-footer" v-if="inventario_model.productos.length>0">
-                                    <thead class="d-none">
-                                        <tr>
-                                            <th tabindex="0"></th>
-                                            <th tabindex="0"></th>
-                                            <th tabindex="0"></th>
-                                            <th tabindex="0"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="p in inventario_model.productos" :key="'p_' + p.id">
-                                            <td>
-                                                <div v-text="p.sku" class="form-control form-control-solid"></div>
-                                            </td>
-                                            <td>
-                                                <span class="fv-row">
-                                                    <input type="number" v-model="p.cantidad" class="form-control" placeholder="Cantidad" :name="`p_cantidad_${p.id}`">
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="fv-row">
-                                                    <div class="input-group">
-                                                        <input type="text" class="form-control" placeholder="Fecha de caducidad" v-model="p.fecha_caducidad" :name="`p_fecha_${p.id}`" :id="`p_fecha_${p.id}`"/>
-                                                        <span class="input-group-text">
-                                                            <i class="ki-duotone ki-calendar fs-2"><span class="path1"></span><span class="path2"></span></i>
-                                                        </span>
-                                                    </div>
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <button type="button" class="btn btn-icon btn-danger" @click="removeProducto(p.id)"><i class="fa-solid fa-trash-alt"></i></button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </form>
-                        <!--end::Form-->
-                    </div>
-                    <!--end::Modal body-->
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" @click="addInventario" :disabled="loading" :data-kt-indicator="loading ? 'on' : 'off'">
-                            <span class="indicator-label">Guardar</span>
-                            <span class="indicator-progress">Guardando <span class="spinner-border spinner-border-sm align-middle"></span></span>
-                        </button>
-                    </div>
-                </div>
-                <!--end::Modal content-->
-            </div>
-            <!--end::Modal dialog-->
-        </div>
-        <!--end::Modal - Add task-->
-
     </div>
 @endsection
 
 @section('scripts')
     <script src="/common_assets/js/vue-tables-2.min.js"></script>
     <script src="/common_assets/js/vue_components/v-select.js"></script>
+    <script src="/common_assets/js/vue_components/v-select-extra.js"></script>
 
     <script>
         const app = new Vue({
@@ -240,6 +178,7 @@
 
                 inventario_model: {
                     sucursal_id: null,
+                    sucursal_nombre: null,
                     productos: [],
                 },
 
@@ -265,6 +204,7 @@
 
                     vm.inventario_model = {
                         sucursal_id: null,
+                        sucursal_nombre: null,
                         productos: [],
                     };
                 });
@@ -278,10 +218,8 @@
                 $( "#datepicker_clear" ).on( "click", function() {
                     picker.clear();
                 } );
-
-                vm.getSucursales(vm.sesion.sucursal);
+                vm.getSucursales();
                 vm.getProductos();
-                vm.getInventario(true, vm.sesion.sucursal);
             },
             methods: {
                 getSucursales() {
@@ -290,6 +228,10 @@
                         '/api/sucursales/all',
                         res => {
                             vm.sucursales = res.results;
+                            vm.$nextTick(() => {
+                                vm.inventario_model.sucursal_id = vm.sucursales[0].id;
+                                vm.inventario_model.sucursal_nombre = vm.sucursales[0].nombre;
+                            });
                         }, 'json'
                     );
                 },
@@ -359,7 +301,15 @@
                                 $.ajax({
                                     method: "POST",
                                     url: "/api/inventarios/agregar-inventario",
-                                    data: vm.inventario_model
+                                    data: {
+                                        sucursal_id: vm.inventario_model.sucursal_id,
+                                        productos: vm.inventario_model.productos.map(el => ({
+                                            id: el.id,
+                                            cantidad: el.cantidad,
+                                            fecha_elaboracion: el.fecha_elaboracion,
+                                            fecha_caducidad: el.fecha_caducidad,
+                                        })),
+                                    }
                                 }).done(function(res) {
                                     if (res.status === true) {
                                         Swal.fire(
@@ -435,16 +385,29 @@
                     if(!vm.inventario_model.productos.some(item => item.id == vm.selected_producto)){
                         let producto = vm.productos.find(item => item.id == vm.selected_producto);
                         if(producto){
+                            let fecha_caducidad = producto.configuracion_json?.dias_anaquel
+                                  ? moment().add(producto.configuracion_json?.dias_anaquel, 'd').format('DD/MM/YYYY')
+                                  : null;
                             vm.inventario_model.productos.push({
                                 id: producto.id,
+                                nombre: producto.nombre,
                                 sku: producto.sku,
                                 cantidad: null,
-                                fecha_caducidad: null,
+                                fecha_elaboracion: null,
+                                dias_anaquel: producto.caracteristicas_json?.dias_anaquel,
+                                fecha_caducidad: fecha_caducidad,
                             });
 
                             vm.$nextTick(() => {
                                 let picker = $(`#p_fecha_${producto.id}`).flatpickr({
-                                    dateFormat: "d/m/Y"
+                                    dateFormat: "d/m/Y",
+                                    defaultDate: "today",
+                                    onChange: function(selectedDates, dateStr, instance) {
+                                        let index = vm.inventario_model.productos.findIndex(item => item.id == producto.id);
+                                        if(p && p.configuracion_json?.dias_anaquel){
+                                            vm.$set(vm.inventario_model.productos[index], 'fecha_caducidad', moment(selectedDates[0]).add(p.configuracion_json?.dias_anaquel, 'd').format('DD/MM/YYYY'))
+                                        }
+                                    },
                                 });
                                 vm.inventario_datepickers.push(picker);
                             });
@@ -563,7 +526,7 @@
                     return this.sucursales.map(item => ({id: item.id, text: item.nombre}));
                 },
                 listaProductos(){
-                    return this.productos.map(item => ({id: item.id, text: item.nombre}));
+                    return this.productos.map(item => ({id: item.id, text: item.nombre, extra: item.sku}));
                 },
                 listaInventario(){
                     if(this.fechaFilter){
