@@ -29,6 +29,7 @@ class ProductosPendientesTraspaso extends Model implements Transformable
         'sucursal_destino',
         'producto_id',
         'cantidad',
+        'fecha_caducidad',
         'estatus',
     ];
 

@@ -18,7 +18,9 @@
                                 v-model="estatusFilter"
                                 :options="[{id:0,text:'DRAFT'},{id:1,text:'ACTIVE'},{id:2,text:'ARCHIVED'}]"
                                 data-allow-clear="true"
-                                data-placeholder="Filtrar por estatus">
+                                data-placeholder="Filtrar por estatus"
+                                data-minimum-results-for-search ="Infinity"
+                                >
                             </v-select>
                         </div>
                         <div class="px-2">
