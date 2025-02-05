@@ -361,6 +361,7 @@ class TraspasosController extends Controller
             $sucursal_destino = $request->sucursal_destino_id;
             $producto_id = $request->producto_id;
             $cantidad = $request->cantidad;
+            $fecha_caducidad = $request->fecha_caducidad;
 
             $pendienteRegistrado = $this->productosPendientes->updateOrCreate(
                 ['id' => $request->id],
@@ -369,6 +370,7 @@ class TraspasosController extends Controller
                     'sucursal_destino' => $sucursal_destino,
                     'producto_id' => $producto_id,
                     'cantidad' => $cantidad,
+                    'fecha_caducidad' => $fecha_caducidad
                 ]
             );
 
