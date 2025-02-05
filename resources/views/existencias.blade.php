@@ -92,7 +92,7 @@
                                 <div>[[traspaso_model.fecha_caducidad | fecha]]</div>
                             </div>
                             <div class="row fv-row mb-7">
-                                <label class="required form-label">Sucursal</label>
+                                <label class="required form-label">Sucursal Destino</label>
                                 <v-select 
                                     v-model="traspaso_model.sucursal_id"
                                     :options="listaSucursales"
@@ -305,6 +305,7 @@
                                         sucursal_destino_id: vm.traspaso_model.sucursal_id,
                                         producto_id: vm.traspaso_model.producto_id,
                                         cantidad: vm.traspaso_model.cantidad,
+                                        fecha_caducidad: vm.traspaso_model.fecha_caducidad,
                                     }
                                 }).done(function(res) {
                                     if (res.status === true) {
@@ -378,7 +379,7 @@
                 },
                 modalTraspaso(producto){
                     this.traspaso_model = {
-                        producto_id: producto.id,
+                        producto_id: producto.producto_id,
                         fecha_caducidad: producto.fecha_caducidad,
                         producto_nombre: producto.producto.nombre,
                         cantidad_existente: producto.cantidad_existente,
@@ -419,8 +420,6 @@
                                                         message: 'No hay inventario suficiente'
                                                     };
                                                 }
-                                                console.log(input.value);
-
                                                 return { valid: true, message: '' };
                                             },
                                         },

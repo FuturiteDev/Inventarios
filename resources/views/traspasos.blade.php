@@ -24,7 +24,7 @@
                         <div slot="id" slot-scope="props">[[props.row.id]]</div>
                         <div slot="origen" slot-scope="props">[[props.row.sucursal_origen?.nombre]]</div>
                         <div slot="destino" slot-scope="props">[[props.row.sucursal_destino?.nombre]]</div>
-                        <div slot="tipo" slot-scope="props">[[props.row.tipo]]</div>
+                        <div slot="tipo" slot-scope="props"><div>[[ tipos.find(item => item.id == props.row.tipo)?.text ?? '--']]</div></div>
                         <div slot="estatus" slot-scope="props">[[props.row.estatus]]</div>
                         <div slot="created_at" slot-scope="props">[[props.row.created_at | fecha]]</div>
                         <div slot="acciones" slot-scope="props">
@@ -84,7 +84,7 @@
                         <div class="row mb-7">
                             <div class="col-6">
                                 <label class="fs-6 fw-bold">Tipo de traspaso</label>
-                                <div>[[show_traspaso.tipo]]</div>
+                                <div>[[ tipos.find(item => item.id == show_traspaso.tipo)?.text ?? '--']]</div>
                             </div>
                             <div class="col-6">
                                 <label class="fs-6 fw-bold">Estatus de traspaso</label>
@@ -141,6 +141,11 @@
             data: () => ({
                 sesion: {!! Auth::user() !!},
                 traspasos:[],
+                tipos: [
+                    {id: 1, text: 'A otra Sucursal'},
+                    {id: 2, text: 'Para cliente'},
+                    {id: 3, text: 'Merma'},
+                ],
                 columns: ['id','origen','destino','tipo','estatus','created_at','acciones'],
                 options: {
                     headings: {
