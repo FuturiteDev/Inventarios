@@ -165,25 +165,20 @@ class TraspasosController extends Controller
             ->whereJsonContains('configuracion->sucursales', (int) $sucursal_destino_id)
             ->first();
             
-            if (!$usuarioAutorizado) {
-                return response()->json([
-                    'status' => false,
-                    'message' => "No se encontró un usuario autorizado para la sucursal destino.",
-                    'results' => null
-                ], 404);
+            if ($usuarioAutorizado) {
+                $usuario_id = $usuarioAutorizado->user_id;
+    
+                $traspasoConDetalle = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos'])->find($traspaso->id);
+    
+                $notificacion = [
+                    'usuario_id' => $usuario_id,
+                    'traspaso_id' => $traspasoConDetalle->id,
+                    'titulo' => "Nuevo traspaso desde sucursal " . $traspaso->sucursalOrigen->nombre,
+                    'mensaje' => "Se ha creado correctamente el traspaso con el ID: " . $traspasoConDetalle->id
+                ];
+                $this->sendNotification($notificacion);
             }
 
-            $usuario_id = $usuarioAutorizado->user_id;
-
-            $traspasoConDetalle = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos'])->find($traspaso->id);
-
-            $notificacion = [
-                'usuario_id' => $usuario_id,
-                'traspaso_id' => $traspasoConDetalle->id,
-                'titulo' => "Nuevo traspaso desde sucursal " . $traspaso->sucursalOrigen->nombre,
-                'mensaje' => "Se ha creado correctamente el traspaso con el ID: " . $traspasoConDetalle->id
-            ];
-            $this->sendNotification($notificacion);
 
             return response()->json([
                 'status' => true,
