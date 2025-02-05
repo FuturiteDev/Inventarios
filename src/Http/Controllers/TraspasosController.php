@@ -79,13 +79,17 @@ class TraspasosController extends Controller
         }
     }
 
+    /**
+     * Retorna traspasos pendientes de la sucursal destino
+     * @param mixed $sucursal_id
+     */
     public function getTraspasoSucursal($sucursal_id)
     {
         try {
 
             $traspasos = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino'])
                 ->where('estatus', 1)
-                ->where('sucursal_origen_id', $sucursal_id)
+                ->where('sucursal_destino_id', $sucursal_id)
                 ->get();
 
             if ($traspasos->isEmpty()) {
