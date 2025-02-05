@@ -165,15 +165,15 @@ class TraspasosController extends Controller
             ->whereJsonContains('configuracion->sucursales', (int) $sucursal_destino_id)
             ->first();
             
+            $traspasoConDetalle = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos'])->find($traspaso->id);
+            
             if ($usuarioAutorizado) {
                 $usuario_id = $usuarioAutorizado->user_id;
-    
-                $traspasoConDetalle = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos'])->find($traspaso->id);
     
                 $notificacion = [
                     'usuario_id' => $usuario_id,
                     'traspaso_id' => $traspasoConDetalle->id,
-                    'titulo' => "Nuevo traspaso desde sucursal " . $traspaso->sucursalOrigen->nombre,
+                    'titulo' => "Nuevo traspaso desde sucursal " . $traspasoConDetalle->sucursalOrigen->nombre,
                     'mensaje' => "Se ha creado correctamente el traspaso con el ID: " . $traspasoConDetalle->id
                 ];
                 $this->sendNotification($notificacion);
