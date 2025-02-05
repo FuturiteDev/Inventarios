@@ -41,9 +41,6 @@
                                 </span>
                             </div>
                         </div>
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_add_inventario">
-                            <i class="ki-outline ki-plus fs-2"></i> Agregar Inventario
-                        </button>
                     </div>
                     <!--begin::Table-->
                     <v-client-table v-model="listaInventario" :columns="columns" :options="options">
@@ -52,9 +49,10 @@
                         <div slot="cantidad" slot-scope="props">[[props.row.cantidad_existente]]</div>
                         <div slot="fecha_caducidad" slot-scope="props">[[props.row.fecha_caducidad | fecha]]</div>
                         <div slot="acciones" slot-scope="props">
+                            <button type="button" class="btn btn-icon btn-sm btn-primary btn-sm me-2" title="Agregar a Traspaso" data-bs-toggle="modal" data-bs-target="#kt_modal_add_traspaso" @click="modalTraspaso(props.row)"><i class="fa-solid fa-truck-fast"></i></button>
                             <button type="button" class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Inventario" :disabled="loading" @click="deleteInventario(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
-                                <span class="indicator-label"><i class="fas fa-trash-alt"></i></span>
-                                <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
+                                <span class="indicator-label"><i class="fas fa-trash-alt"></i></i></span>
+                                <span class="indicator-progress"><i class="fas fa-trash-alt"></i><span class="spinner-border spinner-border-sm align-middle"></span></span>
                             </button>
                         </div>
                     </v-client-table>
@@ -67,14 +65,14 @@
         <!--end::Content-->
 
         <!--begin::Modal - Add task-->
-        <div class="modal fade" id="kt_modal_add_inventario" tabindex="-1" aria-hidden="true">
+        <div class="modal fade" id="kt_modal_add_traspaso" tabindex="-1" aria-hidden="true">
             <!--begin::Modal dialog-->
-            <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
                 <!--begin::Modal content-->
                 <div class="modal-content">
                     <!--begin::Modal header-->
                     <div class="modal-header" id="kt_modal_add_user_header">
-                        <h2 class="fw-bold">Agregar Inventario</h2>
+                        <h2 class="fw-bold">Agregar a Traspaso</h2>
 
                         <!--begin::Close-->
                         <div class="btn btn-close" data-bs-dismiss="modal"></div>
@@ -84,76 +82,35 @@
                     <!--begin::Modal body-->
                     <div class="modal-body">
                         <!--begin::Form-->
-                        <form id="kt_modal_add_inventario_form" class="form" action="#" @submit.prevent="">
-                            <div class="fv-row mb-7">
-                                <label class="required fw-semibold fs-6 ms-2">Sucursal</label>
+                        <form id="kt_modal_add_traspaso_form" class="form" action="#" @submit.prevent="">
+                            <div class="row mb-7">
+                                <label class="form-label">Producto</label>
+                                <div>[[traspaso_model.producto_nombre]]</div>
+                            </div>
+                            <div class="row mb-7">
+                                <label class="form-label">Fecha de caducidad</label>
+                                <div>[[traspaso_model.fecha_caducidad | fecha]]</div>
+                            </div>
+                            <div class="row fv-row mb-7">
+                                <label class="required form-label">Sucursal</label>
                                 <v-select 
-                                    v-model="inventario_model.sucursal_id"
+                                    v-model="traspaso_model.sucursal_id"
                                     :options="listaSucursales"
                                     name="sucursal"
                                     data-allow-clear="false"
                                     data-placeholder="Seleccionar sucursal">
                                 </v-select>
                             </div>
-
-                            <div class="mb-7">
-                                <label class="required fw-semibold fs-6 ms-2">Productos</label>
-                                <div class="d-flex mb-5 p-5">
-                                    <div class="fv-row min-w-25">
-                                        <v-select
-                                            v-model="selected_producto"
-                                            :options="listaProductos"
-                                            name="productos"
-                                            data-allow-clear="true"
-                                            data-placeholder="Agregar producto">
-                                        </v-select>
-                                    </div>
-                                    <button type="button" class="btn btn-icon btn-light-success border border-success ms-5" @click="addProducto"><i class="fa-solid fa-plus"></i></button>
-                                </div>
-
-                                <label class="fw-semibold fs-7 ms-2">Productos agregados</label>
-                                <table class="table table-row-dashed table-row-gray-300 no-footer" v-if="inventario_model.productos.length>0">
-                                    <thead class="d-none">
-                                        <tr>
-                                            <th tabindex="0"></th>
-                                            <th tabindex="0"></th>
-                                            <th tabindex="0"></th>
-                                            <th tabindex="0"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="p in inventario_model.productos" :key="'p_' + p.id">
-                                            <td>
-                                                <div v-text="p.sku" class="form-control form-control-solid"></div>
-                                            </td>
-                                            <td>
-                                                <span class="fv-row">
-                                                    <input type="number" v-model="p.cantidad" class="form-control" placeholder="Cantidad" :name="`p_cantidad_${p.id}`">
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="fv-row">
-                                                    <div class="input-group">
-                                                        <input type="text" class="form-control" placeholder="Fecha de caducidad" v-model="p.fecha_caducidad" :name="`p_fecha_${p.id}`" :id="`p_fecha_${p.id}`"/>
-                                                        <span class="input-group-text">
-                                                            <i class="ki-duotone ki-calendar fs-2"><span class="path1"></span><span class="path2"></span></i>
-                                                        </span>
-                                                    </div>
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <button type="button" class="btn btn-icon btn-danger" @click="removeProducto(p.id)"><i class="fa-solid fa-trash-alt"></i></button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
+                            <div class="row fv-row mb-7">
+                                <label class="required form-label">Cantidad</label>
+                                <input type="number" v-model="traspaso_model.cantidad" class="form-control" placeholder="Cantidad" name="cantidad">
+                            </div>                            
                         </form>
                         <!--end::Form-->
                     </div>
                     <!--end::Modal body-->
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" @click="addInventario" :disabled="loading" :data-kt-indicator="loading ? 'on' : 'off'">
+                        <button type="button" class="btn btn-primary" @click="registrarTraspaso" :disabled="loading" :data-kt-indicator="loading ? 'on' : 'off'">
                             <span class="indicator-label">Guardar</span>
                             <span class="indicator-progress">Guardando <span class="spinner-border spinner-border-sm align-middle"></span></span>
                         </button>
@@ -235,13 +192,8 @@
 
                 sucursalFilter: null,
                 fechaFilter: null,
-                selected_producto: null,
-                inventario_datepickers: [],
 
-                inventario_model: {
-                    sucursal_id: null,
-                    productos: [],
-                },
+                traspaso_model: {},
 
                 validator: null,
                 loading: false,
@@ -256,32 +208,17 @@
                 if (container) {
                     vm.blockUI = new KTBlockUI(container);
                 }
-                $("#kt_modal_add_inventario").on('hidden.bs.modal', event => {
+                $("#kt_modal_add_traspaso").on('hidden.bs.modal', event => {
                     vm.validator.resetForm();
-                    vm.inventario_datepickers.forEach(el => {
-                        el.destroy();
-                    });
-                    vm.inventario_datepickers = [];
-
-                    vm.inventario_model = {
-                        sucursal_id: null,
-                        productos: [],
-                    };
+                    vm.traspaso_model = {};
                 });
 
-                $("#kt_modal_add_inventario").on('shown.bs.modal', event => {
-                    vm.formValidate();
+                $("#kt_modal_add_traspaso").on('shown.bs.modal', event => {
                 });
-                let picker = $("#datepicker_input").flatpickr({
-                    dateFormat: "d/m/Y"
-                });
-                $( "#datepicker_clear" ).on( "click", function() {
-                    picker.clear();
-                } );
 
-                vm.getSucursales(vm.sesion.sucursal);
+                vm.formValidate();
+                vm.getSucursales();
                 vm.getProductos();
-                vm.getInventario(true, vm.sesion.sucursal);
             },
             methods: {
                 getSucursales() {
@@ -290,6 +227,10 @@
                         '/api/sucursales/all',
                         res => {
                             vm.sucursales = res.results;
+                            vm.$nextTick(() => {
+                                vm.sucursalFilter = res.results[0].id;
+                                vm.getInventario(true, res.results[0].id);
+                            });
                         }, 'json'
                     );
                 },
@@ -348,9 +289,8 @@
                         }
                     });
                 },
-                addInventario() {
+                registrarTraspaso() {
                     let vm = this;
-                    vm.formValidate();
 
                     if (vm.validator) {
                         vm.validator.validate().then(function(status) {
@@ -358,17 +298,23 @@
                                 vm.loading = true;
                                 $.ajax({
                                     method: "POST",
-                                    url: "/api/inventarios/agregar-inventario",
-                                    data: vm.inventario_model
+                                    url: "/api/traspasos/pendientes/registrar",
+                                    data: {
+                                        id: vm.isEdit ? vm.traspaso_model.id : null,
+                                        sucursal_origen_id: vm.sucursalFilter,
+                                        sucursal_destino_id: vm.traspaso_model.sucursal_id,
+                                        producto_id: vm.traspaso_model.producto_id,
+                                        cantidad: vm.traspaso_model.cantidad,
+                                    }
                                 }).done(function(res) {
                                     if (res.status === true) {
                                         Swal.fire(
                                             "¡Guardado!",
-                                            "Los datos del inventario se han almacenado con éxito",
+                                            "Los datos del traspaso se han almacenado con éxito",
                                             "success"
                                         );
-                                        vm.getInventario(true, vm.inventario_model.sucursal_id);
-                                        $('#kt_modal_add_inventario').modal('hide');
+                                        vm.getInventario(true, vm.sucursalFilter);
+                                        $('#kt_modal_add_traspaso').modal('hide');
                                     } else {
                                         Swal.fire(
                                             "¡Error!",
@@ -377,7 +323,7 @@
                                         );
                                     }
                                 }).fail(function(jqXHR, textStatus) {
-                                    console.log("Request failed addInventario: " + textStatus, jqXHR);
+                                    console.log("Request failed registrarTraspaso: " + textStatus, jqXHR);
                                     Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
                                 }).always(function(event, xhr, settings) {
                                     vm.loading = false;
@@ -430,42 +376,13 @@
                         }
                     })
                 },
-                addProducto(){
-                    let vm = this;
-                    if(!vm.inventario_model.productos.some(item => item.id == vm.selected_producto)){
-                        let producto = vm.productos.find(item => item.id == vm.selected_producto);
-                        if(producto){
-                            vm.inventario_model.productos.push({
-                                id: producto.id,
-                                sku: producto.sku,
-                                cantidad: null,
-                                fecha_caducidad: null,
-                            });
-
-                            vm.$nextTick(() => {
-                                let picker = $(`#p_fecha_${producto.id}`).flatpickr({
-                                    dateFormat: "d/m/Y"
-                                });
-                                vm.inventario_datepickers.push(picker);
-                            });
-                        }
-                    }
-                    vm.selected_producto = null;
-                },
-                removeProducto(idProducto){
-                    let vm = this;
-                    let index = vm.inventario_model.productos.findIndex(item => item.id == idProducto);
-                    if(index != -1){
-                        vm.$delete(vm.inventario_model.productos, index);
-
-                        vm.$nextTick(() => {
-                            let ind = vm.inventario_datepickers.findIndex(item => item.element.id == `p_fecha_${idProducto}`);
-                            if(ind != -1) {
-                                vm.inventario_datepickers[ind].destroy();
-                                vm.$delete(vm.inventario_datepickers, ind);
-                            }
-                        });
-                    }
+                modalTraspaso(producto){
+                    this.traspaso_model = {
+                        producto_id: producto.id,
+                        fecha_caducidad: producto.fecha_caducidad,
+                        producto_nombre: producto.producto.nombre,
+                        cantidad_existente: producto.cantidad_existente,
+                    };
                 },
                 formValidate() {
                     let vm = this;
@@ -475,7 +392,7 @@
                     }
                     
                     vm.validator = FormValidation.formValidation(
-                        document.getElementById('kt_modal_add_inventario_form'), {
+                        document.getElementById('kt_modal_add_traspaso_form'), {
                             fields: {
                                 'sucursal': {
                                     validators: {
@@ -485,14 +402,29 @@
                                         }
                                     }
                                 },
-                                'productos': {
+                                'cantidad': {
                                     validators: {
                                         callback: {
-                                            message: 'Se requiere minimo 1 producto',
                                             callback: function (input) {
-                                                return vm.inventario_model.productos.length > 0;
+                                                if(!input.value || input.value == '' || input.value == 0){
+                                                    return {
+                                                        valid: false,
+                                                        message: 'Cantidad invalida'
+                                                    };
+                                                }
+
+                                                if(input.value > vm.traspaso_model.cantidad_existente){
+                                                    return {
+                                                        valid: false,
+                                                        message: 'No hay inventario suficiente'
+                                                    };
+                                                }
+                                                console.log(input.value);
+
+                                                return { valid: true, message: '' };
                                             },
                                         },
+                                        
                                     }
                                 }
                             },
@@ -507,55 +439,6 @@
                             }
                         }
                     );
-
-                    vm.inventario_model.productos.forEach((item, index) => {
-                        // vm.validator.addField(('p_sku_' + item.id), {
-                        //     validators: {
-                        //         notEmpty: {
-                        //             message: 'La sucursal es requerida',
-                        //             trim: true
-                        //         }
-                        //     }
-                        // });
-
-                        vm.validator.addField(('p_cantidad_' + item.id), {
-                            validators: {
-                                notEmpty: {
-                                    message: 'La cantidad es requerida',
-                                    trim: true
-                                },
-                                greaterThan: {
-                                    message: 'Cantidad invalida',
-                                    min: 1
-                                }
-                            }
-                        });
-
-                        vm.validator.addField(('p_fecha_' + item.id), {
-                            validators: {
-                                callback: {
-                                    callback: function (input) {
-                                        if(!item.fecha_caducidad || item.fecha_caducidad==null || item.fecha_caducidad==""){
-                                            return {
-                                                valid: false,
-                                                message: 'La fecha es requerida'
-                                            };
-                                        }
-                                        let today = moment();
-                                        let value = moment(item.fecha_caducidad, "DD/MM/Y");
-
-                                        if (today.isSameOrAfter(value)) {
-                                            return {
-                                                valid: false,
-                                                message: 'La fecha debe ser futura'
-                                            };
-                                        }
-                                        return { valid: true, message: '' };
-                                    },
-                                },
-                            }
-                        });
-                    });
                 },
             },
             computed: {
