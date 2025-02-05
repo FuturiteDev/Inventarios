@@ -8,4 +8,5 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/colecciones', [Ongoing\Inventarios\Http\Controllers\ColeccionesController::class, 'index'])->name('colecciones.list');
     Route::view('/producto-terminado', 'inventarios::producto_terminado');
     Route::view('/existencias-sucursal', 'inventarios::existencias');
+    Route::view('/traspasos', 'inventarios::traspasos');
 });
