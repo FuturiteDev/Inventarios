@@ -17,16 +17,16 @@
                 <!--begin::Card body-->
                 <div class="card-body py-4">
                     <!--begin::Form-->
-                    <form id="kt_modal_add_inventario_form" class="form" action="#" @submit.prevent="">
+                    <form id="add_inventario_form" class="form" action="#" @submit.prevent="">
                         <div class="row fv-row mb-7">
                             <div class="col-12">
                                 <label class="form-label">Sucursal</label>
-                                <div class="form-control">[[inventario_model.sucursal_nombre]]</div>
+                                <div class="form-control form-control-solid">[[inventario_sucursal_nombre]]</div>
                             </div>
                         </div>
                         <div class="row fv-row mb-7">
+                            <label class="required form-label">Productos</label>
                             <div class="col-10">
-                                <label class="required form-label">Productos</label>
                                 <v-select-extra
                                     v-model="selected_producto"
                                     name="productos"
@@ -35,13 +35,13 @@
                                     data-allow-clear="true">
                                 </v-select-extra>
                             </div>
-                            <div class="col-2 align-content-end">
+                            <div class="col-2 align-content-center">
                                 <button type="button" class="btn btn-light-success border border-success ms-5" @click="addProducto"><i class="fa-solid fa-plus"></i> Agregar</button>
                             </div>
                         </div>
                         <div class="row mb-7">
                             <label class="form-label">Productos agregados</label>
-                            <table class="table table-row-dashed table-row-gray-300 no-footer" v-if="inventario_model.productos.length>0">
+                            <table class="table table-row-dashed table-row-gray-300 no-footer" v-if="inventario_productos.length>0">
                                 <thead>
                                     <tr>
                                         <th tabindex="0" class="VueTables__heading text-center align-middle">Producto</th>
@@ -53,12 +53,12 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="p in inventario_model.productos" :key="'p_' + p.id">
+                                    <tr class="align-middle" v-for="p in inventario_productos" :key="'p_' + p.id">
                                         <td>
-                                            <span v-text="p.nombre" class="form-control form-control-solid"></span>
+                                            <span v-text="p.nombre ?? ''" class="form-control form-control-solid"></span>
                                         </td>
                                         <td>
-                                            <span v-text="p.sku" class="form-control form-control-solid"></span>
+                                            <span v-text="p.sku ?? ''" class="form-control form-control-solid"></span>
                                         </td>
                                         <td>
                                             <span class="fv-row">
@@ -76,10 +76,10 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <span v-text="p.configuracion_json?.dias_anaquel" class="form-control form-control-solid"></span>
+                                            <span v-text="p.dias_anaquel ?? ''" class="form-control form-control-solid"></span>
                                         </td>
                                         <td>
-                                            <span v-text="p.fecha_caducidad" class="form-control form-control-solid"></span>
+                                            <span v-text="p.fecha_caducidad ?? ''" class="form-control form-control-solid"></span>
                                         </td>
                                         <td>
                                             <button type="button" class="btn btn-icon btn-danger" @click="removeProducto(p.id)"><i class="fa-solid fa-trash-alt"></i></button>
@@ -176,11 +176,9 @@
                 selected_producto: null,
                 inventario_datepickers: [],
 
-                inventario_model: {
-                    sucursal_id: null,
-                    sucursal_nombre: null,
-                    productos: [],
-                },
+                inventario_sucursal_id: null,
+                inventario_sucursal_nombre: null,
+                inventario_productos: [],
 
                 validator: null,
                 loading: false,
@@ -195,23 +193,9 @@
                 if (container) {
                     vm.blockUI = new KTBlockUI(container);
                 }
-                $("#kt_modal_add_inventario").on('hidden.bs.modal', event => {
-                    vm.validator.resetForm();
-                    vm.inventario_datepickers.forEach(el => {
-                        el.destroy();
-                    });
-                    vm.inventario_datepickers = [];
 
-                    vm.inventario_model = {
-                        sucursal_id: null,
-                        sucursal_nombre: null,
-                        productos: [],
-                    };
-                });
+                vm.formValidate();
 
-                $("#kt_modal_add_inventario").on('shown.bs.modal', event => {
-                    vm.formValidate();
-                });
                 let picker = $("#datepicker_input").flatpickr({
                     dateFormat: "d/m/Y"
                 });
@@ -229,8 +213,14 @@
                         res => {
                             vm.sucursales = res.results;
                             vm.$nextTick(() => {
-                                vm.inventario_model.sucursal_id = vm.sucursales[0].id;
-                                vm.inventario_model.sucursal_nombre = vm.sucursales[0].nombre;
+                                let index = vm.sucursales.findIndex(item => item.matriz == 1);
+                                if(index != -1){
+                                    vm.inventario_sucursal_id = vm.sucursales[index].id;
+                                    vm.inventario_sucursal_nombre = vm.sucursales[index].nombre;
+                                } else {
+                                    vm.inventario_sucursal_id = vm.sucursales[0].id;
+                                    vm.inventario_sucursal_nombre = vm.sucursales[0].nombre;
+                                }
                             });
                         }, 'json'
                     );
@@ -244,52 +234,6 @@
                         }, 'json'
                     );
                 },
-                getInventario(showLoader, idSucursal){
-                    let vm = this;
-                    if (showLoader) {
-                        if (!vm.blockUI) {
-                            let container = document.querySelector('#content-card');
-                            if (container) {
-                                vm.blockUI = new KTBlockUI(container);
-                                vm.blockUI.block();
-                            }
-                        } else {
-                            if (!vm.blockUI.isBlocked()) {
-                                vm.blockUI.block();
-                            }
-                        }
-                    }
-
-                    if (vm.requestGet) {
-                        vm.requestGet.abort();
-                        vm.requestGet = null;
-                    }
-
-                    vm.loading = true;
-
-                    if(idSucursal){
-                        vm.sucursalFilter = idSucursal;
-                    }
-                    vm.requestGet = $.ajax({
-                        url: '/api/inventarios/existencia-sucursal',
-                        type: 'POST',
-                        data: {
-                            sucursal_id: idSucursal ?? vm.sucursalFilter
-                        }
-                    }).done(function (res) {
-                        vm.inventario = res.results;
-                    }).fail(function (jqXHR, textStatus) {
-                        if (textStatus != 'abort') {
-                            console.log("Request failed getInventario: " + textStatus, jqXHR);
-                        }
-                    }).always(function () {
-                        vm.loading = false;
-
-                        if (vm.blockUI && vm.blockUI.isBlocked()) {
-                            vm.blockUI.release();
-                        }
-                    });
-                },
                 addInventario() {
                     let vm = this;
                     vm.formValidate();
@@ -302,12 +246,12 @@
                                     method: "POST",
                                     url: "/api/inventarios/agregar-inventario",
                                     data: {
-                                        sucursal_id: vm.inventario_model.sucursal_id,
-                                        productos: vm.inventario_model.productos.map(el => ({
+                                        sucursal_id: vm.inventario_sucursal_id,
+                                        productos: vm.inventario_productos.map(el => ({
                                             id: el.id,
                                             cantidad: el.cantidad,
-                                            fecha_elaboracion: el.fecha_elaboracion,
-                                            fecha_caducidad: el.fecha_caducidad,
+                                            fecha_elaboracion: moment(el.fecha_elaboracion,'DD/MM/YYYY').format('YYYY-MM-DD'),
+                                            fecha_caducidad: moment(el.fecha_caducidad,'DD/MM/YYYY').format('YYYY-MM-DD'),
                                         })),
                                     }
                                 }).done(function(res) {
@@ -317,8 +261,12 @@
                                             "Los datos del inventario se han almacenado con éxito",
                                             "success"
                                         );
-                                        vm.getInventario(true, vm.inventario_model.sucursal_id);
-                                        $('#kt_modal_add_inventario').modal('hide');
+                                        vm.validator.destroy();
+                                        vm.inventario_datepickers.forEach(el => {
+                                            el.destroy();
+                                        });
+                                        vm.inventario_datepickers = [];
+                                        vm.inventario_productos = [];
                                     } else {
                                         Swal.fire(
                                             "¡Error!",
@@ -336,65 +284,21 @@
                         });
                     }
                 },
-                deleteInventario(idInventario) {
-                    let vm = this;
-                    Swal.fire({
-                        title: '¿Estas seguro de que deseas eliminar el registro del inventario?',
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#3085d6',
-                        cancelButtonColor: '#d33',
-                        confirmButtonText: 'Si, eliminar',
-                        cancelButtonText: 'Cancelar',
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            vm.loading = true;
-                            let index = vm.inventario.findIndex(item => item.id == idInventario);
-                            if(index >= 0){
-                                vm.$set(vm.inventario[index], 'eliminando', true);
-                            }
-                            $.ajax({
-                                method: "POST",
-                                url: "/api/inventarios/eliminar-inventario",
-                                data: {
-                                    inventario_id: idInventario,
-                                }
-                            }).done(function(res) {
-                                Swal.fire(
-                                    'Registro eliminado',
-                                    'El registro del inventario ha sido eliminado con éxito',
-                                    'success'
-                                );
-                                vm.getInventario();
-                            }).fail(function(jqXHR, textStatus) {
-                                console.log("Request failed deleteInventario: " + textStatus, jqXHR);
-                                Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
-
-                                index = vm.inventario.findIndex(item => item.id == idInventario);
-                                if(index >= 0){
-                                    vm.$set(vm.inventario[index], 'eliminando', false);
-                                }
-                            }).always(function(event, xhr, settings) {
-                                vm.loading = false;
-                            });
-                        }
-                    })
-                },
                 addProducto(){
                     let vm = this;
-                    if(!vm.inventario_model.productos.some(item => item.id == vm.selected_producto)){
+                    if(!vm.inventario_productos.some(item => item.id == vm.selected_producto)){
                         let producto = vm.productos.find(item => item.id == vm.selected_producto);
                         if(producto){
-                            let fecha_caducidad = producto.configuracion_json?.dias_anaquel
-                                  ? moment().add(producto.configuracion_json?.dias_anaquel, 'd').format('DD/MM/YYYY')
-                                  : null;
-                            vm.inventario_model.productos.push({
+                            let dias_anaquel = producto.caracteristicas_json?.find(item => item.slug && item.slug == 'vida_util');
+                            let fecha_caducidad = dias_anaquel ? moment().add(dias_anaquel.valor, 'd').format('DD/MM/YYYY') : null;
+                            
+                            vm.inventario_productos.push({
                                 id: producto.id,
                                 nombre: producto.nombre,
                                 sku: producto.sku,
                                 cantidad: null,
-                                fecha_elaboracion: null,
-                                dias_anaquel: producto.caracteristicas_json?.dias_anaquel,
+                                fecha_elaboracion: moment().format('DD/MM/YYYY'),
+                                dias_anaquel: dias_anaquel?.valor,
                                 fecha_caducidad: fecha_caducidad,
                             });
 
@@ -403,9 +307,9 @@
                                     dateFormat: "d/m/Y",
                                     defaultDate: "today",
                                     onChange: function(selectedDates, dateStr, instance) {
-                                        let index = vm.inventario_model.productos.findIndex(item => item.id == producto.id);
-                                        if(p && p.configuracion_json?.dias_anaquel){
-                                            vm.$set(vm.inventario_model.productos[index], 'fecha_caducidad', moment(selectedDates[0]).add(p.configuracion_json?.dias_anaquel, 'd').format('DD/MM/YYYY'))
+                                        let index = vm.inventario_productos.findIndex(item => item.id == producto.id);
+                                        if(p && p.dias_anaquel){
+                                            vm.$set(vm.inventario_productos[index], 'fecha_caducidad', moment(selectedDates[0]).add(p.dias_anaquel, 'd').format('DD/MM/YYYY'))
                                         }
                                     },
                                 });
@@ -417,9 +321,9 @@
                 },
                 removeProducto(idProducto){
                     let vm = this;
-                    let index = vm.inventario_model.productos.findIndex(item => item.id == idProducto);
+                    let index = vm.inventario_productos.findIndex(item => item.id == idProducto);
                     if(index != -1){
-                        vm.$delete(vm.inventario_model.productos, index);
+                        vm.$delete(vm.inventario_productos, index);
 
                         vm.$nextTick(() => {
                             let ind = vm.inventario_datepickers.findIndex(item => item.element.id == `p_fecha_${idProducto}`);
@@ -438,7 +342,7 @@
                     }
                     
                     vm.validator = FormValidation.formValidation(
-                        document.getElementById('kt_modal_add_inventario_form'), {
+                        document.getElementById('add_inventario_form'), {
                             fields: {
                                 'sucursal': {
                                     validators: {
@@ -453,7 +357,7 @@
                                         callback: {
                                             message: 'Se requiere minimo 1 producto',
                                             callback: function (input) {
-                                                return vm.inventario_model.productos.length > 0;
+                                                return vm.inventario_productos.length > 0;
                                             },
                                         },
                                     }
@@ -471,7 +375,7 @@
                         }
                     );
 
-                    vm.inventario_model.productos.forEach((item, index) => {
+                    vm.inventario_productos.forEach((item, index) => {
                         // vm.validator.addField(('p_sku_' + item.id), {
                         //     validators: {
                         //         notEmpty: {
@@ -498,21 +402,21 @@
                             validators: {
                                 callback: {
                                     callback: function (input) {
-                                        if(!item.fecha_caducidad || item.fecha_caducidad==null || item.fecha_caducidad==""){
+                                        if(!item.fecha_elaboracion || item.fecha_elaboracion==null || item.fecha_elaboracion==""){
                                             return {
                                                 valid: false,
                                                 message: 'La fecha es requerida'
                                             };
                                         }
                                         let today = moment();
-                                        let value = moment(item.fecha_caducidad, "DD/MM/Y");
+                                        let value = moment(item.fecha_elaboracion, "DD/MM/Y");
 
-                                        if (today.isSameOrAfter(value)) {
-                                            return {
-                                                valid: false,
-                                                message: 'La fecha debe ser futura'
-                                            };
-                                        }
+                                        // if (today.isAfter(value)) {
+                                        //     return {
+                                        //         valid: false,
+                                        //         message: 'La fecha debe ser futura'
+                                        //     };
+                                        // }
                                         return { valid: true, message: '' };
                                     },
                                 },
