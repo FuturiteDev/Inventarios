@@ -14,6 +14,15 @@
                     <div class="card-toolbar">
                         <div class="px-2">
                             <v-select 
+                                class="form-control me-3 min-w-150px"
+                                v-model="estatusFilter"
+                                :options="[{id:0,text:'DRAFT'},{id:1,text:'ACTIVE'},{id:2,text:'ARCHIVED'}]"
+                                data-allow-clear="true"
+                                data-placeholder="Filtrar por estatus">
+                            </v-select>
+                        </div>
+                        <div class="px-2">
+                            <v-select 
                                 class="form-control me-3"
                                 v-model="categoriaFilter"
                                 :options="listaCategorias"
@@ -58,9 +67,9 @@
                             [[props.row.subcategoria?.nombre ?? 'N/A']]
                         </div>
                         <div slot="estatus_desc" slot-scope="props">
-                            <span v-show="estatus == 1" class="badge badge-success">[[props.row.estatus_desc]]</span>
-                            <span v-show="estatus == 2" class="badge badge-dark">[[props.row.estatus_desc]]</span>
-                            <span v-show="estatus == 0" class="badge badge-warning">[[props.row.estatus_desc]]</span>
+                            <span v-show="props.row.estatus == 1" class="badge badge-success">[[props.row.estatus_desc]]</span>
+                            <span v-show="props.row.estatus == 2" class="badge badge-dark">[[props.row.estatus_desc]]</span>
+                            <span v-show="props.row.estatus == 0" class="badge badge-warning">[[props.row.estatus_desc]]</span>
                         </div>
                         <div slot="acciones" slot-scope="props">
                             <button type="button" class="btn btn-icon btn-sm btn-success me-2" title="Ver/Editar Producto" data-bs-toggle="modal" data-bs-target="#kt_modal_add_producto" @click="selectProducto(props.row)">
@@ -404,6 +413,7 @@
                 categoriaFilter: null,
                 subcategoriaFilter: null,
                 coleccionFilter: null,
+                estatusFilter: null,
 
                 idProducto: null,
                 producto: null,
@@ -956,7 +966,7 @@
             computed: {
                 listaProductos() {
                     let vm = this;
-                    if (!vm.categoriaFilter && !vm.subcategoriaFilter && !vm.coleccionFilter) {
+                    if (!vm.categoriaFilter && !vm.subcategoriaFilter && !vm.coleccionFilter && vm.estatusFilter == null) {
                         return vm.productos;
                     }
                     let productos = vm.productos?.filter(function(e) {
@@ -967,8 +977,9 @@
                         let categoriaFilter = vm.categoriaFilter ? e.categoria_id == vm.categoriaFilter : true;
                         let subcategoriaFilter = vm.subcategoriaFilter ? e.subcategoria_id == vm.subcategoriaFilter : true;
                         let coleccionFilter = vm.coleccionFilter ? col != null : true;
+                        let estatusFilter = vm.estatusFilter != null ? e.estatus == vm.estatusFilter  : true;
 
-                        return categoriaFilter && subcategoriaFilter && coleccionFilter;
+                        return categoriaFilter && subcategoriaFilter && coleccionFilter && estatusFilter;
                     }) ?? [];
                     return productos;
                 },
