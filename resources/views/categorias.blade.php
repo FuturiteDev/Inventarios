@@ -360,7 +360,7 @@
                         idCategoria: categoria.id,
                         nombre: categoria.nombre,
                         descripcion: categoria.descripcion,
-                        imagen_path: categoria.imagen_path,
+                        imagen_path: categoria.imagen,
                     };
                 },
                 formValidate() {
