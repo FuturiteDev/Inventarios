@@ -301,44 +301,66 @@ class TraspasosController extends Controller
                 ], 404);
             }
 
+            // $productosPendientes = $this->productosPendientes
+            //     ->where('sucursal_origen', $sucursal->id)
+            //     ->select('producto_id', 'sucursal_origen', 'sucursal_destino', DB::raw('SUM(cantidad) as total_cantidad'))
+            //     ->with(['sucursalOrigen', 'sucursalDestino', 'producto.categoria', 'producto.subcategoria'])
+            //     ->groupBy('producto_id', 'sucursal_origen', 'sucursal_destino')
+            //     ->get();
+
+            // dump($productosPendientes->toArray());
+
             $productosPendientes = $this->productosPendientes
                 ->where('sucursal_origen', $sucursal->id)
-                ->select('producto_id', 'sucursal_origen', 'sucursal_destino', DB::raw('SUM(cantidad) as total_cantidad'))
-                ->with(['sucursalOrigen', 'sucursalDestino', 'producto.categoria', 'producto.subcategoria'])
-                ->groupBy('producto_id', 'sucursal_origen', 'sucursal_destino')
+                ->with(['sucursalDestino', 'producto.categoria', 'producto.subcategoria'])
                 ->get();
 
-            $productos = $productosPendientes->map(function ($productoPendiente) {
-                if (!$productoPendiente->producto) {
-                    return null;
-                }
+                // dump($productosPendientes->toArray());
+            $grouped = $productosPendientes->groupBy('sucursal_destino');
+            // dump($grouped->toArray());
 
-                return [
-                    'id' => $productoPendiente->producto->id,
-                    'nombre' => $productoPendiente->producto->nombre,
-                    'sku' => $productoPendiente->producto->sku,
-                    'categoria' => $productoPendiente->producto->categoria,
-                    'subcategoria' => $productoPendiente->producto->subcategoria,
-                    'cantidad' => $productoPendiente->total_cantidad,
-                    'sucursal_origen' => [
-                        'id' => $productoPendiente->sucursalOrigen->id ?? null,
-                        'nombre' => $productoPendiente->sucursalOrigen->nombre ?? null,
-                    ],
-                    'sucursal_destino' => [
-                        'id' => $productoPendiente->sucursalDestino->id ?? null,
-                        'nombre' => $productoPendiente->sucursalDestino->nombre ?? null,
-                    ],
+            $productosxsucursal = [];
+            $grouped->each(function ($productosPendienteSuc) use(&$productosxsucursal) {
+                $tmpProductosSuc = [
+                    'sucursal_destino_id' => $productosPendienteSuc->first()->sucursalDestino->id,
+                    'sucursal_destino_nombre' => $productosPendienteSuc->first()->sucursalDestino->nombre,
+                    'productos' => []
                 ];
-            })->filter();
+                $tmpProductosPend = [];
+                foreach($productosPendienteSuc as $row){
+                    if(empty($tmpProductosPend[$row->producto->id])){
+                        $tmpProductosPend[$row->producto->id] = [
+                            'producto_id' => $row->producto->id,
+                            'nombre' => $row->producto->nombre,
+                            'sku' => $row->producto->sku,
+                            'categoria' => $row->producto->categoria->only(['id', 'nombre', 'imagen']),
+                            'subcategoria' => $row->producto->subcategoria->only(['id', 'nombre']),
+                            'cantidad' => 0,
+                            'fechas' => []
+                        ];
+                    }
 
+                    $tmpProductosPend[$row->producto->id]['cantidad'] += $row->cantidad;
+                    $tmpProductosPend[$row->producto->id]['fechas'][] = [
+                        'producto_pendiente_id' => $row->id,
+                        'fecha_caducidad' => $row->fecha_caducidad,
+                        'cantidad' => $row->cantidad
+                    ];
+                    
+                }
+                
+                $tmpProductosSuc['productos'] = array_values($tmpProductosPend);
+
+                $productosxsucursal[] = $tmpProductosSuc;
+            });
+// dump($productos);
             return response()->json([
                 'status' => true,
                 'results' => [
-                    'sucursal_origen' => $sucursal->id,
-                    'nombre' => $sucursal->nombre,
-                    'productos' => $productos
-                ],
-                'message' => 'Productos pendientes.'
+                    'sucursal_origen_id' => $sucursal->id,
+                    'sucursal_origen_nombre' => $sucursal->nombre,
+                    'productos_pendientes' => array_values($productosxsucursal)
+                ]
             ], 200);
         } catch (\Exception $e) {
             Log::info("TraspasosController->traspasosPendientes() | " . $e->getMessage() . " | " . $e->getLine());
@@ -362,20 +384,31 @@ class TraspasosController extends Controller
             $cantidad = $request->cantidad;
             $fecha_caducidad = $request->fecha_caducidad;
 
-            $pendienteRegistrado = $this->productosPendientes->updateOrCreate(
-                ['id' => $request->id],
-                [
-                    'sucursal_origen' => $sucursal_origen,
-                    'sucursal_destino' => $sucursal_destino,
-                    'producto_id' => $producto_id,
-                    'cantidad' => $cantidad,
-                    'fecha_caducidad' => $fecha_caducidad
-                ]
-            );
+            if(!empty($request->id)){
+                $prodPendiente = $this->productosPendientes->find($request->id);
+                $prodPendiente->cantidad = $cantidad;
+                $prodPendiente->save();
+            }else{
+                $prodPendiente = $this->productosPendientes->findWhere(['sucursal_origen' => $sucursal_origen, 'sucursal_destino' => $sucursal_destino, 'producto_id' => $producto_id, 'fecha_caducidad' => $fecha_caducidad])->first();
+                if(!empty($prodPendiente)){
+                    $prodPendiente->cantidad += $cantidad;
+                    $prodPendiente->save();
+                }else{
+                    $prodPendiente = $this->productosPendientes->create(
+                        [
+                            'sucursal_origen' => $sucursal_origen,
+                            'sucursal_destino' => $sucursal_destino,
+                            'producto_id' => $producto_id,
+                            'cantidad' => $cantidad,
+                            'fecha_caducidad' => $fecha_caducidad
+                        ]
+                    );
+                }
+            }
 
             return response()->json([
                 'status' => true,
-                'results' => $pendienteRegistrado,
+                'results' => $prodPendiente,
             ], 200);
         } catch (\Exception $e) {
             Log::info("TraspasosController->saveTraspaso() | " . $e->getMessage() . " | " . $e->getLine());

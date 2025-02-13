@@ -27,6 +27,7 @@ class TraspasosProductos extends Model implements Transformable
         'cantidad',
         'cantidad_recibida',
         'foto',
+        'inventario_ids',
     ];
 
     /**
