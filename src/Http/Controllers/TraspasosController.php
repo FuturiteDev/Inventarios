@@ -11,6 +11,7 @@ use Ongoing\Inventarios\Entities\Inventario;
 use Ongoing\Inventarios\Repositories\TraspasosProductosRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\TraspasosRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\ProductosPendientesTraspasoRepositoryEloquent;
+use Ongoing\Inventarios\Repositories\InventarioRepositoryEloquent;
 use App\Repositories\UsuariosautorizadosRepositoryEloquent;
 
 use Ongoing\Inventarios\Entities\Productos;
@@ -33,6 +34,7 @@ class TraspasosController extends Controller
     protected $productosPendientes;
     protected $notificaciones;
     protected $usuariosAutorizados;
+    protected $inventario;
 
     public function __construct(
         UsuarioRepositoryEloquent $usuarios,
@@ -40,7 +42,8 @@ class TraspasosController extends Controller
         TraspasosProductosRepositoryEloquent $traspasosProductos,
         ProductosPendientesTraspasoRepositoryEloquent $productosPendientes,
         NotificacionesRepositoryEloquent $notificaciones,
-        UsuariosautorizadosRepositoryEloquent $usuariosAutorizados
+        UsuariosautorizadosRepositoryEloquent $usuariosAutorizados,
+        InventarioRepositoryEloquent $inventario,
     ) {
         $this->usuarios = $usuarios;
         $this->traspasos = $traspasos;
@@ -48,6 +51,7 @@ class TraspasosController extends Controller
         $this->productosPendientes = $productosPendientes;
         $this->notificaciones = $notificaciones;
         $this->usuariosAutorizados = $usuariosAutorizados;
+        $this->inventario = $inventario;
     }
 
     public function getTraspaso($traspaso_id)
@@ -301,26 +305,15 @@ class TraspasosController extends Controller
                 ], 404);
             }
 
-            // $productosPendientes = $this->productosPendientes
-            //     ->where('sucursal_origen', $sucursal->id)
-            //     ->select('producto_id', 'sucursal_origen', 'sucursal_destino', DB::raw('SUM(cantidad) as total_cantidad'))
-            //     ->with(['sucursalOrigen', 'sucursalDestino', 'producto.categoria', 'producto.subcategoria'])
-            //     ->groupBy('producto_id', 'sucursal_origen', 'sucursal_destino')
-            //     ->get();
-
-            // dump($productosPendientes->toArray());
-
             $productosPendientes = $this->productosPendientes
                 ->where('sucursal_origen', $sucursal->id)
                 ->with(['sucursalDestino', 'producto.categoria', 'producto.subcategoria'])
                 ->get();
 
-                // dump($productosPendientes->toArray());
             $grouped = $productosPendientes->groupBy('sucursal_destino');
-            // dump($grouped->toArray());
 
             $productosxsucursal = [];
-            $grouped->each(function ($productosPendienteSuc) use(&$productosxsucursal) {
+            foreach($grouped as $productosPendienteSuc){
                 $tmpProductosSuc = [
                     'sucursal_destino_id' => $productosPendienteSuc->first()->sucursalDestino->id,
                     'sucursal_destino_nombre' => $productosPendienteSuc->first()->sucursalDestino->nombre,
@@ -341,10 +334,14 @@ class TraspasosController extends Controller
                     }
 
                     $tmpProductosPend[$row->producto->id]['cantidad'] += $row->cantidad;
+
+                    $stockProd = $this->inventario->findWhere(['sucursal_id' => $sucursal->id, 'producto_id' => $row->producto->id, ['cantidad_disponible', '>', 0], 'fecha_caducidad' => $row->fecha_caducidad]);
+                    
                     $tmpProductosPend[$row->producto->id]['fechas'][] = [
                         'producto_pendiente_id' => $row->id,
                         'fecha_caducidad' => $row->fecha_caducidad,
-                        'cantidad' => $row->cantidad
+                        'cantidad' => $row->cantidad,
+                        'stock' => $stockProd->sum('cantidad_disponible')
                     ];
                     
                 }
@@ -352,8 +349,8 @@ class TraspasosController extends Controller
                 $tmpProductosSuc['productos'] = array_values($tmpProductosPend);
 
                 $productosxsucursal[] = $tmpProductosSuc;
-            });
-// dump($productos);
+            };
+
             return response()->json([
                 'status' => true,
                 'results' => [
