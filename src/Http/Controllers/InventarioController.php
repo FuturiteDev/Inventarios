@@ -46,8 +46,18 @@ class InventarioController extends Controller
      */
     function index()
     {
-        Gate::authorize('access-granted', '/inventarios/inventario');
-        return view('inventarios::inventario');
+        Gate::authorize('access-granted', '/inventarios/producto-terminado');
+        return view('inventarios::producto_terminado');
+    }
+
+    /**
+     * Summary of index
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
+     */
+    function existenciasSucursal()
+    {
+        Gate::authorize('access-granted', '/inventarios/existencias-sucursal');
+        return view('inventarios::existencias');
     }
 
 

@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Repositories\NotificacionesRepositoryEloquent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Log;
+
 use Ongoing\Inventarios\Entities\Inventario;
 use Ongoing\Inventarios\Repositories\TraspasosProductosRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\TraspasosRepositoryEloquent;
@@ -16,10 +18,8 @@ use App\Repositories\UsuariosautorizadosRepositoryEloquent;
 
 use Ongoing\Inventarios\Entities\Productos;
 use Ongoing\Sucursales\Entities\Sucursales;
+use Ongoing\Inventarios\Events\TraspasoRecibido;
 use App\Repositories\UsuarioRepositoryEloquent;
-use Illuminate\Support\Facades\DB;
-
-use stdClass;
 
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\Messaging\CloudMessage;
@@ -52,6 +52,12 @@ class TraspasosController extends Controller
         $this->notificaciones = $notificaciones;
         $this->usuariosAutorizados = $usuariosAutorizados;
         $this->inventario = $inventario;
+    }
+
+    public function index()
+    {
+        Gate::authorize('access-granted', '/inventarios/traspasos');
+        return view('inventarios::traspasos');
     }
 
     public function getTraspaso($traspaso_id)
@@ -122,13 +128,11 @@ class TraspasosController extends Controller
     public function saveTraspaso(Request $request)
     {
         try {
+
             $sucursal_origen_id = $request->sucursal_origen_id;
             $sucursal_destino_id = $request->sucursal_destino_id;
 
             $inputTraspasos = [];
-            $inputProdTraspasos = [];
-            $productosInexistentes = [];
-            $productosTraspasados = [];
 
             $inputTraspasos['sucursal_origen_id'] = $sucursal_origen_id;
             $inputTraspasos['sucursal_destino_id'] = $sucursal_destino_id;
@@ -137,52 +141,63 @@ class TraspasosController extends Controller
             $inputTraspasos['asignado_a'] = $request->asignado_a;
             $inputTraspasos['comentarios'] = $request->comentarios;
 
-            foreach ($request->productos as $producto) {
-                $productoExistente = Productos::find($producto['producto_id']);
-
-                if (!$productoExistente) {
-                    $productosInexistentes[] = $producto['producto_id'];
-                } else {
-                    $productosTraspasados[] = $producto;
-                    $productosTraspasadosDelete[] = $producto['producto_id'];
-                }
+            if(empty($request->productos)){
+                return response()->json([
+                    'status' => false,
+                    'message' => "No se han enviado productos para traspasar.",
+                ], 200);
             }
 
             $traspaso = $this->traspasos->create($inputTraspasos);
 
-            foreach ($productosTraspasados as $producto) {
-                $inputProdTraspasos['traspaso_id'] = $traspaso->id;
-                $inputProdTraspasos['producto_id'] = $producto['producto_id'];
-                $inputProdTraspasos['cantidad'] = $producto['cantidad'];
-                $inputProdTraspasos['cantidad_recibida'] = $producto['cantidad_recibida'];
+            foreach ($request->productos as $row) {
+                $inputProdTraspasos = [];
+                $prodPendiente = $this->productosPendientes->find($row['producto_id']);
+                if($row['cantidad'] > 0){
+                    $inputProdTraspasos['traspaso_id'] = $traspaso->id;
+                    $inputProdTraspasos['producto_id'] = $prodPendiente->producto_id;
+                    $inputProdTraspasos['cantidad'] = $row['cantidad'];
+                    $inputProdTraspasos['cantidad_recibida'] = 0;
 
-                $this->traspasosProductos->create($inputProdTraspasos);
-            }
+                    if(!empty($row['foto'])){
+                        $cadena = "";
+                        foreach ($row['foto'] as $byte) {
+                            $cadena .= chr($byte);
+                        }
+                        $fname = md5(uniqid('', true)) . '.jpg';
+                        Storage::disk('public')->put("traspasos/fotos/{$fname}" , $cadena);
+                        $inputProdTraspasos['foto'] = "traspasos/fotos/{$fname}";
+                    }
 
-            if (!empty($productosTraspasadosDelete)) {
-                $this->productosPendientes
-                    ->where('sucursal_origen', $sucursal_origen_id)
-                    ->where('sucursal_destino', $sucursal_destino_id)
-                    ->whereIn('producto_id', $productosTraspasadosDelete)
-                    ->delete();
-            } else {
-                Log::info('No existen productos existentes en productosPendientes.');
+                    $inv = $this->inventario->scopeQuery(function($query) use($row){
+                        return $query->limit($row['cantidad']);
+                    })->findWhere(['sucursal_id' => $sucursal_origen_id, 'producto_id' => $prodPendiente->producto_id, ['cantidad_disponible', '>', 0], 'estatus' => 1]);
+
+                    $inputProdTraspasos['inventario_ids'] = $inv->modelKeys();
+                    $this->traspasosProductos->create($inputProdTraspasos);
+
+                    $inv->each(function($item){
+                        $item->estatus = 2;
+                        $item->save();
+                    });
+                }
+                $prodPendiente->delete();
             }
 
             $usuarioAutorizado = $this->usuariosAutorizados 
             ->whereJsonContains('configuracion->sucursales', (int) $sucursal_destino_id)
             ->first();
             
-            $traspasoConDetalle = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos'])->find($traspaso->id);
+           $traspaso->load(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos']);
             
             if ($usuarioAutorizado) {
                 $usuario_id = $usuarioAutorizado->user_id;
     
                 $notificacion = [
                     'usuario_id' => $usuario_id,
-                    'traspaso_id' => $traspasoConDetalle->id,
-                    'titulo' => "Nuevo traspaso desde sucursal " . $traspasoConDetalle->sucursalOrigen->nombre,
-                    'mensaje' => "Se ha creado correctamente el traspaso con el ID: " . $traspasoConDetalle->id
+                    'traspaso_id' => $traspaso->id,
+                    'titulo' => "Nuevo traspaso desde sucursal " . $traspaso->sucursalOrigen->nombre,
+                    'mensaje' => "Se ha creado correctamente el traspaso con el ID: " . $traspaso->id
                 ];
                 $this->sendNotification($notificacion);
             }
@@ -190,8 +205,7 @@ class TraspasosController extends Controller
 
             return response()->json([
                 'status' => true,
-                'results' => $traspasoConDetalle,
-                'productos_inexistentes_ids' => $productosInexistentes,
+                'results' => $traspaso,
                 'message' => "Traspaso guardado correctamente",
             ], 200);
         } catch (\Exception $e) {
@@ -264,6 +278,8 @@ class TraspasosController extends Controller
                     ]);
                 }
             }
+
+            TraspasoRecibido::dispatch($traspaso);
 
             return response()->json([
                 'status' => true,
