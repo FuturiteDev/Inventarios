@@ -291,12 +291,20 @@
                             <div v-else>
                                 <div>
                                     <v-client-table :data="multimedia" :columns="columnsMultimedia" :options="optionsMultimedia">
+                                        <div slot="portada" slot-scope="props">
+                                            <span v-if="props.row.portada == 1"><i class="fa-solid fa-star"></i></span>
+                                            <span v-else></span>
+                                        </div>
                                         <div slot="preview" slot-scope="props">
                                             <img :src="props.row.url" class="img-fluid" style="max-width: 100px;">
                                         </div>
                                         <div slot="acciones" slot-scope="props">
                                             <button type="button" class="btn btn-icon btn-sm btn-danger" title="Eliminar Marca" @click.prevent="deleteMultimedia(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
                                                 <span class="indicator-label"><i class="fas fa-trash-alt"></i></span>
+                                                <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
+                                            </button>
+                                            <button type="button" class="btn btn-icon btn-sm btn-success" title="Seleccionar portada" @click.prevent="setPortada(props.row.id)" :data-kt-indicator="props.row.seleccionando ? 'on' : 'off'">
+                                                <span class="indicator-label"><i class="fa-solid fa-square-pen"></i></span>
                                                 <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
                                             </button>
                                         </div>
@@ -376,14 +384,16 @@
                         columns: "Columnas",
                     },
                 },
-                columnsMultimedia: ['preview', 'file_name', 'acciones'],
+                columnsMultimedia: ['portada','preview', 'file_name', 'acciones'],
                 optionsMultimedia: {
                     headings: {
+                        portada: '',
                         preview: 'Preview',
                         file_name: 'Nombre',
                         acciones: 'Acciones',
                     },
                     columnsClasses: {
+                        portada: 'align-middle px-2 text-center ',
                         preview: 'align-middle px-2 ',
                         file_name: 'align-middle ',
                         acciones: 'align-middle text-center px-2 ',
@@ -770,13 +780,55 @@
 
                                 index = vm.multimedia.findIndex(item => item.id == idMultimedia);
                                 if(index >= 0){
-                                    vm.$set(vm.multimedia[index], 'eliminando', true);
+                                    vm.$set(vm.multimedia[index], 'eliminando', false);
                                 }
                             }).always(function(event, xhr, settings) {
                                 vm.loading = false;
                             });
                         }
                     })
+                },
+                setPortada(idMultimedia){
+                    let vm = this;
+                    Swal.fire({
+                        title: '¿Estas seguro de que deseas seleccionar esta imagen como la portada?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Si, seleccionar',
+                        cancelButtonText: 'Cancelar',
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            let index = vm.multimedia.findIndex(item => item.id == idMultimedia);
+                            if(index >= 0){
+                                vm.$set(vm.multimedia[index], 'seleccionando', true);
+                            }
+                            $.ajax({
+                                type: 'POST',
+                                url: "/api/productos/establecer-portada",
+                                data: {
+                                    imagen_id: idMultimedia,
+                                },
+                            }).done(function(res) {
+                                vm.multimedia = res.imagenes;
+
+                                Swal.fire(
+                                    'Portada seleccionada',
+                                    'Se ha establecido la portada con éxito',
+                                    'success'
+                                );
+                            }).fail(function(jqXHR, textStatus) {
+                                console.log("Request failed setPortada: " + textStatus, jqXHR);
+                                Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
+                            }).always(function(event, xhr, settings) {
+                                index = vm.multimedia.findIndex(item => item.id == idMultimedia);
+                                if(index >= 0){
+                                    vm.$set(vm.multimedia[index], 'seleccionando', false);
+                                }
+                            });
+                        }
+                    });
                 },
                 getCaracteristicasSubcategoria() {
                     let vm = this;
