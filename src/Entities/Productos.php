@@ -37,6 +37,10 @@ class Productos extends Model implements Transformable
         'caracteristicas_json' => 'array',
         'extras_json' => 'array'
     ];
+
+    protected $appends = ['estatus_desc'];
+
+
     public function categoria() {
         return $this->belongsTo(Categorias::class, 'categoria_id', 'id')->where('categorias.estatus', 1);
     }
@@ -65,4 +69,17 @@ class Productos extends Model implements Transformable
     }
 
 
+    public function getEstatusDescAttribute()
+    {
+        switch ($this->estatus) {
+            case 2:
+                return 'ARCHIVED';
+            case 1:
+                return 'ACTIVE';
+            case 0:
+                return 'DRAFT';
+            default:
+                return '-';
+        }
+    }
 }

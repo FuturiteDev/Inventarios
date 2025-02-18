@@ -22,6 +22,7 @@ class Inventario extends Model
         'producto_id',
         'cantidad_total',
         'cantidad_disponible',
+        'fecha_elaboracion',
         'fecha_caducidad',
         'estatus',
     ];
@@ -48,7 +49,7 @@ class Inventario extends Model
             case 1:
                 return 'Activo';
             case 2:
-                return 'Traspaso pendiente';
+                return 'Traspaso en proceso';
             default:
                 return 'Desconocido';
         }

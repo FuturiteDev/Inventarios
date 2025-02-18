@@ -6,19 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Repositories\NotificacionesRepositoryEloquent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Log;
+
 use Ongoing\Inventarios\Entities\Inventario;
 use Ongoing\Inventarios\Repositories\TraspasosProductosRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\TraspasosRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\ProductosPendientesTraspasoRepositoryEloquent;
+use Ongoing\Inventarios\Repositories\InventarioRepositoryEloquent;
 use App\Repositories\UsuariosautorizadosRepositoryEloquent;
 
 use Ongoing\Inventarios\Entities\Productos;
 use Ongoing\Sucursales\Entities\Sucursales;
+use Ongoing\Inventarios\Events\TraspasoRecibido;
 use App\Repositories\UsuarioRepositoryEloquent;
-use Illuminate\Support\Facades\DB;
-
-use stdClass;
 
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\Messaging\CloudMessage;
@@ -33,6 +34,7 @@ class TraspasosController extends Controller
     protected $productosPendientes;
     protected $notificaciones;
     protected $usuariosAutorizados;
+    protected $inventario;
 
     public function __construct(
         UsuarioRepositoryEloquent $usuarios,
@@ -40,7 +42,8 @@ class TraspasosController extends Controller
         TraspasosProductosRepositoryEloquent $traspasosProductos,
         ProductosPendientesTraspasoRepositoryEloquent $productosPendientes,
         NotificacionesRepositoryEloquent $notificaciones,
-        UsuariosautorizadosRepositoryEloquent $usuariosAutorizados
+        UsuariosautorizadosRepositoryEloquent $usuariosAutorizados,
+        InventarioRepositoryEloquent $inventario,
     ) {
         $this->usuarios = $usuarios;
         $this->traspasos = $traspasos;
@@ -48,6 +51,13 @@ class TraspasosController extends Controller
         $this->productosPendientes = $productosPendientes;
         $this->notificaciones = $notificaciones;
         $this->usuariosAutorizados = $usuariosAutorizados;
+        $this->inventario = $inventario;
+    }
+
+    public function index()
+    {
+        Gate::authorize('access-granted', '/inventarios/traspasos');
+        return view('inventarios::traspasos');
     }
 
     public function getTraspaso($traspaso_id)
@@ -79,13 +89,17 @@ class TraspasosController extends Controller
         }
     }
 
+    /**
+     * Retorna traspasos pendientes de la sucursal destino
+     * @param mixed $sucursal_id
+     */
     public function getTraspasoSucursal($sucursal_id)
     {
         try {
 
             $traspasos = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino'])
                 ->where('estatus', 1)
-                ->where('sucursal_origen_id', $sucursal_id)
+                ->where('sucursal_destino_id', $sucursal_id)
                 ->get();
 
             if ($traspasos->isEmpty()) {
@@ -114,13 +128,11 @@ class TraspasosController extends Controller
     public function saveTraspaso(Request $request)
     {
         try {
+
             $sucursal_origen_id = $request->sucursal_origen_id;
             $sucursal_destino_id = $request->sucursal_destino_id;
 
             $inputTraspasos = [];
-            $inputProdTraspasos = [];
-            $productosInexistentes = [];
-            $productosTraspasados = [];
 
             $inputTraspasos['sucursal_origen_id'] = $sucursal_origen_id;
             $inputTraspasos['sucursal_destino_id'] = $sucursal_destino_id;
@@ -129,66 +141,71 @@ class TraspasosController extends Controller
             $inputTraspasos['asignado_a'] = $request->asignado_a;
             $inputTraspasos['comentarios'] = $request->comentarios;
 
-            foreach ($request->productos as $producto) {
-                $productoExistente = Productos::find($producto['producto_id']);
-
-                if (!$productoExistente) {
-                    $productosInexistentes[] = $producto['producto_id'];
-                } else {
-                    $productosTraspasados[] = $producto;
-                    $productosTraspasadosDelete[] = $producto['producto_id'];
-                }
+            if(empty($request->productos)){
+                return response()->json([
+                    'status' => false,
+                    'message' => "No se han enviado productos para traspasar.",
+                ], 200);
             }
 
             $traspaso = $this->traspasos->create($inputTraspasos);
 
-            foreach ($productosTraspasados as $producto) {
-                $inputProdTraspasos['traspaso_id'] = $traspaso->id;
-                $inputProdTraspasos['producto_id'] = $producto['producto_id'];
-                $inputProdTraspasos['cantidad'] = $producto['cantidad'];
-                $inputProdTraspasos['cantidad_recibida'] = $producto['cantidad_recibida'];
+            foreach ($request->productos as $row) {
+                $inputProdTraspasos = [];
+                $prodPendiente = $this->productosPendientes->find($row['producto_id']);
+                if($row['cantidad'] > 0){
+                    $inputProdTraspasos['traspaso_id'] = $traspaso->id;
+                    $inputProdTraspasos['producto_id'] = $prodPendiente->producto_id;
+                    $inputProdTraspasos['cantidad'] = $row['cantidad'];
+                    $inputProdTraspasos['cantidad_recibida'] = 0;
 
-                $this->traspasosProductos->create($inputProdTraspasos);
-            }
+                    if(!empty($row['foto'])){
+                        $cadena = "";
+                        foreach ($row['foto'] as $byte) {
+                            $cadena .= chr($byte);
+                        }
+                        $fname = md5(uniqid('', true)) . '.jpg';
+                        Storage::disk('public')->put("traspasos/fotos/{$fname}" , $cadena);
+                        $inputProdTraspasos['foto'] = "traspasos/fotos/{$fname}";
+                    }
 
-            if (!empty($productosTraspasadosDelete)) {
-                $this->productosPendientes
-                    ->where('sucursal_origen', $sucursal_origen_id)
-                    ->where('sucursal_destino', $sucursal_destino_id)
-                    ->whereIn('producto_id', $productosTraspasadosDelete)
-                    ->delete();
-            } else {
-                Log::info('No existen productos existentes en productosPendientes.');
+                    $inv = $this->inventario->scopeQuery(function($query) use($row){
+                        return $query->limit($row['cantidad']);
+                    })->findWhere(['sucursal_id' => $sucursal_origen_id, 'producto_id' => $prodPendiente->producto_id, ['cantidad_disponible', '>', 0], 'estatus' => 1]);
+
+                    $inputProdTraspasos['inventario_ids'] = $inv->modelKeys();
+                    $this->traspasosProductos->create($inputProdTraspasos);
+
+                    $inv->each(function($item){
+                        $item->estatus = 2;
+                        $item->save();
+                    });
+                }
+                $prodPendiente->delete();
             }
 
             $usuarioAutorizado = $this->usuariosAutorizados 
             ->whereJsonContains('configuracion->sucursales', (int) $sucursal_destino_id)
             ->first();
             
-            if (!$usuarioAutorizado) {
-                return response()->json([
-                    'status' => false,
-                    'message' => "No se encontró un usuario autorizado para la sucursal destino.",
-                    'results' => null
-                ], 404);
+           $traspaso->load(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos']);
+            
+            if ($usuarioAutorizado) {
+                $usuario_id = $usuarioAutorizado->user_id;
+    
+                $notificacion = [
+                    'usuario_id' => $usuario_id,
+                    'traspaso_id' => $traspaso->id,
+                    'titulo' => "Nuevo traspaso desde sucursal " . $traspaso->sucursalOrigen->nombre,
+                    'mensaje' => "Se ha creado correctamente el traspaso con el ID: " . $traspaso->id
+                ];
+                $this->sendNotification($notificacion);
             }
 
-            $usuario_id = $usuarioAutorizado->user_id;
-
-            $traspasoConDetalle = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos'])->find($traspaso->id);
-
-            $notificacion = [
-                'usuario_id' => $usuario_id,
-                'traspaso_id' => $traspasoConDetalle->id,
-                'titulo' => "Nuevo traspaso desde sucursal " . $traspaso->sucursalOrigen->nombre,
-                'mensaje' => "Se ha creado correctamente el traspaso con el ID: " . $traspasoConDetalle->id
-            ];
-            $this->sendNotification($notificacion);
 
             return response()->json([
                 'status' => true,
-                'results' => $traspasoConDetalle,
-                'productos_inexistentes_ids' => $productosInexistentes,
+                'results' => $traspaso,
                 'message' => "Traspaso guardado correctamente",
             ], 200);
         } catch (\Exception $e) {
@@ -262,6 +279,8 @@ class TraspasosController extends Controller
                 }
             }
 
+            TraspasoRecibido::dispatch($traspaso);
+
             return response()->json([
                 'status' => true,
                 'results' => [
@@ -304,42 +323,57 @@ class TraspasosController extends Controller
 
             $productosPendientes = $this->productosPendientes
                 ->where('sucursal_origen', $sucursal->id)
-                ->select('producto_id', 'sucursal_origen', 'sucursal_destino', DB::raw('SUM(cantidad) as total_cantidad'))
-                ->with(['sucursalOrigen', 'sucursalDestino', 'producto.categoria', 'producto.subcategoria'])
-                ->groupBy('producto_id', 'sucursal_origen', 'sucursal_destino')
+                ->with(['sucursalDestino', 'producto.categoria', 'producto.subcategoria'])
                 ->get();
 
-            $productos = $productosPendientes->map(function ($productoPendiente) {
-                if (!$productoPendiente->producto) {
-                    return null;
-                }
+            $grouped = $productosPendientes->groupBy('sucursal_destino');
 
-                return [
-                    'id' => $productoPendiente->producto->id,
-                    'nombre' => $productoPendiente->producto->nombre,
-                    'sku' => $productoPendiente->producto->sku,
-                    'categoria' => $productoPendiente->producto->categoria,
-                    'subcategoria' => $productoPendiente->producto->subcategoria,
-                    'cantidad' => $productoPendiente->total_cantidad,
-                    'sucursal_origen' => [
-                        'id' => $productoPendiente->sucursalOrigen->id ?? null,
-                        'nombre' => $productoPendiente->sucursalOrigen->nombre ?? null,
-                    ],
-                    'sucursal_destino' => [
-                        'id' => $productoPendiente->sucursalDestino->id ?? null,
-                        'nombre' => $productoPendiente->sucursalDestino->nombre ?? null,
-                    ],
+            $productosxsucursal = [];
+            foreach($grouped as $productosPendienteSuc){
+                $tmpProductosSuc = [
+                    'sucursal_destino_id' => $productosPendienteSuc->first()->sucursalDestino->id,
+                    'sucursal_destino_nombre' => $productosPendienteSuc->first()->sucursalDestino->nombre,
+                    'productos' => []
                 ];
-            })->filter();
+                $tmpProductosPend = [];
+                foreach($productosPendienteSuc as $row){
+                    if(empty($tmpProductosPend[$row->producto->id])){
+                        $tmpProductosPend[$row->producto->id] = [
+                            'producto_id' => $row->producto->id,
+                            'nombre' => $row->producto->nombre,
+                            'sku' => $row->producto->sku,
+                            'categoria' => $row->producto->categoria->only(['id', 'nombre', 'imagen']),
+                            'subcategoria' => $row->producto->subcategoria->only(['id', 'nombre']),
+                            'cantidad' => 0,
+                            'fechas' => []
+                        ];
+                    }
+
+                    $tmpProductosPend[$row->producto->id]['cantidad'] += $row->cantidad;
+
+                    $stockProd = $this->inventario->findWhere(['sucursal_id' => $sucursal->id, 'producto_id' => $row->producto->id, ['cantidad_disponible', '>', 0], 'fecha_caducidad' => $row->fecha_caducidad]);
+                    
+                    $tmpProductosPend[$row->producto->id]['fechas'][] = [
+                        'producto_pendiente_id' => $row->id,
+                        'fecha_caducidad' => $row->fecha_caducidad,
+                        'cantidad' => $row->cantidad,
+                        'stock' => $stockProd->sum('cantidad_disponible')
+                    ];
+                    
+                }
+                
+                $tmpProductosSuc['productos'] = array_values($tmpProductosPend);
+
+                $productosxsucursal[] = $tmpProductosSuc;
+            };
 
             return response()->json([
                 'status' => true,
                 'results' => [
-                    'sucursal_origen' => $sucursal->id,
-                    'nombre' => $sucursal->nombre,
-                    'productos' => $productos
-                ],
-                'message' => 'Productos pendientes.'
+                    'sucursal_origen_id' => $sucursal->id,
+                    'sucursal_origen_nombre' => $sucursal->nombre,
+                    'productos_pendientes' => array_values($productosxsucursal)
+                ]
             ], 200);
         } catch (\Exception $e) {
             Log::info("TraspasosController->traspasosPendientes() | " . $e->getMessage() . " | " . $e->getLine());
@@ -361,20 +395,33 @@ class TraspasosController extends Controller
             $sucursal_destino = $request->sucursal_destino_id;
             $producto_id = $request->producto_id;
             $cantidad = $request->cantidad;
+            $fecha_caducidad = $request->fecha_caducidad;
 
-            $pendienteRegistrado = $this->productosPendientes->updateOrCreate(
-                ['id' => $request->id],
-                [
-                    'sucursal_origen' => $sucursal_origen,
-                    'sucursal_destino' => $sucursal_destino,
-                    'producto_id' => $producto_id,
-                    'cantidad' => $cantidad,
-                ]
-            );
+            if(!empty($request->id)){
+                $prodPendiente = $this->productosPendientes->find($request->id);
+                $prodPendiente->cantidad = $cantidad;
+                $prodPendiente->save();
+            }else{
+                $prodPendiente = $this->productosPendientes->findWhere(['sucursal_origen' => $sucursal_origen, 'sucursal_destino' => $sucursal_destino, 'producto_id' => $producto_id, 'fecha_caducidad' => $fecha_caducidad])->first();
+                if(!empty($prodPendiente)){
+                    $prodPendiente->cantidad += $cantidad;
+                    $prodPendiente->save();
+                }else{
+                    $prodPendiente = $this->productosPendientes->create(
+                        [
+                            'sucursal_origen' => $sucursal_origen,
+                            'sucursal_destino' => $sucursal_destino,
+                            'producto_id' => $producto_id,
+                            'cantidad' => $cantidad,
+                            'fecha_caducidad' => $fecha_caducidad
+                        ]
+                    );
+                }
+            }
 
             return response()->json([
                 'status' => true,
-                'results' => $pendienteRegistrado,
+                'results' => $prodPendiente,
             ], 200);
         } catch (\Exception $e) {
             Log::info("TraspasosController->saveTraspaso() | " . $e->getMessage() . " | " . $e->getLine());

@@ -14,6 +14,17 @@
                     <div class="card-toolbar">
                         <div class="px-2">
                             <v-select 
+                                class="form-control me-3 min-w-150px"
+                                v-model="estatusFilter"
+                                :options="[{id:0,text:'DRAFT'},{id:1,text:'ACTIVE'},{id:2,text:'ARCHIVED'}]"
+                                data-allow-clear="true"
+                                data-placeholder="Filtrar por estatus"
+                                data-minimum-results-for-search ="Infinity"
+                                >
+                            </v-select>
+                        </div>
+                        <div class="px-2">
+                            <v-select 
                                 class="form-control me-3"
                                 v-model="categoriaFilter"
                                 :options="listaCategorias"
@@ -57,6 +68,11 @@
                         <div slot="subcategoria" slot-scope="props">
                             [[props.row.subcategoria?.nombre ?? 'N/A']]
                         </div>
+                        <div slot="estatus_desc" slot-scope="props">
+                            <span v-show="props.row.estatus == 1" class="badge badge-success">[[props.row.estatus_desc]]</span>
+                            <span v-show="props.row.estatus == 2" class="badge badge-dark">[[props.row.estatus_desc]]</span>
+                            <span v-show="props.row.estatus == 0" class="badge badge-warning">[[props.row.estatus_desc]]</span>
+                        </div>
                         <div slot="acciones" slot-scope="props">
                             <button type="button" class="btn btn-icon btn-sm btn-success me-2" title="Ver/Editar Producto" data-bs-toggle="modal" data-bs-target="#kt_modal_add_producto" @click="selectProducto(props.row)">
                                 <i class="fas fa-pencil"></i>
@@ -64,10 +80,10 @@
                             <button type="button" class="btn btn-icon btn-sm btn-primary me-2" title="Multimedia" data-bs-toggle="modal" data-bs-target="#kt_modal_producto_multimedia" @click="getMultimedia(props.row.id, true)" id="openMultimediaBtn">
                                 <i class="fas fa-photo-film"></i>
                             </button>
-                            <button type="button" class="btn btn-icon btn-sm btn-danger me-2" title="Eliminar Producto" @click="deleteProducto(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
+                            {{-- <button type="button" class="btn btn-icon btn-sm btn-danger me-2" title="Eliminar Producto" @click="deleteProducto(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
                                 <span class="indicator-label"><i class="fas fa-trash-alt"></i></span>
                                 <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
-                            </button>
+                            </button> --}}
                         </div>
                     </v-client-table>
                     <!--end::Table-->
@@ -275,12 +291,20 @@
                             <div v-else>
                                 <div>
                                     <v-client-table :data="multimedia" :columns="columnsMultimedia" :options="optionsMultimedia">
+                                        <div slot="portada" slot-scope="props">
+                                            <span v-if="props.row.portada == 1"><i class="fa-solid fa-star"></i></span>
+                                            <span v-else></span>
+                                        </div>
                                         <div slot="preview" slot-scope="props">
                                             <img :src="props.row.url" class="img-fluid" style="max-width: 100px;">
                                         </div>
                                         <div slot="acciones" slot-scope="props">
                                             <button type="button" class="btn btn-icon btn-sm btn-danger" title="Eliminar Marca" @click.prevent="deleteMultimedia(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
                                                 <span class="indicator-label"><i class="fas fa-trash-alt"></i></span>
+                                                <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
+                                            </button>
+                                            <button type="button" class="btn btn-icon btn-sm btn-success" title="Seleccionar portada" @click.prevent="setPortada(props.row.id)" :data-kt-indicator="props.row.seleccionando ? 'on' : 'off'">
+                                                <span class="indicator-label"><i class="fa-solid fa-square-pen"></i></span>
                                                 <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
                                             </button>
                                         </div>
@@ -315,30 +339,30 @@
                 subcategorias: [],
                 subcategorias_filter: [],
                 colecciones: [],
-                columns: ['id', 'sku', 'nombre', 'descripcion', 'categoria', 'subcategoria', 'precio', 'acciones'],
+                columns: ['id', 'sku', 'nombre', 'categoria', 'subcategoria', 'precio', 'estatus_desc', 'acciones'],
                 options: {
                     headings: {
                         id: 'ID',
                         sku: 'Sku',
                         nombre: 'Nombre',
-                        descripcion: 'Descripción',
                         categoria: 'Categoría',
                         subcategoria: 'Subcategoría',
                         precio: 'Precio',
+                        estatus_desc: 'Estatus',
                         acciones: 'Acciones',
                     },
                     columnsClasses: {
                         id: 'align-middle px-2 ',
                         sku: 'align-middle ',
                         nombre: 'align-middle ',
-                        descripcion: 'align-middle text-center ',
                         categoria: 'align-middle text-center ',
                         subcategoria: 'align-middle text-center ',
                         precio: 'align-middle text-center',
+                        estatus_desc: 'align-middle text-center ',
                         acciones: 'align-middle text-center px-2 ',
                     },
-                    sortable: ['sku', 'nombre', 'descripcion', 'categoria', 'subcategoria', 'precio'],
-                    filterable: ['sku', 'nombre', 'descripcion', 'categoria', 'subcategoria', 'precio'],
+                    sortable: ['sku', 'nombre', 'estatus_desc', 'categoria', 'subcategoria', 'precio'],
+                    filterable: ['sku', 'nombre', 'estatus_desc', 'categoria', 'subcategoria', 'precio'],
                     skin: 'table table-sm table-rounded table-striped border align-middle table-row-bordered fs-6',
                     columnsDropdown: true,
                     resizableColumns: false,
@@ -360,14 +384,16 @@
                         columns: "Columnas",
                     },
                 },
-                columnsMultimedia: ['preview', 'file_name', 'acciones'],
+                columnsMultimedia: ['portada','preview', 'file_name', 'acciones'],
                 optionsMultimedia: {
                     headings: {
+                        portada: '',
                         preview: 'Preview',
                         file_name: 'Nombre',
                         acciones: 'Acciones',
                     },
                     columnsClasses: {
+                        portada: 'align-middle px-2 text-center ',
                         preview: 'align-middle px-2 ',
                         file_name: 'align-middle ',
                         acciones: 'align-middle text-center px-2 ',
@@ -399,6 +425,7 @@
                 categoriaFilter: null,
                 subcategoriaFilter: null,
                 coleccionFilter: null,
+                estatusFilter: null,
 
                 idProducto: null,
                 producto: null,
@@ -753,13 +780,55 @@
 
                                 index = vm.multimedia.findIndex(item => item.id == idMultimedia);
                                 if(index >= 0){
-                                    vm.$set(vm.multimedia[index], 'eliminando', true);
+                                    vm.$set(vm.multimedia[index], 'eliminando', false);
                                 }
                             }).always(function(event, xhr, settings) {
                                 vm.loading = false;
                             });
                         }
                     })
+                },
+                setPortada(idMultimedia){
+                    let vm = this;
+                    Swal.fire({
+                        title: '¿Estas seguro de que deseas seleccionar esta imagen como la portada?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Si, seleccionar',
+                        cancelButtonText: 'Cancelar',
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            let index = vm.multimedia.findIndex(item => item.id == idMultimedia);
+                            if(index >= 0){
+                                vm.$set(vm.multimedia[index], 'seleccionando', true);
+                            }
+                            $.ajax({
+                                type: 'POST',
+                                url: "/api/productos/establecer-portada",
+                                data: {
+                                    imagen_id: idMultimedia,
+                                },
+                            }).done(function(res) {
+                                vm.multimedia = res.imagenes;
+
+                                Swal.fire(
+                                    'Portada seleccionada',
+                                    'Se ha establecido la portada con éxito',
+                                    'success'
+                                );
+                            }).fail(function(jqXHR, textStatus) {
+                                console.log("Request failed setPortada: " + textStatus, jqXHR);
+                                Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
+                            }).always(function(event, xhr, settings) {
+                                index = vm.multimedia.findIndex(item => item.id == idMultimedia);
+                                if(index >= 0){
+                                    vm.$set(vm.multimedia[index], 'seleccionando', false);
+                                }
+                            });
+                        }
+                    });
                 },
                 getCaracteristicasSubcategoria() {
                     let vm = this;
@@ -951,7 +1020,7 @@
             computed: {
                 listaProductos() {
                     let vm = this;
-                    if (!vm.categoriaFilter && !vm.subcategoriaFilter && !vm.coleccionFilter) {
+                    if (!vm.categoriaFilter && !vm.subcategoriaFilter && !vm.coleccionFilter && vm.estatusFilter == null) {
                         return vm.productos;
                     }
                     let productos = vm.productos?.filter(function(e) {
@@ -962,8 +1031,9 @@
                         let categoriaFilter = vm.categoriaFilter ? e.categoria_id == vm.categoriaFilter : true;
                         let subcategoriaFilter = vm.subcategoriaFilter ? e.subcategoria_id == vm.subcategoriaFilter : true;
                         let coleccionFilter = vm.coleccionFilter ? col != null : true;
+                        let estatusFilter = vm.estatusFilter != null ? e.estatus == vm.estatusFilter  : true;
 
-                        return categoriaFilter && subcategoriaFilter && coleccionFilter;
+                        return categoriaFilter && subcategoriaFilter && coleccionFilter && estatusFilter;
                     }) ?? [];
                     return productos;
                 },

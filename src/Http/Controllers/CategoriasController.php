@@ -73,7 +73,7 @@ class CategoriasController extends Controller
 
             if ($request->file('imagen')) {
                 $file = $request->file('imagen');
-                $path = $file->store('categorias');
+                $path = $file->store('categorias', 'public');
                 $info['imagen'] = $path;
             }
 

@@ -51,7 +51,7 @@ class ProductosController extends Controller
         try {
             $productos = $this->productos
                 ->with(["categoria", "subcategoria", "colecciones"])
-                ->where(['estatus' => 1])->get();
+                ->get();
 
             return response()->json([
                 'status' => true,

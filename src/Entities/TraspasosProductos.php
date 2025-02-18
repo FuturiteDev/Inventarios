@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 use Ongoing\Inventarios\Entities\Productos;
 use Prettus\Repository\Contracts\Transformable;
 use Prettus\Repository\Traits\TransformableTrait;
+use Illuminate\Database\Eloquent\Casts\AsArrayObject;
+
 
 /**
  * Class TraspasosProductos.
@@ -27,6 +29,11 @@ class TraspasosProductos extends Model implements Transformable
         'cantidad',
         'cantidad_recibida',
         'foto',
+        'inventario_ids',
+    ];
+
+    protected $casts = [
+        'inventario_ids' => AsArrayObject::class
     ];
 
     /**
