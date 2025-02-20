@@ -215,8 +215,8 @@ class TraspasosController extends Controller
                 $usuario_id = $usuarioAutorizado->user_id;
     
                 $notificacion = [
-                    'usuario_id' => $usuario_id,
-                    'traspaso_id' => $traspaso->id,
+                    'usuario_id' => $usuario_id ?? null,
+                    'traspaso_id' => $traspaso->id ?? null,
                     'titulo' => "Nuevo traspaso desde sucursal " . $traspaso->sucursalOrigen->nombre,
                     'mensaje' => "Se ha creado correctamente el traspaso con el ID: " . $traspaso->id
                 ];

@@ -17,13 +17,23 @@ use Ongoing\Sucursales\Entities\Sucursales;
 use Ongoing\Sucursales\Repositories\SucursalesRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\ProductosRepositoryEloquent;
 use App\Mail\SendBrevoMail;
+use App\Repositories\UsuarioRepositoryEloquent;
 use Ongoing\Empleados\Entities\Empleado;
+use App\Repositories\NotificacionesRepositoryEloquent;
+
+use Kreait\Firebase\Factory;
+use Kreait\Firebase\Messaging\CloudMessage;
+use Kreait\Firebase\Messaging\AndroidConfig;
+use Kreait\Firebase\Messaging\ApnsConfig;
+
 
 class InventarioController extends Controller
 {
     protected $inventario;
     protected $sucursales;
     protected $productos;
+    protected $usuarios;
+    protected $notificaciones;
 
     /**
      * Summary of __construct
@@ -33,11 +43,15 @@ class InventarioController extends Controller
     public function __construct(
         InventarioRepositoryEloquent $inventario,
         SucursalesRepositoryEloquent $sucursales,
-        ProductosRepositoryEloquent $productos
+        ProductosRepositoryEloquent $productos,
+        UsuarioRepositoryEloquent $usuarios,
+        NotificacionesRepositoryEloquent $notificaciones
     ) {
         $this->inventario = $inventario;
         $this->sucursales = $sucursales;
         $this->productos = $productos;
+        $this->usuarios = $usuarios;
+        $this->notificaciones = $notificaciones;
     }
 
     /**
@@ -134,6 +148,10 @@ class InventarioController extends Controller
     {
         try {
 
+            // OPCIONAL: EMPLEADO_NUMERO
+            // VALIDAR SI SE RECIBE EMPLEADO_NUMERO, MANDAR NOTIFICACION MOVIL
+            // SE AGREGO INVENTARIO, PRODUCTO Y DATA
+
             // Validaciones
             $validator = Validator::make($request->all(), [
                 'sucursal_id' => 'required|exists:sucursales,id',
@@ -150,6 +168,32 @@ class InventarioController extends Controller
                     'message' => "Algun producto no existe en la base de datos",
                     "info" => $validator->errors(),
                 ], 400);
+            }
+
+            if ($request->numero_empleado) {
+                $data = [
+                    'sucursal_id' => $request->sucursal_id,
+                    'productos' => []
+                ];
+            
+                foreach ($request->productos as $producto) {
+                    $data['productos'][] = [
+                        'producto_id' => $producto['id'],
+                        'cantidad' => $producto['cantidad'],
+                        'fecha_elaboracion' => $producto['fecha_elaboracion'] ?? null,
+                        'fecha_caducidad' => $producto['fecha_caducidad'] ?? null
+                    ];
+                }
+            
+                $notificacion = [
+                    'usuario_id' => $request->usuario_id ?? null,
+                    'traspaso_id' => $request->traspaso_id ?? null,
+                    'titulo' => "Inventarios agregados correctamente.",
+                    'data' => $data,
+                    'mensaje' => "Inventarios agregados."
+                ];
+            
+                $this->sendNotification($notificacion);
             }
 
             $sucursal_id = $request->sucursal_id;
@@ -278,6 +322,8 @@ class InventarioController extends Controller
             $fecha_caducidad = $request->fecha_caducidad;
             $numero_empleado = $request->numero_empleado;
             $comentarios = $request->comentarios;
+            $usuario_id = $request->usuario_id;
+
 
             $inventarioActual = $this->inventario
                 ->where('sucursal_id', $sucursal_id)
@@ -290,11 +336,20 @@ class InventarioController extends Controller
 
             $cantidadActual = 0;
 
+            $titulo = "El inventario no aumento ni disminuyo.";
+            $mensaje = "El inventario sigue igual.";
+
             if ($inventarioActual->count() > 0) {
                 $cantidadActual = $inventarioActual->sum('cantidad_total');
                 $diferencia = $cantidad - $cantidadActual;
 
+                $titulo = "Se agrego correctamente el inventario.";
+                $mensaje = "Se agrego el producto " . $producto_id . " a stock por la cantidad de " . $cantidad . ", diferencia con la cantidad actual (" . $cantidadActual . ") es de " . $diferencia;
+
                 if ($diferencia < 0) {
+
+                    $titulo = "Se disminuyo correctamente el inventario.";
+                    $mensaje = "Se disminuyo el producto " . $producto_id . " la cantidad de " . $cantidad . ", diferencia con la cantidad actual (" . $cantidadActual . ") es de " . $diferencia;
                     $registros = $inventarioActual->take(abs($diferencia));
 
                     foreach ($registros as $registro) {
@@ -366,6 +421,23 @@ class InventarioController extends Controller
                 ->select('fecha_caducidad', DB::raw('SUM(cantidad_total) as cantidad_total'))
                 ->groupBy('fecha_caducidad')
                 ->get();
+
+
+            $data = [];
+
+            $data['sucursal_id'] = $sucursal_id;
+            $data['producto_id'] = $producto_id;
+            $data['fecha_caducidad'] = $fecha_caducidad;
+
+            $notificacion = [
+                'usuario_id' => $usuario_id,
+                'traspaso_id' => null,
+                'titulo' => $titulo,
+                'data' => $data,
+                'mensaje' => $mensaje
+            ];
+
+            $this->sendNotification($notificacion);
 
             return response()->json([
                 'status' => true,
@@ -484,6 +556,51 @@ class InventarioController extends Controller
                 'status' => false,
                 'message' => "[ERROR] InventarioController->revisionInventario() | " . $e->getMessage()
             ], 500);
+        }
+    }
+
+
+    public function sendNotification($request)
+    {
+        try {
+
+            $this->notificaciones->create([
+                'usuario_id' => $request['usuario_id'],
+                'trapaso_id' => $request['traspaso_id'],
+                'titulo' => $request['titulo'],
+                'mensaje' => $request['mensaje'],
+                'data' => $request['data'],
+                'leido' => $request['leido'] ?? 0
+            ]);
+
+            $FcmToken = $this->usuarios->whereNotNull('device_token')->where('id', $request['usuario_id'])->first();
+
+            if ($FcmToken) {
+                $firebase = (new Factory)->withServiceAccount(storage_path() . '/app/apetit-60f6a-firebase-adminsdk-fbsvc-cb77effb73.json');
+
+                $messaging = $firebase->createMessaging();
+                $message = CloudMessage::withTarget('token', $FcmToken->device_token)
+                    ->withNotification(["title" => $request['titulo'], "body" => $request['mensaje']])
+                    ->withAndroidConfig(
+                        AndroidConfig::fromArray(['notification' => ["title" => $request['titulo'], "body" => $request['mensaje'], 'channel_id' => 'general']])
+                            ->withSound('cash.mp3')
+                    )
+                    ->withApnsConfig(
+                        ApnsConfig::new()
+                            ->withApsField('alert', ["title" => $request['titulo'], "body" => $request['mensaje']])
+                            ->withSound('cash.aiff')
+                            ->withBadge(1)
+                    );
+
+                $messaging->send($message);
+            }
+
+            return ['success' => true];
+        } catch (\Throwable $e) {
+            Log::info("[TraspasosController-sendNotification] - ERROR " . $e->getMessage());
+            report($e);
+
+            return ['success' => false];
         }
     }
 }
