@@ -35,7 +35,7 @@ class Traspasos extends Model implements Transformable
     ];
 
 
-    protected $appends = ['estatus_desc'];
+    protected $appends = ['estatus_desc', 'tipo_desc'];
 
 
     public function getEstatusDescAttribute()
@@ -47,6 +47,17 @@ class Traspasos extends Model implements Transformable
                 return 'En proceso';
             case 0:
                 return 'Cancelado';
+            default:
+                return '-';
+        }
+    }
+
+    public function getTipoDescAttribute()
+    {
+        switch ($this->estatus) {
+            case 1: return 'A otra Sucursal';
+            case 2: return 'Para cliente';
+            case 3: return 'Merma';
             default:
                 return '-';
         }
