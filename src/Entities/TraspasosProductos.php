@@ -30,6 +30,7 @@ class TraspasosProductos extends Model implements Transformable
         'cantidad_recibida',
         'foto',
         'inventario_ids',
+        'fecha_caducidad',
     ];
 
     protected $casts = [

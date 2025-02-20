@@ -34,6 +34,24 @@ class Traspasos extends Model implements Transformable
         'estatus',
     ];
 
+
+    protected $appends = ['estatus_desc'];
+
+
+    public function getEstatusDescAttribute()
+    {
+        switch ($this->estatus) {
+            case 2:
+                return 'Finalizado';
+            case 1:
+                return 'En proceso';
+            case 0:
+                return 'Cancelado';
+            default:
+                return '-';
+        }
+    }
+
     /**
      * Relación con la tabla 'sucursales' (origen)
      */

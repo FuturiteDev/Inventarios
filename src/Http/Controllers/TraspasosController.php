@@ -65,15 +65,35 @@ class TraspasosController extends Controller
         try {
 
             $traspaso = $this->traspasos
-            ->with([
-                'sucursalOrigen',
-                'sucursalDestino',
-                'empleado:id,nombre,no_empleado',
-                'empleadoAsignado:id,nombre,no_empleado',
-                'traspasoProductos.producto'
-            ])
+                ->with([
+                    'sucursalOrigen',
+                    'sucursalDestino',
+                    'empleado:id,nombre,no_empleado',
+                    'empleadoAsignado:id,nombre,no_empleado',
+                    // 'traspasoProductos.producto'
+                ])
+                ->find($traspaso_id);
 
-            ->find($traspaso_id);
+            $traspasoProductos = $traspaso->traspasoProductos()->with('producto')->get();
+            $detalle = [];
+            foreach($traspasoProductos->groupBy('producto_id') as $gpo){
+                $tmpProd = $gpo->first()->producto->only('id', 'nombre', 'sku');
+                $tmpProd['cantidad_total'] = 0;
+                $tmpProd['fechas'] = [] ;
+                foreach($gpo as $row){
+                    $tmpProd['cantidad_total'] += $row->cantidad;
+                    $tmpProd['fechas'][] = [
+                        'id' => $row->id,
+                        'fecha_caducidad' => $row->fecha_caducidad,
+                        'cantidad' => $row->cantidad,
+                        'cantidad_recibida' => $row->cantidad_recibida,
+                    ];
+                }
+                $detalle[] = $tmpProd;
+            }
+
+            $traspaso->detalle = $detalle;
+            
             return response()->json([
                 'status' => true,
                 'results' => $traspaso
@@ -156,6 +176,7 @@ class TraspasosController extends Controller
                 if($row['cantidad'] > 0){
                     $inputProdTraspasos['traspaso_id'] = $traspaso->id;
                     $inputProdTraspasos['producto_id'] = $prodPendiente->producto_id;
+                    $inputProdTraspasos['fecha_caducidad'] = $prodPendiente->fecha_caducidad;
                     $inputProdTraspasos['cantidad'] = $row['cantidad'];
                     $inputProdTraspasos['cantidad_recibida'] = 0;
 
@@ -171,7 +192,7 @@ class TraspasosController extends Controller
 
                     $inv = $this->inventario->scopeQuery(function($query) use($row){
                         return $query->limit($row['cantidad']);
-                    })->findWhere(['sucursal_id' => $sucursal_origen_id, 'producto_id' => $prodPendiente->producto_id, ['cantidad_disponible', '>', 0], 'estatus' => 1]);
+                    })->findWhere(['sucursal_id' => $sucursal_origen_id, 'producto_id' => $prodPendiente->producto_id, 'fecha_caducidad' => $prodPendiente->fecha_caducidad, ['cantidad_disponible', '>', 0], 'estatus' => 1]);
 
                     $inputProdTraspasos['inventario_ids'] = $inv->modelKeys();
                     $this->traspasosProductos->create($inputProdTraspasos);
