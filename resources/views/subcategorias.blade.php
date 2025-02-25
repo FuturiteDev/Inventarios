@@ -126,7 +126,7 @@
                                                 </td>
                                                 <td>
                                                     <input type="text" v-model="caracteristica.valor" class="form-control form-control-sm" placeholder="Valor" v-if="caracteristica.tipo=='texto'">
-                                                    <input type="number" v-model="caracteristica.valor" class="form-control form-control-sm" placeholder="Valor" v-if="caracteristica.tipo=='numero'">
+                                                    <input type="number" v-model="caracteristica.valor" class="form-control form-control-sm" placeholder="Valor" v-else>
                                                 </td>
                                                 <td>
                                                     <button type="button" class="btn btn-danger btn-sm btn-icon" @click="deleteCaracteristica(index)">
