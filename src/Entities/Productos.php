@@ -41,16 +41,18 @@ class Productos extends Model implements Transformable
     protected $appends = ['estatus_desc'];
 
 
-    public function categoria() {
+    public function categoria()
+    {
         return $this->belongsTo(Categorias::class, 'categoria_id', 'id')->where('categorias.estatus', 1);
     }
 
-    public function subcategoria() {
+    public function subcategoria()
+    {
         return $this->belongsTo(SubCategoria::class, 'subcategoria_id', 'id')->where('sub_categorias.estatus', 1);
-
     }
 
-    public function colecciones() {
+    public function colecciones()
+    {
         return $this->belongsToMany(Colecciones::class, 'colecciones_productos', 'producto_id', 'coleccion_id')->where('colecciones.estatus', 1);
     }
 
@@ -64,10 +66,15 @@ class Productos extends Model implements Transformable
         return $this->hasMany(ProductosPendientesTraspaso::class);
     }
 
-    public function pedidos() {
+    public function pedidos()
+    {
         return $this->hasMany(PedidoProductos::class);
     }
 
+    public function inventarios()
+    {
+        return $this->hasMany(Inventario::class, 'producto_id');
+    }
 
     public function getEstatusDescAttribute()
     {

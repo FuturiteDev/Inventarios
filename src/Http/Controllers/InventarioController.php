@@ -175,7 +175,7 @@ class InventarioController extends Controller
                     'sucursal_id' => $request->sucursal_id,
                     'productos' => []
                 ];
-            
+
                 foreach ($request->productos as $producto) {
                     $data['productos'][] = [
                         'producto_id' => $producto['id'],
@@ -184,7 +184,7 @@ class InventarioController extends Controller
                         'fecha_caducidad' => $producto['fecha_caducidad'] ?? null
                     ];
                 }
-            
+
                 $notificacion = [
                     'usuario_id' => $request->usuario_id ?? null,
                     'traspaso_id' => $request->traspaso_id ?? null,
@@ -192,7 +192,7 @@ class InventarioController extends Controller
                     'data' => $data,
                     'mensaje' => "Inventarios agregados."
                 ];
-            
+
                 $this->sendNotification($notificacion);
             }
 
@@ -601,6 +601,57 @@ class InventarioController extends Controller
             report($e);
 
             return ['success' => false];
+        }
+    }
+
+
+    public function productosExistenciaGeneral(Request $request)
+    {
+        try {
+            $productos = $this->productos->where('estatus', 1)
+                ->with('inventarios')
+                ->get();
+
+            $sucursales = $this->sucursales->where('estatus', 1)->get();
+
+            $results = $productos->map(function ($producto) use ($sucursales) {
+                $totalExistencia = $producto->inventarios->sum('cantidad_disponible');
+
+                $sucursalData = $sucursales->map(function ($sucursal) use ($producto) {
+                    $cantidad = $producto->inventarios
+                        ->where('sucursal_id', $sucursal->id)
+                        ->sum('cantidad_disponible');
+
+                    return [
+                        'sucursal_id'         => $sucursal->id,
+                        'sucursal_nombre'     => $sucursal->nombre,
+                        'cantidad_existente'  => $cantidad,
+                    ];
+                })->filter(function ($data) {
+                    return $data['cantidad_existente'] > 0;
+                })->values();
+
+                return [
+                    'producto_id'      => $producto->id,
+                    'nombre'           => $producto->nombre,
+                    'sku'              => $producto->sku,
+                    'total_existencia' => $totalExistencia,
+                    'sucursales'       => $sucursalData,
+                ];
+            });
+
+            return response()->json([
+                'status'  => true,
+                'results' => $results
+            ], 200);
+        } catch (\Exception $e) {
+            Log::info("InventarioController->productosExistenciaGeneral() | " . $e->getMessage() . " | " . $e->getLine());
+
+            return response()->json([
+                'status'  => false,
+                'message' => "[ERROR] InventarioController->productosExistenciaGeneral() | " . $e->getMessage() . " | " . $e->getLine(),
+                'results' => null
+            ], 500);
         }
     }
 }
