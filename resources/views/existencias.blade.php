@@ -4,63 +4,100 @@
     <div id="app">
         <!--begin::Content-->
         <div id="kt_app_content" class="app-content">
-            <!--begin::Card-->
-            <div class="card card-flush" id="content-card">
-                <!--begin::Card header-->
-                <div class="card-header align-items-center py-5 gap-2 gap-md-5">
-                    <div class="card-title flex-column">
-                        <h3 class="ps-2">Existencias por Sucursal</h3>
-                    </div>
-                    <div class="card-toolbar">
-                        <div class="px-2 min-w-200px">
-                            <v-select 
-                                v-model="sucursalFilter"
-                                :options="listaSucursales"
-                                data-allow-clear="false"
-                                data-placeholder="Filtrar por sucursal">
-                            </v-select>
-                        </div>
-                        <button type="button" class="btn btn-icon btn-primary" @click="getInventario(true)">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                        </button>
-                    </div>
-                </div>
-                <!--end::Card header-->
-
-                <!--begin::Card body-->
-                <div class="card-body py-4">
-                    <div class="d-flex mb-5 justify-content-end">
-                        <div class="px-2">
-                            <div class="input-group" id="datepicker_wrapper">
-                                <span class="input-group-text">
-                                    <i class="ki-duotone ki-calendar fs-2"><span class="path1"></span><span class="path2"></span></i>
-                                </span>
-                                <input id="datepicker_input" type="text" class="form-control border-right-0" placeholder="Fecha de caducidad" v-model="fechaFilter"/>
-                                <span class="bg-white border-left-0 input-group-text">
-                                    <button type="button" class="btn-close" id="datepicker_clear"></button>
-                                </span>
+            <ul class="mt-5 nav nav-fill nav-tabs" id="myTab" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#inventarioSucursal" role="tab">Existencias por Sucursal</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#inventarioGeneral" role="tab">Existencias Generales</a>
+                </li>
+            </ul>
+            <div class="tab-content" id="myTabContent">
+                <div class="tab-pane fade show active" id="inventarioSucursal" role="tabpanel">
+                    <!--begin::Card-->
+                    <div class="card card-flush" id="content-card-sucursal">
+                        <!--begin::Card header-->
+                        <div class="card-header align-items-center py-5 gap-2 gap-md-5">
+                            <div class="card-title flex-column">
+                                <h3 class="ps-2">Existencias por Sucursal</h3>
+                            </div>
+                            <div class="card-toolbar">
+                                <div class="px-2 min-w-200px">
+                                    <v-select 
+                                        v-model="sucursalFilter"
+                                        :options="listaSucursales"
+                                        data-allow-clear="false"
+                                        data-placeholder="Filtrar por sucursal">
+                                    </v-select>
+                                </div>
+                                <button type="button" class="btn btn-icon btn-primary" @click="getInventarioSucursal(true)">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                </button>
                             </div>
                         </div>
-                    </div>
-                    <!--begin::Table-->
-                    <v-client-table v-model="listaInventario" :columns="columns" :options="options">
-                        <div slot="nombre" slot-scope="props">[[props.row.producto.nombre]]</div>
-                        <div slot="sku" slot-scope="props">[[props.row.producto.sku]]</div>
-                        <div slot="cantidad" slot-scope="props">[[props.row.cantidad_existente]]</div>
-                        <div slot="fecha_caducidad" slot-scope="props">[[props.row.fecha_caducidad | fecha]]</div>
-                        <div slot="acciones" slot-scope="props">
-                            <button type="button" class="btn btn-icon btn-sm btn-primary btn-sm me-2" title="Agregar a Traspaso" data-bs-toggle="modal" data-bs-target="#kt_modal_add_traspaso" @click="modalTraspaso(props.row)"><i class="fa-solid fa-truck-fast"></i></button>
-                            <button type="button" class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Inventario" :disabled="loading" @click="deleteInventario(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
-                                <span class="indicator-label"><i class="fas fa-trash-alt"></i></i></span>
-                                <span class="indicator-progress"><i class="fas fa-trash-alt"></i><span class="spinner-border spinner-border-sm align-middle"></span></span>
-                            </button>
+                        <!--end::Card header-->
+
+                        <!--begin::Card body-->
+                        <div class="card-body py-4">
+                            <div class="px-2 mb-5 mw-300px">
+                                <div class="input-group" id="datepicker_wrapper">
+                                    <span class="input-group-text">
+                                        <i class="ki-duotone ki-calendar fs-2"><span class="path1"></span><span class="path2"></span></i>
+                                    </span>
+                                    <input id="datepicker_input" type="text" class="form-control border-right-0" placeholder="Fecha de caducidad" v-model="fechaFilter"/>
+                                    <span class="bg-white border-left-0 input-group-text">
+                                        <button type="button" class="btn-close" id="datepicker_clear"></button>
+                                    </span>
+                                </div>
+                            </div>
+                            <!--begin::Table-->
+                            <v-client-table v-model="listaInventario" :columns="columns" :options="options">
+                                <div slot="nombre" slot-scope="props">[[props.row.producto.nombre]]</div>
+                                <div slot="sku" slot-scope="props">[[props.row.producto.sku]]</div>
+                                <div slot="cantidad" slot-scope="props">[[props.row.cantidad_existente]]</div>
+                                <div slot="fecha_caducidad" slot-scope="props">[[props.row.fecha_caducidad | fecha]]</div>
+                                <div slot="acciones" slot-scope="props">
+                                    <button type="button" class="btn btn-icon btn-sm btn-primary btn-sm me-2" title="Agregar a Traspaso" data-bs-toggle="modal" data-bs-target="#kt_modal_add_traspaso" @click="modalTraspaso(props.row)"><i class="fa-solid fa-truck-fast"></i></button>
+                                    <button type="button" class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Inventario" :disabled="loading" @click="deleteInventario(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
+                                        <span class="indicator-label"><i class="fas fa-trash-alt"></i></i></span>
+                                        <span class="indicator-progress"><i class="fas fa-trash-alt"></i><span class="spinner-border spinner-border-sm align-middle"></span></span>
+                                    </button>
+                                </div>
+                            </v-client-table>
+                            <!--end::Table-->
                         </div>
-                    </v-client-table>
-                    <!--end::Table-->
+                        <!--end::Card body-->
+                    </div>
+                    <!--end::Card-->
                 </div>
-                <!--end::Card body-->
+                <div class="tab-pane fade" id="inventarioGeneral" role="tabpanel">
+                    <!--begin::Card-->
+                    <div class="card card-flush" id="content-card-general">
+                        <!--begin::Card header-->
+                        <div class="card-header align-items-center py-5 gap-2 gap-md-5">
+                            <div class="card-title flex-column">
+                                <h3 class="ps-2">Existencias Generales</h3>
+                            </div>
+                            <div class="card-toolbar">
+                            </div>
+                        </div>
+                        <!--end::Card header-->
+
+                        <!--begin::Card body-->
+                        <div class="card-body py-4" v-if="sucursales && sucursales.length>0">
+                            <!--begin::Table-->
+                            <v-client-table v-model="inventario_general" :columns="columnsGlobal" :options="optionsGlobal">
+                                <div v-for="item in sucursales" :slot="item.id" slot-scope="props">
+                                    [[props.row.sucursales.find((i) => i.sucursal_id == item.id)?.cantidad_existente ?? '']]
+                                </div>
+                            </v-client-table>
+                            <!--end::Table-->
+                        </div>
+                        <!--end::Card body-->
+                    </div>
+                    <!--end::Card-->
+                </div>
             </div>
-            <!--end::Card-->
         </div>
         <!--end::Content-->
 
@@ -137,7 +174,7 @@
                 sesion: {!! Auth::user() !!},
                 inventario:[],
                 sucursales: [],
-                productos: [],
+                inventario_general: [],
                 columns: ['id','nombre','sku','cantidad','fecha_caducidad','acciones'],
                 options: {
                     headings: {
@@ -197,28 +234,31 @@
 
                 validator: null,
                 loading: false,
-                blockUI: null,
-                requestGet: null,
+                blockUISucursal: null,
+                blockUIGeneral: null,
             }),
             mounted() {
                 let vm = this;
                 vm.$forceUpdate();
 
-                let container = document.querySelector('#content-card');
+                let container = document.querySelector('#content-card-sucursal');
                 if (container) {
-                    vm.blockUI = new KTBlockUI(container);
+                    vm.blockUISucursal = new KTBlockUI(container);
                 }
+
+                container = document.querySelector('#content-card-general');
+                if (container) {
+                    vm.blockUIGeneral = new KTBlockUI(container);
+                }
+
                 $("#kt_modal_add_traspaso").on('hidden.bs.modal', event => {
                     vm.validator.resetForm();
                     vm.traspaso_model = {};
                 });
 
-                $("#kt_modal_add_traspaso").on('shown.bs.modal', event => {
-                });
-
                 vm.formValidate();
                 vm.getSucursales();
-                vm.getProductos();
+                vm.getInventarioGeneral();
             },
             methods: {
                 getSucursales() {
@@ -229,39 +269,60 @@
                             vm.sucursales = res.results;
                             vm.$nextTick(() => {
                                 vm.sucursalFilter = res.results[0].id;
-                                vm.getInventario(true, res.results[0].id);
+                                vm.getInventarioSucursal(true, res.results[0].id);
                             });
                         }, 'json'
                     );
                 },
-                getProductos() {
-                    let vm = this;
-                    $.get(
-                        '/api/productos/all',
-                        res => {
-                            vm.productos = res.results;
-                        }, 'json'
-                    );
-                },
-                getInventario(showLoader, idSucursal){
+                getInventarioGeneral(showLoader) {
                     let vm = this;
                     if (showLoader) {
-                        if (!vm.blockUI) {
-                            let container = document.querySelector('#content-card');
+                        if (!vm.blockUIGeneral) {
+                            let container = document.querySelector('#content-card-general');
                             if (container) {
-                                vm.blockUI = new KTBlockUI(container);
-                                vm.blockUI.block();
+                                vm.blockUIGeneral = new KTBlockUI(container);
+                                vm.blockUIGeneral.block();
                             }
                         } else {
-                            if (!vm.blockUI.isBlocked()) {
-                                vm.blockUI.block();
+                            if (!vm.blockUIGeneral.isBlocked()) {
+                                vm.blockUIGeneral.block();
                             }
                         }
                     }
 
-                    if (vm.requestGet) {
-                        vm.requestGet.abort();
-                        vm.requestGet = null;
+                    vm.loading = true;
+
+                    $.ajax({
+                        url: '/api/inventarios/existencia-general',
+                        type: 'GET',
+                    }).done(function (res) {
+                        vm.inventario_general = res.results;
+                    }).fail(function (jqXHR, textStatus) {
+                        if (textStatus != 'abort') {
+                            console.log("Request failed getInventarioGeneral: " + textStatus, jqXHR);
+                        }
+                    }).always(function () {
+                        vm.loading = false;
+
+                        if (vm.blockUIGeneral && vm.blockUIGeneral.isBlocked()) {
+                            vm.blockUIGeneral.release();
+                        }
+                    });
+                },
+                getInventarioSucursal(showLoader, idSucursal){
+                    let vm = this;
+                    if (showLoader) {
+                        if (!vm.blockUISucursal) {
+                            let container = document.querySelector('#content-card-sucursal');
+                            if (container) {
+                                vm.blockUISucursal = new KTBlockUI(container);
+                                vm.blockUISucursal.block();
+                            }
+                        } else {
+                            if (!vm.blockUISucursal.isBlocked()) {
+                                vm.blockUISucursal.block();
+                            }
+                        }
                     }
 
                     vm.loading = true;
@@ -269,7 +330,7 @@
                     if(idSucursal){
                         vm.sucursalFilter = idSucursal;
                     }
-                    vm.requestGet = $.ajax({
+                    $.ajax({
                         url: '/api/inventarios/existencia-sucursal',
                         type: 'POST',
                         data: {
@@ -279,13 +340,13 @@
                         vm.inventario = res.results;
                     }).fail(function (jqXHR, textStatus) {
                         if (textStatus != 'abort') {
-                            console.log("Request failed getInventario: " + textStatus, jqXHR);
+                            console.log("Request failed getInventarioSucursal: " + textStatus, jqXHR);
                         }
                     }).always(function () {
                         vm.loading = false;
 
-                        if (vm.blockUI && vm.blockUI.isBlocked()) {
-                            vm.blockUI.release();
+                        if (vm.blockUISucursal && vm.blockUISucursal.isBlocked()) {
+                            vm.blockUISucursal.release();
                         }
                     });
                 },
@@ -314,7 +375,8 @@
                                             "Los datos del traspaso se han almacenado con éxito",
                                             "success"
                                         );
-                                        vm.getInventario(true, vm.sucursalFilter);
+                                        vm.getInventarioSucursal(true, vm.sucursalFilter);
+                                        vm.getInventarioGeneral(true);
                                         $('#kt_modal_add_traspaso').modal('hide');
                                     } else {
                                         Swal.fire(
@@ -362,7 +424,7 @@
                                     'El registro del inventario ha sido eliminado con éxito',
                                     'success'
                                 );
-                                vm.getInventario();
+                                vm.getInventarioSucursal(true, vm.sucursalFilter);
                             }).fail(function(jqXHR, textStatus) {
                                 console.log("Request failed deleteInventario: " + textStatus, jqXHR);
                                 Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
@@ -444,16 +506,68 @@
                 listaSucursales(){
                     return this.sucursales.map(item => ({id: item.id, text: item.nombre}));
                 },
-                listaProductos(){
-                    return this.productos.map(item => ({id: item.id, text: item.nombre}));
-                },
                 listaInventario(){
                     if(this.fechaFilter){
                         return this.inventario.filter(item => moment(item.fecha_caducidad).format('DD/MM/Y') == this.fechaFilter);
                     } else {
                         return this.inventario;
                     }
-                }
+                },
+                columnsGlobal(){
+                    let columns = ['sku','nombre','total_existencia'];
+                    this.sucursales.forEach(item => {
+                        columns.push(`${item.id}`)
+                    });
+                    return columns;
+                },
+                optionsGlobal(){
+                    let headings = {
+                        sku: 'SKU',
+                        nombre: 'Producto',
+                        total_existencia: 'Total de existencias',
+                    };
+                    let columnsClasses = {
+                        sku: 'align-middle text-center ',
+                        nombre: 'align-middle text-center ',
+                        total_existencia: 'align-middle text-center ',
+                    };
+                    let columns = [];
+
+                    this.sucursales.forEach(item => {
+                        headings[`${item.id}`] = item.nombre;
+                        columnsClasses[`${item.id}`] = 'align-middle text-center ';
+                        columns.push(`${item.id}`);
+                    });
+
+                    console.log(headings);
+                    
+                    return {
+                        sortIcon: {
+                            base: 'ms-3 fas',
+                            up: 'fa-sort-asc text-gray-400',
+                            down: 'fa-sort-desc text-gray-400',
+                            is: 'fa-sort text-gray-400',
+                        },
+                        texts: {
+                            count: "Mostrando {from} de {to} de {count} registros|{count} registros|Un registro",
+                            first: "Primera",
+                            last: "Última",
+                            filterPlaceholder: "Buscar...",
+                            limit: "Registros:",
+                            page: "Página:",
+                            noResults: "No se encontraron resultados",
+                            loading: "Cargando...",
+                            columns: "Columnas",
+                        },
+                        skin: 'table table-sm table-rounded table-striped border align-middle table-row-bordered fs-6',
+                        headings: headings,
+                        columnsClasses: columnsClasses,
+                        sortable: ['sku', 'nombre'],
+                        filterable: ['nombre', 'sku'],
+                        columnsDropdown: true,
+                        resizableColumns: false,
+                    };
+                },
             },
             filters: {
                 fecha: function (value, usrFormat) {
