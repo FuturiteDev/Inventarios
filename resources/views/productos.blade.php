@@ -866,11 +866,7 @@
                     if (vm.setEdit == false) {
                         let subcategoria = vm.subcategorias.find(item => item.id == vm.idSubcategoria);
                         if(subcategoria) {
-                            vm.subcategoria_caracteristicas = subcategoria.caracteristicas_json.map((item) => ({
-                                etiqueta: item.etiqueta,
-                                tipo: item.tipo,
-                                valor: item.valor,
-                            }));
+                            vm.subcategoria_caracteristicas = subcategoria.caracteristicas_json.map((item) => Object.assign({}, item));
                         } else {
                             vm.subcategoria_caracteristicas = [];
                         }
@@ -909,13 +905,8 @@
                             let subcategoria = vm.subcategorias.find(item => item.id == producto.subcategoria_id);
                             if(subcategoria) {
                                 vm.subcategoria_caracteristicas = subcategoria.caracteristicas_json.map((item) => {
-                                    console.log(producto.caracteristicas_json);
                                     const result = producto.caracteristicas_json.find((element) => element.etiqueta == item.etiqueta);
-                                    return {
-                                        etiqueta: item.etiqueta,
-                                        tipo: item.tipo,
-                                        valor: result?.valor ?? null,
-                                    };
+                                    return Object.assign(item, {valor: result?.valor ?? null});
                                 });
                             }
 

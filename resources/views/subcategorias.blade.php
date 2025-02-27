@@ -472,11 +472,7 @@
                         nombre: subcategory.nombre,
                         descripcion: subcategory.descripcion,
                     };
-                    this.subcategoria_caracteristicas = subcategory.caracteristicas_json.map((item) => ({
-                        etiqueta: item.etiqueta,
-                        tipo: item.tipo,
-                        valor: item.valor,
-                    }));
+                    this.subcategoria_caracteristicas = subcategory.caracteristicas_json.map((item) => Object.assign({}, item));
                 },
                 showEditCaracteristicas() {
                     this.isCaracteristicaEdit = true;
