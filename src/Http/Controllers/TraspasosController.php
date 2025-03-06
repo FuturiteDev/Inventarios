@@ -257,49 +257,71 @@ class TraspasosController extends Controller
 
             $traspaso->estatus = 2;
             $traspaso->comentarios = $request->comentarios ?? $traspaso->comentarios;
-            $traspaso->empleado_id = $request->empleado_id;
+            // $traspaso->empleado_id = $request->empleado_id;
             $traspaso->save();
 
             $productosRecibidos = [];
+            $productosRechazados = [];
             foreach ($request->productos as $productoData) {
-                $producto = Productos::find($productoData['id']);
+                $row = $traspaso->traspasoProductos()->find($productoData['id']);
 
-                if (!$producto) {
-                    $productosInexistentes[] = $productoData['id'];
-                    continue;
+                $row->cantidad_recibida = $productoData['cantidad_recibida'];
+
+                if(!empty($productoData['foto'])){
+                    $cadena = "";
+                    foreach ($productoData['foto'] as $byte) {
+                        $cadena .= chr($byte);
+                    }
+                    $fname = md5(uniqid('', true)) . '.jpg';
+                    Storage::disk('public')->put("traspasos/fotos/{$fname}" , $cadena);
+                    $row->foto = "traspasos/fotos/{$fname}";
                 }
 
-                $productoTraspaso = $this->traspasosProductos->create([
-                    'traspaso_id' => $traspaso->id,
-                    'producto_id' => $producto->id,
-                    'cantidad' => $productoData['cantidad'],
-                    'cantidad_recibida' => $productoData['cantidad_recibida'],
-                    'foto' => isset($productoData['foto']) ? $productoData['foto']->store('traspasos/fotos', 'public') : null
-                ]);
+                $row->save();
+                $inv_ids_rechazados = [];
+                foreach ($row->inventario_ids as $i => $invId) {
+                    if($row->cantidad_recibida > $i){
+                        $inv = $this->inventario->find($invId);
+                        $inv->estatus = $traspaso->tipo == 3 ? 0 : 1;
+                        $inv->sucursal_id = $traspaso->sucursal_destino_id;
+                        $inv->save();
+                    }else{
+                        $inv_ids_rechazados[] = $invId;
+                    }
+                }
 
-                $productosRecibidos[] = $productoTraspaso;
+                if ($row->cantidad_recibida < $row->cantidad) {
+                    $productosRechazados[] = [
+                        'producto_id' => $row->producto_id,
+                        'cantidad' => $row->cantidad - $row->cantidad_recibida,
+                        'cantidad_recibida' => 0,
+                        'foto' => $row->foto,
+                        'inventario_ids' => $inv_ids_rechazados,
+                        'fecha_caducidad' => $row->fecha_caducidad
+                    ];
+                }
+                
+            }
 
-                $inventario = Inventario::where('sucursal_id', $traspaso->sucursal_destino_id)
-                    ->where('producto_id', $producto->id)
-                    ->first();
+            if(!empty($productosRechazados)){
+                $newTraspaso = $traspaso->replicate();
+                $newTraspaso->tipo = 3;
+                $newTraspaso->sucursal_origen_id = $traspaso->sucursal_destino_id;
+                $matriz = Sucursales::where('matriz', 1)->where('estatus', 1)->first();
+                if(!empty($matriz)){
+                    $newTraspaso->sucursal_destino_id = $matriz->id;
+                }else{
+                    $newTraspaso->sucursal_destino_id = $traspaso->sucursal_origen_id;
+                }
 
-                if ($inventario) {
-                    $inventario->cantidad_disponible += $productoData['cantidad_recibida'];
-                    $inventario->cantidad_total += $productoData['cantidad_recibida'];
-                    $inventario->save();
-                } else {
-                    Inventario::create([
-                        'sucursal_id' => $traspaso->sucursal_destino_id,
-                        'producto_id' => $producto->id,
-                        'cantidad_disponible' => $productoData['cantidad_recibida'],
-                        'cantidad_total' => $productoData['cantidad_recibida'],
-                        'fecha_elaboracion' => $productoData['fecha_elaboracion'],
-                        'fecha_caducidad' => $productoData['fecha_caducidad'],
-                        'estatus' => 1
-                    ]);
+                $newTraspaso->comentarios .= "\n\n Merma generada por productos rechazados en traspaso: {$traspaso->id}.";
+                $newTraspaso->save();
+                foreach($productosRechazados as $row){
+                    $newTraspaso->traspasoProductos()->create($row);
                 }
             }
 
+            //evento para confirmar que se recibio el traspaso
             TraspasoRecibido::dispatch($traspaso);
 
             return response()->json([
