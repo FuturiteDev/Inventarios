@@ -179,19 +179,26 @@
                                     <label class="required fw-semibold fs-6 ms-2" for="precio">Precio</label>
                                     <input type="text" class="form-control" placeholder="Precio" id="precio" name="precio" v-model="precio" onblur="formatoNumero(this)">
                                 </div>
-                                <div class="fv-row mb-7">
-                                    <label class="fs-6 fw-bold mb-2">Características</label>
-                                    <div class="row mt-5">
-                                        <div class="col-lg-12">
-                                            <ul class="list-group">
-                                                <li class="list-group-item d-flex align-items-stretch justify-content-between" v-for="(caracteristica, index) in caracteristicas_subcategoria">
-                                                    <label class="col-sm-2 control-label">[[caracteristica.etiqueta]]</label>
-                                                    <div class="col-lg-6">
-                                                        <input type="text" v-model="caracteristica.valor" class="form-control" :name="`caracteristica${caracteristica.etiqueta}`">
-                                                    </div>
-                                                </li>
-                                            </ul>
-                                        </div>
+                                <div class="mb-7">
+                                    <label class="required fw-semibold fs-6 ms-2 mb-2">Características</label>
+                                    <div class="border border-1 border-gray-300 p-4 rounded rounded-1" v-if="subcategoria_caracteristicas.length>0">
+                                        <table class="no-footer table">
+                                            <thead class="d-none">
+                                                <tr>
+                                                    <th tabindex="0" class="VueTables__heading text-center align-middle">Etiqueta</th>
+                                                    <th tabindex="0" class="VueTables__heading text-center align-middle">Valor</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr class="align-middle text-center fv-row" v-for="(caracteristica, index) in subcategoria_caracteristicas" :key="'c_' + caracteristica.id">
+                                                    <td>[[caracteristica.etiqueta]]</td>
+                                                    <td>
+                                                        <input type="text" v-model="caracteristica.valor" class="form-control" placeholder="Valor" :name="`caracteristica${caracteristica.etiqueta}`" v-if="caracteristica.tipo=='texto'">
+                                                        <input type="number" v-model="caracteristica.valor" class="form-control" placeholder="Valor" :name="`caracteristica${caracteristica.etiqueta}`" v-else>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                                 <div class="fv-row mb-7">
@@ -438,17 +445,17 @@
                 idColecciones: [],
                 visitas: 1,
                 estatus: 1,
-                caracteristicas_subcategoria: [],
+                subcategoria_caracteristicas: [],
                 extras: [],
                 extra_input: null,
                 formMultimedia: false,
                 multimedia: [],
 
                 setEdit: false,
-                validator: null,
                 isEdit: false,
                 msgError: false,
                 loading: false,
+                validator: null,
                 blockUI: null,
                 blockUIModal: null,
                 requestGet: null,
@@ -472,12 +479,10 @@
                 vm.getCategorias();
                 vm.getColecciones();
                 vm.formValidate();
-                $("#kt_modal_add_producto").on('hidden.bs.modal', event => {
-                    vm.formValidate();
-                    vm.clearCampos();
-                });
+                vm.initModals();
             },
             methods: {
+                // Inits
                 initForm() {
                     if (this.formMultimedia) {
                         let vm = this;
@@ -518,6 +523,31 @@
                         $('#image-preview').attr('src', '{{ asset('assets-1/media/svg/files/blank-image.svg') }}');
                     }
                 },
+                initModals() {
+                    $("#kt_modal_add_producto").on('hidden.bs.modal', event => {
+                        this.formValidate();
+                        this.isEdit = false;
+                        this.setEdit = false;
+                        this.loading = false;
+                        this.msgError = false;
+
+                        this.idProducto = null;
+                        this.producto = null;
+                        this.sku = null;
+                        this.nombre = null;
+                        this.descripcion = null;
+                        this.idCategoria = null;
+                        this.idSubcategoria = null;
+                        this.precio = null;
+                        this.idColecciones = [];
+                        this.visitas = 1;
+                        this.estatus = 1;
+                        this.subcategoria_caracteristicas = [];
+                        this.extras = [];
+                        this.extra = null;
+                    });
+                },
+                // Request Get
                 getProductos(showLoader) {
                     let vm = this;
                     if (showLoader) {
@@ -627,11 +657,12 @@
                         }
                     });
                 },
+                // Request
                 saveProducto() {
                     let vm = this
                     vm.formValidate();
 
-                    vm.caracteristicas_subcategoria.forEach(item => {
+                    vm.subcategoria_caracteristicas.forEach(item => {
                         vm.validator.addField(`caracteristica${item.etiqueta}`, {
                             validators: {
                                 notEmpty: {
@@ -667,7 +698,7 @@
                                     precio: vm.precio,
                                     nombre: vm.nombre,
                                     descripcion: vm.descripcion,
-                                    caracteristicas_json: vm.caracteristicas_subcategoria,
+                                    caracteristicas_json: vm.subcategoria_caracteristicas,
                                     extras_json: vm.extras,
                                     colecciones: vm.idColecciones,
                                     visitas: vm.visitas,
@@ -834,14 +865,20 @@
                     let vm = this;
                     if (vm.setEdit == false) {
                         let subcategoria = vm.subcategorias.find(item => item.id == vm.idSubcategoria);
-                        let list = subcategoria?.caracteristicas_json.map((caracteristica, index) => ({ etiqueta: caracteristica, valor: ""}) );
-
-                        vm.caracteristicas_subcategoria = list;
+                        if(subcategoria) {
+                            vm.subcategoria_caracteristicas = subcategoria.caracteristicas_json.map((item) => Object.assign({}, item));
+                        } else {
+                            vm.subcategoria_caracteristicas = [];
+                        }
                     }
                 },
+                // Utils
                 selectProducto(producto) {
                     let vm = this;
-                    vm.clearCampos();
+                    vm.loading = false;
+                    vm.msgError = false;
+                    vm.subcategoria_caracteristicas = [];
+                    vm.extra = null;
                     vm.isEdit = true;
                     vm.setEdit = true;
 
@@ -866,23 +903,12 @@
                         vm.subcategorias = res.results;
                         vm.$nextTick(() => {
                             let subcategoria = vm.subcategorias.find(item => item.id == producto.subcategoria_id);
-                            let list = [];
-                            subcategoria?.caracteristicas_json.forEach((caracteristica, index) => {
-                                const result = producto.caracteristicas_json.find((element) => element.etiqueta == caracteristica);
-                                if(result){
-                                    list.push({
-                                        etiqueta: caracteristica,
-                                        valor: result.valor,
-                                    });
-                                }else{
-                                    list.push({
-                                        etiqueta: caracteristica,
-                                        valor: "",
-                                    });
-                                }
-                                
-                            });
-                            vm.caracteristicas_subcategoria = list;
+                            if(subcategoria) {
+                                vm.subcategoria_caracteristicas = subcategoria.caracteristicas_json.map((item) => {
+                                    const result = producto.caracteristicas_json.find((element) => element.etiqueta == item.etiqueta);
+                                    return Object.assign(item, {valor: result?.valor ?? null});
+                                });
+                            }
 
                             vm.idSubcategoria = producto.subcategoria_id;
                         });
@@ -995,26 +1021,6 @@
                             }
                         }
                     );
-                },
-                clearCampos() {
-                    this.isEdit = false;
-                    this.loading = false;
-                    this.msgError = false;
-
-                    this.idProducto = null;
-                    this.producto = null;
-                    this.sku = null;
-                    this.nombre = null;
-                    this.descripcion = null;
-                    this.idCategoria = null;
-                    this.idSubcategoria = null;
-                    this.precio = null;
-                    this.idColecciones = [];
-                    this.visitas = 1;
-                    this.estatus = 1;
-                    this.caracteristicas_subcategoria = [];
-                    this.extras = [];
-                    this.extra = null;
                 },
             },
             computed: {

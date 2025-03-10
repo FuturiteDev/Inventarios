@@ -5,6 +5,7 @@ namespace Ongoing\Inventarios\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use Log;
 
 use Ongoing\Inventarios\Repositories\CategoriasRepositoryEloquent;
@@ -116,6 +117,15 @@ class SubCategoryController extends Controller {
         try {
 
             $values = $request->all();
+            if(!empty($values['caracteristicas_json'])){
+                foreach($values['caracteristicas_json'] as $k => $item){
+                    if(empty($item['slug'])){
+                        $item['slug'] = Str::slug($item['etiqueta']);
+                    }
+                    $values['caracteristicas_json'][$k] = $item;
+                }
+            }
+            
             $this->subCategorias->updateOrCreate(['id' => $request->id], $values);
 
             return response()->json([

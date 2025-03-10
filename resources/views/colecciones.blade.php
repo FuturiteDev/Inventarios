@@ -21,7 +21,6 @@
 
                 <!--begin::Card body-->
                 <div class="card-body py-4">
-                    <img src="https://cdn.shopify.com/s/files/1/1887/4475/files/IMG_4634.jpg?v=1698102045" style="width: 200px;" alt="demo">
                     <!--begin::Table-->
                     <v-client-table v-model="colecciones" :columns="columns" :options="options">
                         <div slot="acciones" slot-scope="props">

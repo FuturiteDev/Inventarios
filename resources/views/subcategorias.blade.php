@@ -25,7 +25,7 @@
                             data-placeholder="Filtrar por categoría">
                         </v-select>
                     </div>
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_add_subcategory" @click="isEdit = false">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal_add_subcategory" @click="isEdit = false">
                         <i class="fa-solid fa-plus"></i> Agregar subcategoría
                     </button>
                 </div>
@@ -36,7 +36,7 @@
                     <v-client-table v-model="listaSubcategorias" :columns="columns" :options="options">
                         <div slot="categoria" slot-scope="props">[[props.row.categoria?.nombre ?? '']]</div>
                         <div slot="acciones" slot-scope="props">
-                            <button type="button" class="btn btn-icon btn-sm btn-success" title="Editar subcategoria" data-bs-toggle="modal" data-bs-target="#kt_add_subcategory" @click="selectSubcategory(props.row)">
+                            <button type="button" class="btn btn-icon btn-sm btn-success" title="Editar subcategoria" data-bs-toggle="modal" data-bs-target="#modal_add_subcategory" @click="selectSubcategory(props.row)">
                                 <i class="fa-solid fa-pencil"></i>
                             </button>
                             <button type="button" class="btn btn-icon btn-sm btn-danger" title="Eliminar" @click="deleteSubcategory(props.row.id)" :disabled="loading" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
@@ -51,7 +51,7 @@
 
 
         <!-- Modals -->
-        <div class="modal fade" tabindex="-1" id="kt_add_subcategory" data-bs-backdrop="static">
+        <div class="modal fade" tabindex="-1" id="modal_add_subcategory" data-bs-backdrop="static">
             <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -62,74 +62,122 @@
                         <!--end::Close-->
                     </div>
                     <!--begin::Modal body-->
-                    <div class="modal-body scroll-y mx-5">
-                        <form id="kt_modal_add_subcategory_form" class="form" action="#" @submit.prevent="">
-                            <!--begin::Scroll-->
-                            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_user_scroll" data-kt-scroll="true"
-                                data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header"
-                                data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
-                                <div class="fv-row mb-7">
-                                    <label class="required fw-semibold fs-6 ms-2" for="cat_id">Categoría</label>
-                                    <v-select
-                                        class="form-control"
-                                        v-model="idCategoria"
-                                        :options="listaCategorias"
-                                        data-allow-clear="true"
-                                        data-placeholder="Selecciona una categoría"
-                                        id="cat_id"
-                                        name="cat_id"
-                                        data-dropdown-parent="#kt_add_subcategory">
-                                    </v-select>
-                                </div>
+                    <div class="modal-body mx-5">
+                        <form id="modal_add_subcategory_form" class="form" action="#" @submit.prevent="">
+                            <div class="fv-row mb-7">
+                                <label class="required fw-semibold fs-6 ms-2" for="cat_id">Categoría</label>
+                                <v-select
+                                    v-model="subcategoria_model.idCategoria"
+                                    :options="listaCategorias"
+                                    data-allow-clear="true"
+                                    data-placeholder="Selecciona una categoría"
+                                    id="cat_id"
+                                    name="categoria_id"
+                                    data-dropdown-parent="#modal_add_subcategory">
+                                </v-select>
+                            </div>
 
-                                <div class="fv-row mb-7">
-                                    <label class="required fw-semibold fs-6 ms-2" for="subCat_name">Nombre</label>
-                                    <input type="text" class="form-control" placeholder="Nombre de la subcategoría" id="subCat_name" name="subCat_name" v-model="nombre">
-                                </div>
+                            <div class="fv-row mb-7">
+                                <label class="required fw-semibold fs-6 ms-2" for="subCat_name">Nombre</label>
+                                <input type="text" class="form-control" placeholder="Nombre de la subcategoría" id="subCat_name" name="name" v-model="subcategoria_model.nombre"/>
+                            </div>
 
-                                <div class="fv-row mb-7">
-                                    <label class="required fw-semibold fs-6 ms-2" for="subCat_desc">Descripción</label>
-                                    <textarea class="form-control" rows="3" placeholder="Descripción de la subcategoría" id="subCat_desc" name="subCat_desc" v-model="descripcion"></textarea>
-                                </div>
+                            <div class="fv-row mb-7">
+                                <label class="required fw-semibold fs-6 ms-2" for="subCat_desc">Descripción</label>
+                                <textarea class="form-control" rows="3" placeholder="Descripción de la subcategoría" id="subCat_desc" name="desc" v-model="subcategoria_model.descripcion"></textarea>
+                            </div>
 
-                                <div class="fv-row mb-7">
-                                    <label class="required fw-semibold fs-6 ms-2">Características</label>
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" id="inputGroupSelect04" aria-label="Example select with button addon" v-model="caracteristica">
-                                        <button class="btn btn-light-success border border-success" type="button" @click.stop="addCaracteristica();validateCaracteristicas();">
-                                            <i class="fa-solid fa-plus"></i> Agregar caracteristica
+                            <div class="fv-row mb-2">
+                                <label class="required fw-semibold fs-6 ms-2">Características</label>
+                                <div class="text-end">
+                                    <button type="button" class="btn btn-primary btn-sm" @click="showEditCaracteristicas" v-if="!isCaracteristicaEdit&&isEdit">
+                                        <i class="fa-solid fa-pencil"></i> Editar
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-light-success border border-success" type="button" @click="addCaracteristica" v-else>
+                                        <i class="fa-solid fa-plus"></i> Agregar característica
+                                    </button>
+                                </div>
+                                <input type="hidden" name="caracteristicas"/>
+                            </div>
+                            <div class="mb-7" v-if="subcategoria_caracteristicas.length>0">
+                                <div class="bg-light border border-1 border-gray-300 p-4 rounded rounded-1">
+                                    <table class="no-footer table" :class="{'bg-white table-bordered': isEdit }">
+                                        <thead :class="{'d-none': !(isEdit&&!isCaracteristicaEdit) }">
+                                            <tr>
+                                                <th tabindex="0" class="VueTables__heading text-center align-middle">Etiqueta</th>
+                                                <th tabindex="0" class="VueTables__heading text-center align-middle">Tipo de campo</th>
+                                                <th tabindex="0" class="VueTables__heading text-center align-middle">Valor</th>
+                                                <th tabindex="0" class="VueTables__heading text-center align-middle" v-if="isCaracteristicaEdit == isEdit"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody v-if="!isEdit">
+                                            <tr class="align-middle text-center" v-for="(caracteristica, index) in subcategoria_caracteristicas" :key="'c_' + caracteristica.id">
+                                                <td>
+                                                    <input type="text" v-model="caracteristica.etiqueta" class="form-control form-control-sm" placeholder="Etiqueta">
+                                                </td>
+                                                <td>
+                                                    <v-select
+                                                        v-model="caracteristica.tipo"
+                                                        class="form-control-sm"
+                                                        :options="listInputType"
+                                                        data-placeholder="Tipo de campo"
+                                                        data-minimum-results-for-search ="Infinity">
+                                                    </v-select>
+                                                </td>
+                                                <td>
+                                                    <input type="text" v-model="caracteristica.valor" class="form-control form-control-sm" placeholder="Valor" v-if="caracteristica.tipo=='texto'">
+                                                    <input type="number" v-model="caracteristica.valor" class="form-control form-control-sm" placeholder="Valor" v-else>
+                                                </td>
+                                                <td>
+                                                    <button type="button" class="btn btn-danger btn-sm btn-icon" @click="deleteCaracteristica(index)">
+                                                        <i class="fa-solid fa-trash-can"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                        <tbody v-else-if="!isCaracteristicaEdit">
+                                            <tr class="align-middle text-center" v-for="(caracteristica, index) in subcategoria_caracteristicas" :key="'c_' + caracteristica.id">
+                                                <td>[[caracteristica.etiqueta]]</td>
+                                                <td>[[caracteristica.tipo]]</td>
+                                                <td>[[caracteristica.valor]]</td>
+                                            </tr>
+                                        </tbody>
+                                        <tbody v-else>
+                                            <tr class="align-middle text-center" v-for="(caracteristica, index) in caracteristicasEdit" :key="'c_' + caracteristica.id">
+                                                <td>
+                                                    <input type="text" v-model="caracteristica.etiqueta" class="form-control form-control-sm" placeholder="Etiqueta">
+                                                </td>
+                                                <td>
+                                                    <v-select
+                                                        v-model="caracteristica.tipo"
+                                                        class="form-control-sm"
+                                                        :options="listInputType"
+                                                        data-placeholder="Tipo de campo"
+                                                        data-minimum-results-for-search="Infinity">
+                                                    </v-select>
+                                                </td>
+                                                <td>
+                                                    <input type="text" v-model="caracteristica.valor" class="form-control form-control-sm" placeholder="Valor" v-if="caracteristica.tipo=='texto'">
+                                                    <input type="number" v-model="caracteristica.valor" class="form-control form-control-sm" placeholder="Valor" v-if="caracteristica.tipo=='numero'">
+                                                </td>
+                                                <td>
+                                                    <button type="button" class="btn btn-danger btn-sm btn-icon" @click="deleteCaracteristica(index)">
+                                                        <i class="fa-solid fa-trash-can"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    <div class="d-flex justify-content-end mt-3" v-if="isCaracteristicaEdit">
+                                        <button type="button" class="btn btn-secondary btn-sm me-2" @click="isCaracteristicaEdit=false">
+                                            <i class="fa-solid fa-xmark"></i> Cancelar
                                         </button>
-                                    </div>
-                                    <div class="row mt-5">
-                                        <div class="col-lg-6 col-md-12">
-                                            <ul class="list-group">
-                                                <li class="list-group-item d-flex justify-content-between align-items-center" v-for="(caracteristica, index) in caracteristicas">
-                                                    <span v-text="caracteristica" v-if="!isCaracteristicaEdit"></span>
-                                                    <input type="text" v-model="caracteristicasEdit[index]" class="form-control form-control-sm me-3" v-if="isCaracteristicaEdit">
-                                                    <div class="caracteristicas-acciones">
-                                                        <button type="button" class="btn btn-danger btn-sm btn-icon" @click="deleteCaracteristica(index)">
-                                                            <i class="fa-solid fa-trash-can"></i>
-                                                        </button>
-                                                    </div>
-                                                </li>
-                                            </ul>
-                                            <div class="d-flex justify-content-end mt-3">
-                                                <button type="button" class="btn btn-primary btn-sm" @click="showEditCaracteristicas" v-if="!isCaracteristicaEdit && caracteristicas.length > 0 && isEdit">
-                                                    <i class="fa-solid fa-pencil"></i> Editar
-                                                </button>
-                                                <button type="button" class="btn btn-secondary btn-sm me-2" v-if="isCaracteristicaEdit" @click="isCaracteristicaEdit=false;caracteristicasEdit=caracteristicas">
-                                                    <i class="fa-solid fa-xmark"></i> Cancelar
-                                                </button>
-                                                <button type="button" class="btn btn-primary btn-sm" @click="saveCaracteristicas" v-if="isCaracteristicaEdit">
-                                                    <i class="fa-solid fa-check"></i> Finalizar
-                                                </button>
-                                            </div>
-                                            <span class="text-danger" v-if="msgError">Debes agregar por lo menos una caracteristica</span>
-                                        </div>
+                                        <button type="button" class="btn btn-primary btn-sm" @click="saveCaracteristicas">
+                                            <i class="fa-solid fa-check"></i> Finalizar
+                                        </button>
                                     </div>
                                 </div>
                             </div>
-                            <!--end::Scroll-->
                         </form>
                         <!--end::Form-->
                     </div>
@@ -159,6 +207,10 @@
             data: () => ({
                 subcategorias: {!! json_encode($subCategorias->original['results']) !!},
                 categorias: [],
+                listInputType: [
+                    {id: 'texto', text: 'Texto'},
+                    {id: 'numero', text: 'Número'},
+                ],
 
                 columns: ['categoria', 'nombre', 'descripcion', 'acciones'],
                 options: {
@@ -198,44 +250,124 @@
                     },
                 },
 
-                isEdit: false,
-                isCaracteristicaEdit: false,
-                idCategoria: null,
-                idSubcategoria: null,
-
-                nombre: null,
-                descripcion: null,
-                caracteristica: null,
-                inputEditCaracteristica: null,
-                caracteristicas: [],
+                subcategoria_model: {
+                    idSubcategoria: null,
+                    idCategoria: null,
+                    nombre: null,
+                    descripcion: null,
+                },
+                subcategoria_caracteristicas: [],
                 caracteristicasEdit: [],
 
                 categoriaFilter: null,
-                validator: null,
-                msgError: false,
+
+                isEdit: false,
+                isCaracteristicaEdit: false,
                 loading: false,
+                validator: null,
             }),
             mounted() {
                 this.$forceUpdate();
                 this.getCategorias();
-                this.formValidate();
-
-                $("#kt_add_subcategory").on('hidden.bs.modal', event => {
-                    this.validator.resetForm();
-                    this.clearCampos();
-                });
+                this.initFormValidate();
+                this.initModals();
             },
             methods: {
+                // Inits
+                initModals(){
+                    let vm = this;
+
+                    $("#modal_add_subcategory").on('hidden.bs.modal', event => {
+                        if(vm.validator){
+                            vm.validator.resetForm();
+                        }
+
+                        vm.isEdit = false;
+                        vm.loading = false;
+
+                        vm.subcategoria_model = {
+                            idSubcategoria: null,
+                            idCategoria: null,
+                            nombre: null,
+                            descripcion: null,
+                        };
+                        vm.subcategoria_caracteristicas = [];
+                    });
+                },
+                initFormValidate() {
+                    let vm = this;
+                    if(vm.validator){
+                        vm.validator.destroy();
+                        vm.validator = null;
+                    }
+
+                    vm.validator = FormValidation.formValidation(
+                        document.getElementById('modal_add_subcategory_form'), {
+                            fields: {
+                                'categoria_id': {
+                                    validators: {
+                                        notEmpty: {
+                                            message: 'Seleccionar una categoría es requerido',
+                                            trim: true,
+                                        },
+                                    }
+                                },
+                                'name': {
+                                    validators: {
+                                        notEmpty: {
+                                            message: 'El nombre de la subcategoría es requerido',
+                                            trim: true,
+                                        },
+                                    }
+                                },
+                                'desc': {
+                                    validators: {
+                                        notEmpty: {
+                                            message: 'La descripción de la subcategoría es requerida',
+                                            trim: true,
+                                        },
+                                    }
+                                },
+                                'caracteristicas': {
+                                    validators: {
+                                        callback: {
+                                            callback: function (input) {
+                                                if (vm.subcategoria_caracteristicas.length <= 0) {
+                                                    return { valid: false, message: 'Debes agregar por lo menos una caracteristica' };
+                                                }
+
+                                                if(vm.subcategoria_caracteristicas.some((sub) => !sub.etiqueta || !sub.tipo)){
+                                                    return { valid: false, message: 'Hay campos pendientes de llenar' };
+                                                }
+
+                                                return { valid: true, message: '' };
+                                            },
+                                        },
+                                    }
+                                },
+                            },
+
+                            plugins: {
+                                trigger: new FormValidation.plugins.Trigger(),
+                                bootstrap: new FormValidation.plugins.Bootstrap5({
+                                    rowSelector: '.fv-row',
+                                    eleInvalidClass: '',
+                                    eleValidClass: ''
+                                })
+                            }
+                        }
+                    );
+                },
+                // Request get
                 getCategorias(){
                     let vm = this;
                     $.get('/api/categorias/all', res => {
                         vm.categorias = res.results;
                     }, 'json');
                 },
+                // Request
                 saveSubcategory() {
                     let vm = this;
-                    this.validateCaracteristicas();
-
                     if (vm.validator) {
                         vm.validator.validate().then(status => {
                             if (status == 'Valid') {
@@ -244,11 +376,11 @@
                                     method: 'POST',
                                     url: '/api/sub-categorias/save',
                                     data: {
-                                        id: vm.idSubcategoria,
-                                        categoria_id: vm.idCategoria,
-                                        nombre: vm.nombre,
-                                        descripcion: vm.descripcion,
-                                        caracteristicas_json: vm.caracteristicas,
+                                        id: vm.subcategoria_model.idSubcategoria,
+                                        categoria_id: vm.subcategoria_model.idCategoria,
+                                        nombre: vm.subcategoria_model.nombre,
+                                        descripcion: vm.subcategoria_model.descripcion,
+                                        caracteristicas_json: vm.subcategoria_caracteristicas,
                                     }
                                 }).done(function(res) {
                                     if (res.status) {
@@ -259,7 +391,7 @@
                                         );
                                         vm.subcategorias = res.results;
                                         vm.getCategorias();
-                                        $("#kt_add_subcategory").modal('hide');
+                                        $("#modal_add_subcategory").modal('hide');
                                     } else {
                                         Swal.fire(
                                             "¡Error!",
@@ -321,93 +453,48 @@
                     });
                 },
                 saveCaracteristicas() {
+                    let vm = this;
                     $.post('/api/sub-categorias/save', {
-                        id: this.idSubcategoria,
-                        categoria_id: this.idCategoria,
-                        caracteristicas_json: this.caracteristicasEdit,
+                        id: vm.subcategoria_model.idSubcategoria,
+                        categoria_id: vm.subcategoria_model.idCategoria,
+                        caracteristicas_json: vm.caracteristicasEdit,
                     });
-                    this.caracteristicas = this.caracteristicasEdit;
-                    this.isCaracteristicaEdit = false;
+                    vm.subcategoria_caracteristicas = vm.caracteristicasEdit;
+                    vm.isCaracteristicaEdit = false;
                 },
+                // Utils
                 selectSubcategory(subcategory) {
                     this.isEdit = true;
-                    this.idCategoria = subcategory.categoria_id;
-                    this.idSubcategoria = subcategory.id;
-                    this.nombre = subcategory.nombre;
-                    this.descripcion = subcategory.descripcion;
-                    this.caracteristicas = subcategory.caracteristicas_json;
+
+                    this.subcategoria_model = {
+                        idSubcategoria: subcategory.id,
+                        idCategoria: subcategory.categoria_id,
+                        nombre: subcategory.nombre,
+                        descripcion: subcategory.descripcion,
+                    };
+                    this.subcategoria_caracteristicas = subcategory.caracteristicas_json.map((item) => Object.assign({}, item));
+                },
+                showEditCaracteristicas() {
+                    this.isCaracteristicaEdit = true;
+                    this.caracteristicasEdit = this.subcategoria_caracteristicas.map((caracteristica) => Object.assign({}, caracteristica));
                 },
                 addCaracteristica() {
-                    if (this.caracteristica) {
-                        this.caracteristicas.push(this.caracteristica);
-                        this.caracteristica = null;
+                    if(this.isCaracteristicaEdit){
+                        this.caracteristicasEdit.push({
+                            etiqueta: null,
+                            tipo: null,
+                            valor: null,
+                        });
+                    } else {
+                        this.subcategoria_caracteristicas.push({
+                            etiqueta: null,
+                            tipo: null,
+                            valor: null,
+                        });
                     }
                 },
                 deleteCaracteristica(index) {
-                    this.caracteristicas.splice(index, 1);
-                },
-                showEditCaracteristicas() {
-                    this.caracteristicasEdit = [];
-                    this.isCaracteristicaEdit = true;
-                    this.caracteristicas.forEach((caracteristica, index) => {
-                        this.caracteristicasEdit[index] = caracteristica;
-                    });
-                },
-                formValidate() {
-                    const form = document.getElementById('kt_modal_add_subcategory_form');
-                    this.validator = FormValidation.formValidation(
-                        form, {
-                            fields: {
-                                'cat_id': {
-                                    validators: {
-                                        notEmpty: {
-                                            message: 'Seleccionar una categoría es requerido',
-                                            trim: true,
-                                        },
-                                    }
-                                },
-                                'subCat_name': {
-                                    validators: {
-                                        notEmpty: {
-                                            message: 'El nombre de la subcategoría es requerido',
-                                            trim: true,
-                                        },
-                                    }
-                                },
-                                'subCat_desc': {
-                                    validators: {
-                                        notEmpty: {
-                                            message: 'La descripción de la subcategoría es requerida',
-                                            trim: true,
-                                        },
-                                    }
-                                },
-                            },
-
-                            plugins: {
-                                trigger: new FormValidation.plugins.Trigger(),
-                                bootstrap: new FormValidation.plugins.Bootstrap5({
-                                    rowSelector: '.fv-row',
-                                    eleInvalidClass: '',
-                                    eleValidClass: ''
-                                })
-                            }
-                        }
-                    );
-                },
-                validateCaracteristicas() {
-                    if (this.caracteristicas.length > 0) {
-                        this.msgError = false;
-                    } else {
-                        this.msgError = true;
-                    }
-                },
-                clearCampos() {
-                    this.idCategoria = null;
-                    this.nombre = null;
-                    this.descripcion = null;
-                    this.caracteristicas = [];
-                    this.loading = false;
+                    this.subcategoria_caracteristicas.splice(index, 1);
                 },
             },
             computed: {
