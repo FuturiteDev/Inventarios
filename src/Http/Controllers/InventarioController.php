@@ -661,33 +661,42 @@ class InventarioController extends Controller
         }
     }
 
-
-
     public function getProductosConPocaExistencia(Request $request)
-    {
-        try {
-            $productos = Inventario::select('producto_id', DB::raw('SUM(cantidad_disponible) as cantidad_existente'))
-                ->where('sucursal_id', $request->sucursal_id)
-                ->groupBy('producto_id')
-                ->havingRaw('cantidad_existente <= ?', [$request->existencia_minima])
-                ->get();
+{
+    try {
+        $request->validate([
+            'sucursal_id' => 'required|integer|exists:sucursales,id',
+            'existencia_minima' => 'required|integer|min:0',
+        ]);
 
-            Log::info('Productos: ' . $productos);
-            $productosGrouped = $productos->filter(function ($inventario) {
-                return $inventario->producto !== null;
-            })->groupBy(function ($inventario) {
-                return $inventario->producto_id . '-' . $inventario->fecha_caducidad;
-            });
+        $productos = Inventario::with([
+            'producto' => function ($query) {
+                $query->where('estatus', 1)
+                    ->with(['categoria', 'subcategoria']);
+            }
+        ])
+            ->where('sucursal_id', $request->sucursal_id)
+            ->where('estatus', '>', 0)
+            ->get();
 
-            $productosList = $productosGrouped->map(function ($group) {
-                $inventario = $group->first();
-                $cantidad_existente = $group->sum('cantidad_existente');  // Asegúrate de sumar cantidad_existente
+        $productosGrouped = $productos->filter(function ($inventario) {
+            return $inventario->producto !== null;
+        })->groupBy(function ($inventario) {
+            return $inventario->producto_id . '-' . $inventario->fecha_caducidad;
+        });
 
+        $productosList = $productosGrouped->map(function ($group) use ($request) {
+            $inventario = $group->first();
+            $cantidad_total = $group->sum('cantidad_total');
+            $cantidad_existente = $group->count();
+
+            if ($cantidad_existente <= $request->existencia_minima) {
                 return [
                     'id' => $inventario->id,
                     'sucursal_id' => $inventario->sucursal_id,
                     'producto_id' => $inventario->producto_id,
-                    'cantidad_existente' => $cantidad_existente,  // Solo mostrar cantidad_existente
+                    'cantidad_total' => $cantidad_total,
+                    'cantidad_existente' => $cantidad_existente,
                     'fecha_caducidad' => $inventario->fecha_caducidad,
                     'estatus' => $inventario->estatus,
                     'estatus_desc' => $inventario->estatus_desc,
@@ -709,20 +718,25 @@ class InventarioController extends Controller
                         ] : null,
                     ],
                 ];
-            })->values();
+            }
 
-            return response()->json([
-                'status' => true,
-                'results' => $productosList
-            ], 200);
-        } catch (\Exception $e) {
-            Log::error("InventarioController->getProductosConPocaExistencia() | " . $e->getMessage() . " | " . $e->getLine());
+            return null;
+        })->filter()->values();
 
-            return response()->json([
-                'status' => false,
-                'message' => "[ERROR] InventarioController->getProductosConPocaExistencia() | " . $e->getMessage() . " | " . $e->getLine(),
-                'results' => null
-            ], 500);
-        }
+        return response()->json([
+            'status' => true,
+            'results' => $productosList
+        ], 200);
+
+    } catch (\Exception $e) {
+        Log::info("InventarioController->getProductosBajaExistencia() | " . $e->getMessage() . " | " . $e->getLine());
+
+        return response()->json([
+            'status' => false,
+            'message' => "[ERROR] InventarioController->getProductosBajaExistencia() | " . $e->getMessage() . " | " . $e->getLine(),
+            'results' => null
+        ], 500);
     }
+}
+
 }
