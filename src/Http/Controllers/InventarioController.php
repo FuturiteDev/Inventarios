@@ -74,32 +74,25 @@ class InventarioController extends Controller
         return view('inventarios::existencias');
     }
 
-
-    /**
-     * Summary of getProductosConExistencias
-     * @param \Illuminate\Http\Request $request
-     * @return mixed|\Illuminate\Http\JsonResponse
-     */
     public function getProductosConExistencias(Request $request)
     {
         try {
-            // Obtener productos con existencias
-            $productos = Inventario::with(['producto' => function ($query) {
-                $query->where('estatus', 1); // Producto activo
-            }])
+            $productos = Inventario::with([
+                'producto' => function ($query) {
+                    $query->where('estatus', 1)
+                        ->with(['categoria', 'subcategoria']);
+                }
+            ])
                 ->where('sucursal_id', $request->sucursal_id)
-                ->where('cantidad_disponible', '>', 0)
                 ->where('estatus', '>', 0)
                 ->get();
 
-            // Filtrar productos activos y agruparlos por producto_id y fecha_caducidad
             $productosGrouped = $productos->filter(function ($inventario) {
                 return $inventario->producto !== null;
             })->groupBy(function ($inventario) {
                 return $inventario->producto_id . '-' . $inventario->fecha_caducidad;
             });
 
-            // Formatear la respuesta
             $productosList = $productosGrouped->map(function ($group) {
                 $inventario = $group->first();
                 $cantidad_total = $group->sum('cantidad_total');
@@ -113,12 +106,23 @@ class InventarioController extends Controller
                     'cantidad_existente' => $cantidad_existente,
                     'fecha_caducidad' => $inventario->fecha_caducidad,
                     'estatus' => $inventario->estatus,
-                    'estatus_desc' => $inventario->estatus === 1 ? 'activo' : 'inactivo',
+                    'estatus_desc' => $inventario->estatus_desc,
+
                     'producto' => [
                         'id' => $inventario->producto->id,
                         'nombre' => $inventario->producto->nombre,
                         'sku' => $inventario->producto->sku,
-                        'estatus' => $inventario->producto->estatus,
+                        'estatus' => $inventario->producto->estatus_desc,
+                        'caracteristicas' => $inventario->producto->caracteristicas_json,
+                        'extras' => $inventario->producto->extras_json,
+                        'categoria' => $inventario->producto->categoria ? [
+                            'id' => $inventario->producto->categoria->id,
+                            'nombre' => $inventario->producto->categoria->nombre,
+                        ] : null,
+                        'subcategoria' => $inventario->producto->subcategoria ? [
+                            'id' => $inventario->producto->subcategoria->id,
+                            'nombre' => $inventario->producto->subcategoria->nombre,
+                        ] : null,
                     ],
                 ];
             })->values();
@@ -137,6 +141,8 @@ class InventarioController extends Controller
             ], 500);
         }
     }
+
+
 
 
     /**
@@ -650,6 +656,71 @@ class InventarioController extends Controller
             return response()->json([
                 'status'  => false,
                 'message' => "[ERROR] InventarioController->productosExistenciaGeneral() | " . $e->getMessage() . " | " . $e->getLine(),
+                'results' => null
+            ], 500);
+        }
+    }
+
+
+
+    public function getProductosConPocaExistencia(Request $request)
+    {
+        try {
+            $productos = Inventario::select('producto_id', DB::raw('SUM(cantidad_disponible) as cantidad_existente'))
+                ->where('sucursal_id', $request->sucursal_id)
+                ->groupBy('producto_id')
+                ->havingRaw('cantidad_existente <= ?', [$request->existencia_minima])
+                ->get();
+
+            Log::info('Productos: ' . $productos);
+            $productosGrouped = $productos->filter(function ($inventario) {
+                return $inventario->producto !== null;
+            })->groupBy(function ($inventario) {
+                return $inventario->producto_id . '-' . $inventario->fecha_caducidad;
+            });
+
+            $productosList = $productosGrouped->map(function ($group) {
+                $inventario = $group->first();
+                $cantidad_existente = $group->sum('cantidad_existente');  // Asegúrate de sumar cantidad_existente
+
+                return [
+                    'id' => $inventario->id,
+                    'sucursal_id' => $inventario->sucursal_id,
+                    'producto_id' => $inventario->producto_id,
+                    'cantidad_existente' => $cantidad_existente,  // Solo mostrar cantidad_existente
+                    'fecha_caducidad' => $inventario->fecha_caducidad,
+                    'estatus' => $inventario->estatus,
+                    'estatus_desc' => $inventario->estatus_desc,
+
+                    'producto' => [
+                        'id' => $inventario->producto->id,
+                        'nombre' => $inventario->producto->nombre,
+                        'sku' => $inventario->producto->sku,
+                        'estatus' => $inventario->producto->estatus_desc,
+                        'caracteristicas' => $inventario->producto->caracteristicas_json,
+                        'extras' => $inventario->producto->extras_json,
+                        'categoria' => $inventario->producto->categoria ? [
+                            'id' => $inventario->producto->categoria->id,
+                            'nombre' => $inventario->producto->categoria->nombre,
+                        ] : null,
+                        'subcategoria' => $inventario->producto->subcategoria ? [
+                            'id' => $inventario->producto->subcategoria->id,
+                            'nombre' => $inventario->producto->subcategoria->nombre,
+                        ] : null,
+                    ],
+                ];
+            })->values();
+
+            return response()->json([
+                'status' => true,
+                'results' => $productosList
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error("InventarioController->getProductosConPocaExistencia() | " . $e->getMessage() . " | " . $e->getLine());
+
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] InventarioController->getProductosConPocaExistencia() | " . $e->getMessage() . " | " . $e->getLine(),
                 'results' => null
             ], 500);
         }
