@@ -84,6 +84,7 @@
                                 <div slot="sku" slot-scope="props">[[props.row.producto.sku]]</div>
                                 <div slot="cantidad" slot-scope="props">[[props.row.cantidad_existente]]</div>
                                 <div slot="fecha_caducidad" slot-scope="props">[[props.row.fecha_caducidad | fecha]]</div>
+                                <div slot="cantidad_existente" slot-scope="props">[[props.row.cantidad_existente ?? '0']]</div>
                                 <div slot="acciones" slot-scope="props">
                                     <button type="button" class="btn btn-icon btn-sm btn-primary btn-sm me-2" title="Agregar a Traspaso" data-bs-toggle="modal" data-bs-target="#kt_modal_add_traspaso" @click="modalTraspaso(props.row)"><i class="fa-solid fa-truck-fast"></i></button>
                                     <button type="button" class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Inventario" :disabled="loading" @click="deleteInventario(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
@@ -216,6 +217,7 @@
                                 <div slot="sku" slot-scope="props">[[props.row.producto.sku]]</div>
                                 <div slot="cantidad" slot-scope="props">[[props.row.cantidad_existente]]</div>
                                 <div slot="fecha_caducidad" slot-scope="props">[[props.row.fecha_caducidad | fecha]]</div>
+                                <div slot="cantidad_existente" slot-scope="props">[[props.row.cantidad_existente ?? '0']]</div>
                                 <div slot="acciones" slot-scope="props">
                                     <button type="button" class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Inventario" :disabled="loading" @click="deleteInventario(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
                                         <span class="indicator-label"><i class="fas fa-trash-alt"></i></i></span>
@@ -311,13 +313,13 @@
                 subcategorias_existencias: [],
                 subcategorias_general: [],
                 subcategorias_pocaexistencias: [],
-                columns: ['id','nombre','sku','cantidad','fecha_caducidad','acciones'],
+                columns: ['id','nombre','sku','cantidad_existente','fecha_caducidad','acciones'],
                 options: {
                     headings: {
                         id: 'ID',
                         sku: 'SKU',
                         nombre: 'Producto',
-                        cantidad: 'Cantidad',
+                        cantidad_existente: 'Cantidad Existente',
                         fecha_caducidad: 'Fecha de caducidad',
                         acciones: 'Acciones',
                     },
@@ -325,7 +327,7 @@
                         id: 'align-middle px-2 ',
                         sku: 'align-middle text-center ',
                         nombre: 'align-middle ',
-                        cantidad: 'align-middle text-center ',
+                        cantidad_existente: 'align-middle text-center ',
                         fecha_caducidad: 'align-middle text-center ',
                         acciones: 'align-middle text-center px-2 ',
                     },
@@ -353,11 +355,11 @@
                     },
                     filterAlgorithm: {
                         nombre(row, query) {
-                            let value = row.producto.nombre.toLowerCase();
+                            let value = row.producto?.nombre?.toLowerCase();
                             return value.includes(query.toLowerCase());
                         },
                         sku(row, query) {
-                            let value = row.producto.sku?.toLowerCase();
+                            let value = row.producto?.sku?.toLowerCase();
                             return value?.includes(query.toLowerCase());
                         },
                     },
@@ -525,7 +527,21 @@
                             sucursal_id: idSucursal ?? vm.filterSucursalExistencias
                         }
                     }).done(function (res) {
-                        vm.inventario = res.results;
+                        vm.inventario = res.results
+                        .flatMap(item => item.inventario
+                            .map(i =>Object.assign(i, {
+                                producto: {
+                                    id: item.id,
+                                    nombre: item.nombre,
+                                    sku: item.sku,
+                                    estatus: item.estatus,
+                                    caracteristicas: item.caracteristicas,
+                                    extras: item.extras,
+                                    categoria: item.categoria,
+                                    subcategoria: item.subcategoria,
+                                },
+                            }))
+                        );
                     }).fail(function (jqXHR, textStatus) {
                         if (textStatus != 'abort') {
                             console.log("Request failed getInventarioSucursal: " + textStatus, jqXHR);
@@ -670,7 +686,7 @@
                     this.traspaso_model = {
                         producto_id: producto.producto_id,
                         fecha_caducidad: producto.fecha_caducidad,
-                        producto_nombre: producto.producto.nombre,
+                        producto_nombre: producto.nombre,
                         cantidad_existente: producto.cantidad_existente,
                     };
                 },
@@ -746,7 +762,7 @@
                     }
                     if(this.showProductosTiendaExistencias){
                         list = list.filter(function (item) { 
-                            let tags = item.producto?.extras.find(el => el.slug == "tags");
+                            let tags = item.producto?.extras?.find(el => el.slug == "tags");
                             return tags && tags?.valor.includes("TIENDA");
                         });
                     }
@@ -755,14 +771,14 @@
                 listaGeneral(){
                     let list = this.inventario_general;
                     if(this.filterCategoriaGeneral){
-                        list = list.filter(item => item.producto?.categoria?.id == this.filterCategoriaGeneral);
+                        list = list.filter(item => item.categoria?.id == this.filterCategoriaGeneral);
                     }
                     if(this.filterSubcategoriaGeneral){
-                        list = list.filter(item => item.producto?.subcategoria?.id == this.filterSubcategoriaGeneral);
+                        list = list.filter(item => item.subcategoria?.id == this.filterSubcategoriaGeneral);
                     }
                     if(this.showProductosTiendaGeneral){
                         list = list.filter(function (item) { 
-                            let tags = item.producto?.extras.find(el => el.slug == "tags");
+                            let tags = item.extras?.find(el => el.slug == "tags");
                             return tags && tags?.valor.includes("TIENDA");
                         });
                     }
@@ -781,7 +797,7 @@
                     }
                     if(this.showProductosTiendaPocaExistencias){
                         list = list.filter(function (item) { 
-                            let tags = item.producto?.extras.find(el => el.slug == "tags");
+                            let tags = item.producto?.extras?.find(el => el.slug == "tags");
                             return tags && tags?.valor.includes("TIENDA");
                         });
                     }
