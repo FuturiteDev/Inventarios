@@ -25,15 +25,10 @@
                         <div slot="origen" slot-scope="props">[[props.row.sucursal_origen?.nombre]]</div>
                         <div slot="destino" slot-scope="props">[[props.row.sucursal_destino?.nombre]]</div>
                         <div slot="tipo" slot-scope="props"><div>[[ tipos.find(item => item.id == props.row.tipo)?.text ?? '--']]</div></div>
-                        <div slot="estatus" slot-scope="props">[[props.row.estatus]]</div>
+                        <div slot="estatus" slot-scope="props">[[props.row.estatus_desc]]</div>
                         <div slot="created_at" slot-scope="props">[[props.row.created_at | fecha]]</div>
                         <div slot="acciones" slot-scope="props">
                             <button type="button" class="btn btn-icon btn-sm btn-primary btn-sm me-2" title="Ver Traspaso" data-bs-toggle="modal" data-bs-target="#kt_modal_ver_traspaso" @click="initModalTraspaso(props.row)"><i class="fas fa-eye"></i></button>
-                            <button type="button" class="btn btn-icon btn-sm btn-info btn-sm me-2" title="Agregar a Traspaso" data-bs-toggle="modal" data-bs-target="#kt_modal_add_traspaso" @click="modalTraspaso(props.row)"><i class="fa-solid fa-truck-fast"></i></button>
-                            <button type="button" class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Inventario" :disabled="loading" @click="deleteInventario(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
-                                <span class="indicator-label"><i class="fas fa-trash-alt"></i></i></span>
-                                <span class="indicator-progress"><i class="fas fa-trash-alt"></i><span class="spinner-border spinner-border-sm align-middle"></span></span>
-                            </button>
                         </div>
                     </v-client-table>
                     <!--end::Table-->
@@ -160,12 +155,12 @@
                         tipo: 'align-middle text-center ',
                         estatus: 'align-middle text-center ',
                         fecha: 'align-middle text-center ',
-                        acciones: 'align-middle ',
+                        acciones: 'align-middle text-center px-2',
                     },
                     sortable: ['id', 'fecha'],
                     filterable: false,
                     skin: 'table table-sm table-rounded table-striped border align-middle table-row-bordered fs-6',
-                    columnsDropdown: true,
+                    columnsDropdown: false,
                     resizableColumns: false,
                     sortIcon: {
                         base: 'ms-3 fas',
@@ -201,8 +196,6 @@
                 if (container) {
                     vm.blockUI = new KTBlockUI(container);
                 }
-                $("#kt_modal_add_traspaso").on('shown.bs.modal', event => {
-                });
 
                 vm.getTraspasos(true);
             },
