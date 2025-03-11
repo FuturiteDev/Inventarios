@@ -77,55 +77,52 @@ class InventarioController extends Controller
     public function getProductosConExistencias(Request $request)
     {
         try {
-            $productos = Inventario::with([
-                'producto' => function ($query) {
-                    $query->where('estatus', 1)
-                        ->with(['categoria', 'subcategoria']);
-                }
-            ])
-                ->where('sucursal_id', $request->sucursal_id)
-                ->where('estatus', '>', 0)
+            $productos = $this->productos->where('estatus', 1)
+                ->with([
+                    'categoria',
+                    'subcategoria',
+                    'inventarios' => function ($query) use ($request) {
+                        $query->where('sucursal_id', $request->sucursal_id)
+                            ->where('estatus', '>', 0);
+                    }
+                ])
                 ->get();
 
-            $productosGrouped = $productos->filter(function ($inventario) {
-                return $inventario->producto !== null;
-            })->groupBy(function ($inventario) {
-                return $inventario->producto_id . '-' . $inventario->fecha_caducidad;
-            });
+            $productosList = $productos->map(function ($producto) {
+                $productosGrouped = $producto->inventarios->groupBy('fecha_caducidad');
 
-            $productosList = $productosGrouped->map(function ($group) {
-                $inventario = $group->first();
-                $cantidad_total = $group->sum('cantidad_total');
-                $cantidad_existente = $group->sum('cantidad_disponible');
+                $inventarioData = $productosGrouped->map(function ($group) {
+                    $inventario = $group->first();
+                    return [
+                        'id' => $inventario->id,
+                        'sucursal_id' => $inventario->sucursal_id,
+                        'producto_id' => $inventario->producto_id,
+                        'cantidad_total' => $group->sum('cantidad_total'),
+                        'cantidad_existente' => $group->sum('cantidad_disponible'),
+                        'fecha_caducidad' => $inventario->fecha_caducidad,
+                        'estatus' => $inventario->estatus,
+                        'estatus_desc' => $inventario->estatus_desc,
+                    ];
+                })->values();
 
                 return [
-                    'id' => $inventario->id,
-                    'sucursal_id' => $inventario->sucursal_id,
-                    'producto_id' => $inventario->producto_id,
-                    'cantidad_total' => $cantidad_total,
-                    'cantidad_existente' => $cantidad_existente,
-                    'fecha_caducidad' => $inventario->fecha_caducidad,
-                    'estatus' => $inventario->estatus,
-                    'estatus_desc' => $inventario->estatus_desc,
-
-                    'producto' => [
-                        'id' => $inventario->producto->id,
-                        'nombre' => $inventario->producto->nombre,
-                        'sku' => $inventario->producto->sku,
-                        'estatus' => $inventario->producto->estatus_desc,
-                        'caracteristicas' => $inventario->producto->caracteristicas_json,
-                        'extras' => $inventario->producto->extras_json,
-                        'categoria' => $inventario->producto->categoria ? [
-                            'id' => $inventario->producto->categoria->id,
-                            'nombre' => $inventario->producto->categoria->nombre,
-                        ] : null,
-                        'subcategoria' => $inventario->producto->subcategoria ? [
-                            'id' => $inventario->producto->subcategoria->id,
-                            'nombre' => $inventario->producto->subcategoria->nombre,
-                        ] : null,
-                    ],
+                    'id' => $producto->id,
+                    'nombre' => $producto->nombre,
+                    'sku' => $producto->sku,
+                    'estatus' => $producto->estatus_desc,
+                    'caracteristicas' => $producto->caracteristicas_json,
+                    'extras' => $producto->extras_json,
+                    'categoria' => $producto->categoria ? [
+                        'id' => $producto->categoria->id,
+                        'nombre' => $producto->categoria->nombre,
+                    ] : null,
+                    'subcategoria' => $producto->subcategoria ? [
+                        'id' => $producto->subcategoria->id,
+                        'nombre' => $producto->subcategoria->nombre,
+                    ] : null,
+                    'inventario' => $inventarioData
                 ];
-            })->values();
+            });
 
             return response()->json([
                 'status' => true,
@@ -141,8 +138,6 @@ class InventarioController extends Controller
             ], 500);
         }
     }
-
-
 
 
     /**
@@ -565,7 +560,6 @@ class InventarioController extends Controller
         }
     }
 
-
     public function sendNotification($request)
     {
         try {
@@ -610,12 +604,15 @@ class InventarioController extends Controller
         }
     }
 
-
     public function productosExistenciaGeneral(Request $request)
     {
         try {
             $productos = $this->productos->where('estatus', 1)
-                ->with('inventarios')
+                ->with([
+                    'inventarios',
+                    'categoria:id,nombre,descripcion',
+                    'subcategoria:id,nombre,descripcion'
+                ])
                 ->get();
 
             $sucursales = $this->sucursales->where('estatus', 1)->get();
@@ -643,6 +640,10 @@ class InventarioController extends Controller
                     'sku'              => $producto->sku,
                     'total_existencia' => $totalExistencia,
                     'sucursales'       => $sucursalData,
+                    'categoria'       => $producto->categoria,
+                    'subcategoria'       => $producto->subcategoria,
+                    'caracteristicas' => $producto->caracteristicas_json,
+                    'extras' => $producto->extras_json,
                 ];
             });
 
@@ -662,81 +663,66 @@ class InventarioController extends Controller
     }
 
     public function getProductosConPocaExistencia(Request $request)
-{
-    try {
-        $request->validate([
-            'sucursal_id' => 'required|integer|exists:sucursales,id',
-            'existencia_minima' => 'required|integer|min:0',
-        ]);
+    {
+        try {
+            $request->validate([
+                'sucursal_id' => 'required|integer|exists:sucursales,id',
+                'existencia_minima' => 'required|integer|min:0',
+            ]);
 
-        $productos = Inventario::with([
-            'producto' => function ($query) {
-                $query->where('estatus', 1)
-                    ->with(['categoria', 'subcategoria']);
-            }
-        ])
-            ->where('sucursal_id', $request->sucursal_id)
-            ->where('estatus', '>', 0)
-            ->get();
+            $productos = $this->productos->where('estatus', 1)
+                ->with(['inventarios' => function ($query) use ($request) {
+                    $query->where('sucursal_id', $request->sucursal_id);
+                }, 'categoria:id,nombre', 'subcategoria:id,nombre'])
+                ->get();
 
-        $productosGrouped = $productos->filter(function ($inventario) {
-            return $inventario->producto !== null;
-        })->groupBy(function ($inventario) {
-            return $inventario->producto_id . '-' . $inventario->fecha_caducidad;
-        });
+            $productosFiltrados = $productos->map(function ($producto) use ($request) {
+                $cantidad_total = $producto->inventarios->sum('cantidad_total');
+                $cantidad_existente = $producto->inventarios->sum('cantidad_disponible');
 
-        $productosList = $productosGrouped->map(function ($group) use ($request) {
-            $inventario = $group->first();
-            $cantidad_total = $group->sum('cantidad_total');
-            $cantidad_existente = $group->count();
+                if ($cantidad_existente <= $request->existencia_minima) {
+                    return [
+                        'id' => $producto->id,
+                        'sucursal_id' => $request->sucursal_id,
+                        'producto_id' => $producto->id,
+                        'cantidad_total' => $cantidad_total,
+                        'cantidad_existente' => $cantidad_existente,
+                        'fecha_caducidad' => $producto->inventarios->min('fecha_caducidad'),
+                        'estatus' => $producto->estatus,
+                        'estatus_desc' => $producto->estatus_desc,
+                        'producto' => [
+                            'id' => $producto->id,
+                            'nombre' => $producto->nombre,
+                            'sku' => $producto->sku,
+                            'estatus' => $producto->estatus_desc,
+                            'caracteristicas' => $producto->caracteristicas_json,
+                            'extras' => $producto->extras_json,
+                            'categoria' => $producto->categoria ? [
+                                'id' => $producto->categoria->id,
+                                'nombre' => $producto->categoria->nombre,
+                            ] : null,
+                            'subcategoria' => $producto->subcategoria ? [
+                                'id' => $producto->subcategoria->id,
+                                'nombre' => $producto->subcategoria->nombre,
+                            ] : null,
+                        ],
+                    ];
+                }
+                return null;
+            })->filter()->values();
 
-            if ($cantidad_existente <= $request->existencia_minima) {
-                return [
-                    'id' => $inventario->id,
-                    'sucursal_id' => $inventario->sucursal_id,
-                    'producto_id' => $inventario->producto_id,
-                    'cantidad_total' => $cantidad_total,
-                    'cantidad_existente' => $cantidad_existente,
-                    'fecha_caducidad' => $inventario->fecha_caducidad,
-                    'estatus' => $inventario->estatus,
-                    'estatus_desc' => $inventario->estatus_desc,
+            return response()->json([
+                'status' => true,
+                'results' => $productosFiltrados
+            ], 200);
+        } catch (\Exception $e) {
+            Log::info("InventarioController->getProductosConPocaExistencia() | " . $e->getMessage() . " | " . $e->getLine());
 
-                    'producto' => [
-                        'id' => $inventario->producto->id,
-                        'nombre' => $inventario->producto->nombre,
-                        'sku' => $inventario->producto->sku,
-                        'estatus' => $inventario->producto->estatus_desc,
-                        'caracteristicas' => $inventario->producto->caracteristicas_json,
-                        'extras' => $inventario->producto->extras_json,
-                        'categoria' => $inventario->producto->categoria ? [
-                            'id' => $inventario->producto->categoria->id,
-                            'nombre' => $inventario->producto->categoria->nombre,
-                        ] : null,
-                        'subcategoria' => $inventario->producto->subcategoria ? [
-                            'id' => $inventario->producto->subcategoria->id,
-                            'nombre' => $inventario->producto->subcategoria->nombre,
-                        ] : null,
-                    ],
-                ];
-            }
-
-            return null;
-        })->filter()->values();
-
-        return response()->json([
-            'status' => true,
-            'results' => $productosList
-        ], 200);
-
-    } catch (\Exception $e) {
-        Log::info("InventarioController->getProductosBajaExistencia() | " . $e->getMessage() . " | " . $e->getLine());
-
-        return response()->json([
-            'status' => false,
-            'message' => "[ERROR] InventarioController->getProductosBajaExistencia() | " . $e->getMessage() . " | " . $e->getLine(),
-            'results' => null
-        ], 500);
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] InventarioController->getProductosConPocaExistencia() | " . $e->getMessage() . " | " . $e->getLine(),
+                'results' => null
+            ], 500);
+        }
     }
-}
-
 }
