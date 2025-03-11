@@ -685,11 +685,7 @@ class InventarioController extends Controller
                         'id' => $producto->id,
                         'sucursal_id' => $request->sucursal_id,
                         'producto_id' => $producto->id,
-                        'cantidad_total' => $cantidad_total,
                         'cantidad_existente' => $cantidad_existente,
-                        'fecha_caducidad' => $producto->inventarios->min('fecha_caducidad'),
-                        'estatus' => $producto->estatus,
-                        'estatus_desc' => $producto->estatus_desc,
                         'producto' => [
                             'id' => $producto->id,
                             'nombre' => $producto->nombre,
