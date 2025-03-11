@@ -671,10 +671,17 @@ class InventarioController extends Controller
             ]);
 
             $productos = $this->productos->where('estatus', 1)
-                ->with(['inventarios' => function ($query) use ($request) {
-                    $query->where('sucursal_id', $request->sucursal_id);
-                }, 'categoria:id,nombre', 'subcategoria:id,nombre'])
+                ->with([
+                    'inventarios' => function ($query) use ($request) {
+                        $query->where('sucursal_id', $request->sucursal_id)
+                            ->where('estatus', 1)
+                            ->where('cantidad_disponible', '>', 0);
+                    },
+                    'categoria:id,nombre',
+                    'subcategoria:id,nombre'
+                ])
                 ->get();
+
 
             $productosFiltrados = $productos->map(function ($producto) use ($request) {
                 $cantidad_total = $producto->inventarios->sum('cantidad_total');
