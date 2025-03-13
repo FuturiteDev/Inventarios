@@ -212,18 +212,11 @@
                                 </div>
                             </div>
                             <!--end::Toolbar-->
-                            <v-client-table v-model="listaPocaExistencia" :columns="columns" :options="options">
+                            <v-client-table v-model="listaPocaExistencia" :columns="columnsPocaExistencia" :options="options">
                                 <div slot="nombre" slot-scope="props">[[props.row.producto.nombre]]</div>
                                 <div slot="sku" slot-scope="props">[[props.row.producto.sku]]</div>
                                 <div slot="cantidad" slot-scope="props">[[props.row.cantidad_existente]]</div>
-                                <div slot="fecha_caducidad" slot-scope="props">[[props.row.fecha_caducidad | fecha]]</div>
                                 <div slot="cantidad_existente" slot-scope="props">[[props.row.cantidad_existente ?? '0']]</div>
-                                <div slot="acciones" slot-scope="props">
-                                    <button type="button" class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Inventario" :disabled="loading" @click="deleteInventario(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
-                                        <span class="indicator-label"><i class="fas fa-trash-alt"></i></i></span>
-                                        <span class="indicator-progress"><i class="fas fa-trash-alt"></i><span class="spinner-border spinner-border-sm align-middle"></span></span>
-                                    </button>
-                                </div>
                             </v-client-table>
                         </div>
                     </div>
@@ -314,6 +307,7 @@
                 subcategorias_general: [],
                 subcategorias_pocaexistencias: [],
                 columns: ['id','nombre','sku','cantidad_existente','fecha_caducidad','acciones'],
+                columnsPocaExistencia: ['id','nombre','sku','cantidad_existente'],
                 options: {
                     headings: {
                         id: 'ID',
@@ -331,7 +325,7 @@
                         fecha_caducidad: 'align-middle text-center ',
                         acciones: 'align-middle text-center px-2 ',
                     },
-                    sortable: ['sku', 'fecha_caducidad'],
+                    sortable: ['sku', 'fecha_caducidad','cantidad_existente'],
                     filterable: ['nombre', 'sku'],
                     skin: 'table table-sm table-rounded table-striped border align-middle table-row-bordered fs-6',
                     columnsDropdown: true,

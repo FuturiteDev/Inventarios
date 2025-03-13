@@ -55,8 +55,8 @@
                     </div>
                     <!--end::Modal header-->
                     <!--begin::Modal body-->
-                    <div class="modal-body" v-if="show_traspaso">    
-                        <div class="row mb-7">
+                    <div class="modal-body" v-if="show_traspaso">
+                        <div class="row g-7 mb-7">
                             <div class="col-6">
                                 <label class="fs-6 fw-bold">ID</label>
                                 <div>[[show_traspaso.id]]</div>
@@ -65,8 +65,6 @@
                                 <label class="fs-6 fw-bold">Fecha</label>
                                 <div>[[show_traspaso.created_at | fecha]]</div>
                             </div>
-                        </div>
-                        <div class="row mb-7">
                             <div class="col-6">
                                 <label class="fs-6 fw-bold">Sucursal origen</label>
                                 <div>[[show_traspaso.sucursal_origen?.nombre]]</div>
@@ -75,42 +73,55 @@
                                 <label class="fs-6 fw-bold">Sucursal destino</label>
                                 <div>[[show_traspaso.sucursal_destino?.nombre]]</div>
                             </div>
-                        </div>
-                        <div class="row mb-7">
                             <div class="col-6">
                                 <label class="fs-6 fw-bold">Tipo de traspaso</label>
                                 <div>[[ tipos.find(item => item.id == show_traspaso.tipo)?.text ?? '--']]</div>
                             </div>
                             <div class="col-6">
                                 <label class="fs-6 fw-bold">Estatus de traspaso</label>
-                                <div>[[show_traspaso.estatus]]</div>
+                                <div>[[show_traspaso.estatus_desc]]</div>
                             </div>
-                        </div>
-                        <div class="row mb-7">
                             <div class="col-6">
                                 <label class="fs-6 fw-bold">Empleado</label>
-                                <div>[[show_traspaso.empleado?.nombre_completo]]</div>
-                                <div class="text-muted">[[show_traspaso.empleado?.no_empleado]]</div>
+                                <div>[[show_traspaso.empleado?.nombre_completo ?? '--']]</div>
+                                <div class="text-muted">[[show_traspaso.empleado?.no_empleado ?? '--']]</div>
                             </div>
                             <div class="col-6">
                                 <label class="fs-6 fw-bold">Empleado asignado</label>
-                                <div>[[show_traspaso.empleado_asignado?.nombre_completo]]</div>
-                                <div class="text-muted">[[show_traspaso.empleado_asignado?.no_empleado]]</div>
+                                <div>[[show_traspaso.empleado_asignado?.nombre_completo ?? '--']]</div>
+                                <div class="text-muted">[[show_traspaso.empleado_asignado?.no_empleado ?? '--']]</div>
                             </div>
-                        </div>
-                        <div class="row mb-7">
-                            <label class="fs-6 fw-bold">Productos</label>
-                            <ul class="list-group" v-if="show_traspaso.traspaso_productos">
-                                <li class="list-group-item d-flex justify-content-between align-items-center" v-for="producto in show_traspaso.traspaso_productos">
-                                    [[producto?.producto?.nombre]]
-                                    <v-file class="border-1" :files="producto?.producto?.foto" v-if="producto?.producto?.foto"></v-file>
-                                    <span class="badge badge-info badge-pill">[[producto.cantidad]]</span>
-                                </li>
-                            </ul>
-                        </div>
-                        <div class="row mb-7">
-                            <label class="fs-6 fw-bold">Comentarios</label>
-                            <div>[[show_traspaso.comentarios]]</div>
+                            <div class="col-12" v-if="show_traspaso.productos">
+                                <label class="fs-6 fw-bold">Productos</label>
+                                <table class="border border-1 no-footer table table-bordered table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th tabindex="0" class="VueTables__heading text-center align-middle">Producto</th>
+                                            <th tabindex="0" class="VueTables__heading text-center align-middle">SKU</th>
+                                            <th tabindex="0" class="VueTables__heading text-center align-middle">Fecha de caducidad</th>
+                                            <th tabindex="0" class="VueTables__heading text-center align-middle">Cantidad</th>
+                                            <th tabindex="0" class="VueTables__heading text-center align-middle">Cantidad Recibida</th>
+                                            <th tabindex="0" class="VueTables__heading text-center align-middle"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="align-middle" v-for="prod in show_traspaso.productos" :key="'prod_' + prod.id">
+                                            <td class="text-center align-middle">[[prod.nombre ?? '']]</td>
+                                            <td class="text-center align-middle">[[prod.sku ?? '']]</td>
+                                            <td class="text-center align-middle">[[prod.fecha_caducidad | fecha]]</td>
+                                            <td class="text-center align-middle">[[prod.cantidad ?? '']]</td>
+                                            <td class="text-center align-middle">[[prod.cantidad_recibida ?? '']]</td>
+                                            <td class="text-center align-middle">
+                                                <a class="btn btn-primary btn-icon btn-sm" href="prod.foto" target="_blank"><i class="fas fa-eye"></i></a>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-12">
+                                <label class="fs-6 fw-bold">Comentarios</label>
+                                <div>[[show_traspaso.comentarios]]</div>
+                            </div>
                         </div>
                     </div>
                     <!--end::Modal body-->
@@ -246,6 +257,21 @@
                         type: 'GET',
                     }).done(function (res) {
                         vm.show_traspaso = res.results;
+
+                        vm.show_traspaso.productos = res.results.detalle
+                        .flatMap(item => item.fechas
+                            .map(i => ({
+                                nombre: item.nombre,
+                                sku: item.sku,
+                                id: i.id,
+                                fecha_caducidad: i.fecha_caducidad,
+                                cantidad: i.cantidad,
+                                cantidad_recibida: i.cantidad_recibida,
+
+                            }))
+                        );
+
+                        console.log(res.results);
                     }).fail(function (jqXHR, textStatus) {
                         if (textStatus != 'abort') {
                             console.log("Request failed getTraspasoDetalle: " + textStatus, jqXHR);
