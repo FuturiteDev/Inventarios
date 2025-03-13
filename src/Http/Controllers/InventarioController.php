@@ -120,7 +120,8 @@ class InventarioController extends Controller
                         'id' => $producto->subcategoria->id,
                         'nombre' => $producto->subcategoria->nombre,
                     ] : null,
-                    'inventario' => $inventarioData
+                    'inventario' => $inventarioData,
+                    'colecciones' => $producto->colecciones
                 ];
             });
 
@@ -644,6 +645,7 @@ class InventarioController extends Controller
                     'subcategoria'       => $producto->subcategoria,
                     'caracteristicas' => $producto->caracteristicas_json,
                     'extras' => $producto->extras_json,
+                    'colecciones' => $producto->colecciones,
                 ];
             });
 
@@ -708,6 +710,7 @@ class InventarioController extends Controller
                                 'id' => $producto->subcategoria->id,
                                 'nombre' => $producto->subcategoria->nombre,
                             ] : null,
+                            'colecciones' => $producto->colecciones
                         ],
                     ];
                 }
