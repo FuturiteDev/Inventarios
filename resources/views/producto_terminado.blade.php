@@ -308,8 +308,9 @@
                                     defaultDate: "today",
                                     onChange: function(selectedDates, dateStr, instance) {
                                         let index = vm.inventario_productos.findIndex(item => item.id == producto.id);
-                                        if(p && p.dias_anaquel){
-                                            vm.$set(vm.inventario_productos[index], 'fecha_caducidad', moment(selectedDates[0]).add(p.dias_anaquel, 'd').format('DD/MM/YYYY'))
+                                        if(index!=-1){
+                                            let fecha =  moment(selectedDates[0]).add(vm.inventario_productos[index].dias_anaquel, 'd').format('DD/MM/YYYY');
+                                            vm.$set(vm.inventario_productos[index], 'fecha_caducidad', fecha);
                                         }
                                     },
                                 });

@@ -70,34 +70,40 @@ class TraspasosController extends Controller
                     'sucursalDestino',
                     'empleado:id,nombre,no_empleado',
                     'empleadoAsignado:id,nombre,no_empleado',
-                    // 'traspasoProductos.producto'
-                ])
+                    // 'traspasoProductos:id,foto,traspaso_id'
+                    ])
                 ->find($traspaso_id);
 
-            $traspasoProductos = $traspaso->traspasoProductos()->with('producto')->get();
-            $detalle = [];
-            foreach($traspasoProductos->groupBy('producto_id') as $gpo){
-                $tmpProd = $gpo->first()->producto->only('id', 'nombre', 'sku');
-                $tmpProd['cantidad_total'] = 0;
-                $tmpProd['fechas'] = [] ;
-                foreach($gpo as $row){
-                    $tmpProd['cantidad_total'] += $row->cantidad;
-                    $tmpProd['fechas'][] = [
-                        'id' => $row->id,
-                        'fecha_caducidad' => $row->fecha_caducidad,
-                        'cantidad' => $row->cantidad,
-                        'cantidad_recibida' => $row->cantidad_recibida,
-                    ];
-                }
-                $detalle[] = $tmpProd;
-            }
 
-            $traspaso->detalle = $detalle;
-            
-            return response()->json([
-                'status' => true,
-                'results' => $traspaso
-            ], 200);
+                $traspasoProductos = $traspaso->traspasoProductos()->with('producto')->get();
+
+                $detalle = [];
+                foreach ($traspasoProductos->groupBy('producto_id') as $gpo) {
+                    $tmpProd = $gpo->first()->producto->only('id', 'nombre', 'sku');
+                    $tmpProd['cantidad_total'] = 0;
+                    $tmpProd['fechas'] = [];
+                    
+                    foreach ($gpo as $row) {
+                        $tmpProd['cantidad_total'] += $row->cantidad;
+                        $tmpProd['fechas'][] = [
+                            'id' => $row->id,
+                            'fecha_caducidad' => $row->fecha_caducidad,
+                            'cantidad' => $row->cantidad,
+                            'cantidad_recibida' => $row->cantidad_recibida,
+                            'foto' => $row->foto
+                        ];
+                    }
+                
+                    $detalle[] = $tmpProd;
+                }
+                
+                $traspaso->detalle = $detalle;
+                
+                return response()->json([
+                    'status' => true,
+                    'results' => $traspaso
+                ], 200);
+                
         } catch (\Exception $e) {
             Log::info("TraspasosController->getTraspaso() | " . $e->getMessage() . " | " . $e->getLine());
 

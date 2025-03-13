@@ -120,7 +120,8 @@ class InventarioController extends Controller
                         'id' => $producto->subcategoria->id,
                         'nombre' => $producto->subcategoria->nombre,
                     ] : null,
-                    'inventario' => $inventarioData
+                    'inventario' => $inventarioData,
+                    'colecciones' => $producto->colecciones
                 ];
             });
 
@@ -644,6 +645,7 @@ class InventarioController extends Controller
                     'subcategoria'       => $producto->subcategoria,
                     'caracteristicas' => $producto->caracteristicas_json,
                     'extras' => $producto->extras_json,
+                    'colecciones' => $producto->colecciones,
                 ];
             });
 
@@ -671,10 +673,17 @@ class InventarioController extends Controller
             ]);
 
             $productos = $this->productos->where('estatus', 1)
-                ->with(['inventarios' => function ($query) use ($request) {
-                    $query->where('sucursal_id', $request->sucursal_id);
-                }, 'categoria:id,nombre', 'subcategoria:id,nombre'])
+                ->with([
+                    'inventarios' => function ($query) use ($request) {
+                        $query->where('sucursal_id', $request->sucursal_id)
+                            ->where('estatus', 1)
+                            ->where('cantidad_disponible', '>', 0);
+                    },
+                    'categoria:id,nombre',
+                    'subcategoria:id,nombre'
+                ])
                 ->get();
+
 
             $productosFiltrados = $productos->map(function ($producto) use ($request) {
                 $cantidad_total = $producto->inventarios->sum('cantidad_total');
@@ -685,11 +694,7 @@ class InventarioController extends Controller
                         'id' => $producto->id,
                         'sucursal_id' => $request->sucursal_id,
                         'producto_id' => $producto->id,
-                        'cantidad_total' => $cantidad_total,
                         'cantidad_existente' => $cantidad_existente,
-                        'fecha_caducidad' => $producto->inventarios->min('fecha_caducidad'),
-                        'estatus' => $producto->estatus,
-                        'estatus_desc' => $producto->estatus_desc,
                         'producto' => [
                             'id' => $producto->id,
                             'nombre' => $producto->nombre,
@@ -705,6 +710,7 @@ class InventarioController extends Controller
                                 'id' => $producto->subcategoria->id,
                                 'nombre' => $producto->subcategoria->nombre,
                             ] : null,
+                            'colecciones' => $producto->colecciones
                         ],
                     ];
                 }
