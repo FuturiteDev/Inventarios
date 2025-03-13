@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Log;
-
+use Ongoing\Inventarios\Entities\Colecciones;
 use Ongoing\Inventarios\Repositories\ColeccionesRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\ColeccionesProductosRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\ProductosRepositoryEloquent;
@@ -70,8 +70,8 @@ class ColeccionesController extends Controller
     public function getProductosColeccion($coleccion_id)
     {
         try {
-            $coleccion = $this->colecciones->with(['productos' => ['categoria', 'subcategoria']])->find($coleccion_id);
-
+            $coleccion = Colecciones::with(['productos.categoria', 'productos.subcategoria'])->find($coleccion_id);
+            
             return response()->json([
                 'status' => true,
                 'results' => $coleccion->productos
