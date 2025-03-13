@@ -56,6 +56,15 @@
                                 <div>
                                     <v-select
                                         class="pe-20"
+                                        v-model="filterColeccionExistencias"
+                                        :options="listaColecciones"
+                                        data-allow-clear="true"
+                                        data-placeholder="Filtrar por coleccion">
+                                    </v-select>
+                                </div>
+                                <!-- <div>
+                                    <v-select
+                                        class="pe-20"
                                         v-model="filterCategoriaExistencias"
                                         :options="listaCategorias"
                                         data-allow-clear="true"
@@ -70,7 +79,7 @@
                                         data-allow-clear="true"
                                         data-placeholder="Filtrar por subcategoria">
                                     </v-select>
-                                </div>
+                                </div> -->
                                 <div class="align-content-center">
                                     <div class="form-check form-switch form-check-custom form-check-solid">
                                         <input class="form-check-input" type="checkbox" v-model="showProductosTiendaExistencias"/>
@@ -113,6 +122,15 @@
                                 <div>
                                     <v-select
                                         class="pe-20"
+                                        v-model="filterColeccionGeneral"
+                                        :options="listaColecciones"
+                                        data-allow-clear="true"
+                                        data-placeholder="Filtrar por coleccion">
+                                    </v-select>
+                                </div>
+                                <!-- <div>
+                                    <v-select
+                                        class="pe-20"
                                         v-model="filterCategoriaGeneral"
                                         :options="listaCategorias"
                                         data-allow-clear="true"
@@ -127,7 +145,7 @@
                                         data-allow-clear="true"
                                         data-placeholder="Filtrar por subcategoria">
                                     </v-select>
-                                </div>
+                                </div> -->
                                 <div class="align-content-center">
                                     <div class="form-check form-switch form-check-custom form-check-solid">
                                         <input class="form-check-input" type="checkbox" v-model="showProductosTiendaGeneral"/>
@@ -189,6 +207,15 @@
                                 <div>
                                     <v-select
                                         class="pe-20"
+                                        v-model="filterColeccionPocaExistencias"
+                                        :options="listaColecciones"
+                                        data-allow-clear="true"
+                                        data-placeholder="Filtrar por coleccion">
+                                    </v-select>
+                                </div>
+                                <!-- <div>
+                                    <v-select
+                                        class="pe-20"
                                         v-model="filterCategoriaPocaExistencias"
                                         :options="listaCategorias"
                                         data-allow-clear="true"
@@ -203,7 +230,7 @@
                                         data-allow-clear="true"
                                         data-placeholder="Filtrar por subcategoria">
                                     </v-select>
-                                </div>
+                                </div> -->
                                 <div class="align-content-center">
                                     <div class="form-check form-switch form-check-custom form-check-solid">
                                         <input class="form-check-input" type="checkbox" v-model="showProductosTiendaPocaExistencias"/>
@@ -302,10 +329,11 @@
                 inventario_general: [],
                 inventario_pocaexistencia: [],
                 sucursales: [],
-                categorias: [],
-                subcategorias_existencias: [],
-                subcategorias_general: [],
-                subcategorias_pocaexistencias: [],
+                colecciones: [],
+                // categorias: [],
+                // subcategorias_existencias: [],
+                // subcategorias_general: [],
+                // subcategorias_pocaexistencias: [],
                 columns: ['id','nombre','sku','cantidad_existente','fecha_caducidad','acciones'],
                 columnsPocaExistencia: ['id','nombre','sku','cantidad_existente'],
                 options: {
@@ -363,12 +391,15 @@
                 filterSucursalPocaExistencias: null,
                 filterFechaExistencias: null,
                 filterFechaPocaExistencias: null,
-                filterCategoriaExistencias: null,
-                filterCategoriaGeneral: null,
-                filterCategoriaPocaExistencias: null,
-                filterSubcategoriaExistencias: null,
-                filterSubcategoriaGeneral: null,
-                filterSubcategoriaPocaExistencias: null,
+                filterColeccionExistencias: null,
+                filterColeccionGeneral: null,
+                filterColeccionPocaExistencias: null,
+                // filterCategoriaExistencias: null,
+                // filterCategoriaGeneral: null,
+                // filterCategoriaPocaExistencias: null,
+                // filterSubcategoriaExistencias: null,
+                // filterSubcategoriaGeneral: null,
+                // filterSubcategoriaPocaExistencias: null,
                 showProductosTiendaExistencias: false,
                 showProductosTiendaGeneral: false,
                 showProductosTiendaPocaExistencias: false,
@@ -422,7 +453,8 @@
 
                 vm.formValidate();
                 vm.getSucursales();
-                vm.getCategorias();
+                //vm.getCategorias();
+                vm.getColecciones();
                 vm.getInventarioGeneral();
             },
             methods: {
@@ -441,30 +473,36 @@
                         }, 'json'
                     );
                 },
-                getCategorias() {
+                getColecciones() {
                     let vm = this;
-                    $.get('/api/categorias/all', res => {
-                        vm.categorias = res.results;
+                    $.get('/api/colecciones/all', res => {
+                        vm.colecciones = res.results;
                     }, 'json');
                 },
-                getSubcategorias1(categoriaID) {
-                    let vm = this;
-                    $.get(`/api/sub-categorias/categoria/${categoriaID}`, res => {
-                        vm.subcategorias_existencias = res.results;
-                    }, 'json');
-                },
-                getSubcategorias2(categoriaID) {
-                    let vm = this;
-                    $.get(`/api/sub-categorias/categoria/${categoriaID}`, res => {
-                        vm.subcategorias_general = res.results;
-                    }, 'json');
-                },
-                getSubcategorias3(categoriaID) {
-                    let vm = this;
-                    $.get(`/api/sub-categorias/categoria/${categoriaID}`, res => {
-                        vm.subcategorias_pocaexistencias = res.results;
-                    }, 'json');
-                },
+                // getCategorias() {
+                //     let vm = this;
+                //     $.get('/api/categorias/all', res => {
+                //         vm.categorias = res.results;
+                //     }, 'json');
+                // },
+                // getSubcategorias1(categoriaID) {
+                //     let vm = this;
+                //     $.get(`/api/sub-categorias/categoria/${categoriaID}`, res => {
+                //         vm.subcategorias_existencias = res.results;
+                //     }, 'json');
+                // },
+                // getSubcategorias2(categoriaID) {
+                //     let vm = this;
+                //     $.get(`/api/sub-categorias/categoria/${categoriaID}`, res => {
+                //         vm.subcategorias_general = res.results;
+                //     }, 'json');
+                // },
+                // getSubcategorias3(categoriaID) {
+                //     let vm = this;
+                //     $.get(`/api/sub-categorias/categoria/${categoriaID}`, res => {
+                //         vm.subcategorias_pocaexistencias = res.results;
+                //     }, 'json');
+                // },
                 getInventarioGeneral(showLoader) {
                     let vm = this;
                     if (showLoader) {
@@ -533,6 +571,8 @@
                                     extras: item.extras,
                                     categoria: item.categoria,
                                     subcategoria: item.subcategoria,
+                                    subcategoria: item.subcategoria,
+                                    colecciones: item.colecciones,
                                 },
                             }))
                         );
@@ -744,17 +784,21 @@
                     return this.sucursales.map(item => ({id: item.id, text: item.nombre}));
                 },
                 listaInventario(){
-                    let list = this.inventario;
-                    if(this.filterFechaExistencias){
-                        list = list.filter(item => moment(item.fecha_caducidad).format('DD/MM/Y') == this.filterFechaExistencias);
+                    let vm = this;
+                    let list = vm.inventario;
+                    if(vm.filterFechaExistencias){
+                        list = list.filter(item => moment(item.fecha_caducidad).format('DD/MM/Y') == vm.filterFechaExistencias);
                     }
-                    if(this.filterCategoriaExistencias){
-                        list = list.filter(item => item.producto?.categoria?.id == this.filterCategoriaExistencias);
+                    if(vm.filterColeccionExistencias){
+                        list = list.filter( item => item.producto?.colecciones.some(col => col.id == vm.filterColeccionExistencias));
                     }
-                    if(this.filterSubcategoriaExistencias){
-                        list = list.filter(item => item.producto?.subcategoria?.id == this.filterSubcategoriaExistencias);
-                    }
-                    if(this.showProductosTiendaExistencias){
+                    // if(this.filterCategoriaExistencias){
+                    //     list = list.filter(item => item.producto?.categoria?.id == this.filterCategoriaExistencias);
+                    // }
+                    // if(this.filterSubcategoriaExistencias){
+                    //     list = list.filter(item => item.producto?.subcategoria?.id == this.filterSubcategoriaExistencias);
+                    // }
+                    if(vm.showProductosTiendaExistencias){
                         list = list.filter(function (item) { 
                             let tags = item.producto?.extras?.find(el => el.slug == "tags");
                             return tags && tags?.valor.includes("TIENDA");
@@ -763,14 +807,18 @@
                     return list;
                 },
                 listaGeneral(){
-                    let list = this.inventario_general;
-                    if(this.filterCategoriaGeneral){
-                        list = list.filter(item => item.categoria?.id == this.filterCategoriaGeneral);
+                    let vm = this;
+                    let list = vm.inventario_general;
+                    if(vm.filterColeccionGeneral){
+                        list = list.filter(item => item.colecciones.some(col => col.id == vm.filterColeccionGeneral));
                     }
-                    if(this.filterSubcategoriaGeneral){
-                        list = list.filter(item => item.subcategoria?.id == this.filterSubcategoriaGeneral);
-                    }
-                    if(this.showProductosTiendaGeneral){
+                    // if(this.filterCategoriaGeneral){
+                    //     list = list.filter(item => item.categoria?.id == this.filterCategoriaGeneral);
+                    // }
+                    // if(this.filterSubcategoriaGeneral){
+                    //     list = list.filter(item => item.subcategoria?.id == this.filterSubcategoriaGeneral);
+                    // }
+                    if(vm.showProductosTiendaGeneral){
                         list = list.filter(function (item) { 
                             let tags = item.extras?.find(el => el.slug == "tags");
                             return tags && tags?.valor.includes("TIENDA");
@@ -779,17 +827,21 @@
                     return list;
                 },
                 listaPocaExistencia(){
-                    let list = this.inventario_pocaexistencia;
-                    if(this.filterFechaPocaExistencias){
-                        list = list.filter(item => moment(item.fecha_caducidad).format('DD/MM/Y') == this.filterFechaPocaExistencias);
+                    let vm = this;
+                    let list = vm.inventario_pocaexistencia;
+                    if(vm.filterFechaPocaExistencias){
+                        list = list.filter(item => moment(item.fecha_caducidad).format('DD/MM/Y') == vm.filterFechaPocaExistencias);
                     }
-                    if(this.filterCategoriaPocaExistencias){
-                        list = list.filter(item => item.producto?.categoria?.id == this.filterCategoriaPocaExistencias);
+                    if(vm.filterColeccionPocaExistencias){
+                        list = list.filter(item => item.producto?.colecciones.some(col => col.id == vm.filterColeccionPocaExistencias));
                     }
-                    if(this.filterSubcategoriaPocaExistencias){
-                        list = list.filter(item => item.producto?.subcategoria?.id == this.filterSubcategoriaPocaExistencias);
-                    }
-                    if(this.showProductosTiendaPocaExistencias){
+                    // if(this.filterCategoriaPocaExistencias){
+                    //     list = list.filter(item => item.producto?.categoria?.id == this.filterCategoriaPocaExistencias);
+                    // }
+                    // if(this.filterSubcategoriaPocaExistencias){
+                    //     list = list.filter(item => item.producto?.subcategoria?.id == this.filterSubcategoriaPocaExistencias);
+                    // }
+                    if(vm.showProductosTiendaPocaExistencias){
                         list = list.filter(function (item) { 
                             let tags = item.producto?.extras?.find(el => el.slug == "tags");
                             return tags && tags?.valor.includes("TIENDA");
@@ -797,18 +849,21 @@
                     }
                     return list;
                 },
-                listaCategorias() {
-                    return this.categorias.map(item => ({ id: item.id, text: item.nombre }));
+                listaColecciones() {
+                    return this.colecciones.map(item => ({ id: item.id, text: item.nombre }));
                 },
-                listaSubcategorias1() {
-                    return this.subcategorias_existencias.map(item => ({ id: item.id, text: item.nombre }));
-                },
-                listaSubcategorias2() {
-                    return this.subcategorias_general.map(item => ({ id: item.id, text: item.nombre }));
-                },
-                listaSubcategorias3() {
-                    return this.subcategorias_pocaexistencias.map(item => ({ id: item.id, text: item.nombre }));
-                },
+                // listaCategorias() {
+                //     return this.categorias.map(item => ({ id: item.id, text: item.nombre }));
+                // },
+                // listaSubcategorias1() {
+                //     return this.subcategorias_existencias.map(item => ({ id: item.id, text: item.nombre }));
+                // },
+                // listaSubcategorias2() {
+                //     return this.subcategorias_general.map(item => ({ id: item.id, text: item.nombre }));
+                // },
+                // listaSubcategorias3() {
+                //     return this.subcategorias_pocaexistencias.map(item => ({ id: item.id, text: item.nombre }));
+                // },
                 columnsGlobal(){
                     let columns = ['sku','nombre','total_existencia'];
                     this.sucursales.forEach(item => {
@@ -864,27 +919,27 @@
                 },
             },
             watch: {
-                filterCategoriaExistencias(n,o){
-                    if(n){
-                        this.getSubcategorias1(n);
-                    } else {
-                        this.subcategorias_existencias = [];
-                    }
-                },
-                filterCategoriaGeneral(n,o){
-                    if(n){
-                        this.getSubcategorias2(n);
-                    } else {
-                        this.subcategorias_general = [];
-                    }
-                },
-                filterCategoriaPocaExistencias(n,o){
-                    if(n){
-                        this.getSubcategorias3(n);
-                    } else {
-                        this.subcategorias_pocaexistencias = [];
-                    }
-                }
+                // filterCategoriaExistencias(n,o){
+                //     if(n){
+                //         this.getSubcategorias1(n);
+                //     } else {
+                //         this.subcategorias_existencias = [];
+                //     }
+                // },
+                // filterCategoriaGeneral(n,o){
+                //     if(n){
+                //         this.getSubcategorias2(n);
+                //     } else {
+                //         this.subcategorias_general = [];
+                //     }
+                // },
+                // filterCategoriaPocaExistencias(n,o){
+                //     if(n){
+                //         this.getSubcategorias3(n);
+                //     } else {
+                //         this.subcategorias_pocaexistencias = [];
+                //     }
+                // }
             },
             filters: {
                 fecha: function (value, usrFormat) {

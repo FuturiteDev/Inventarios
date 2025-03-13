@@ -96,22 +96,21 @@
         <!--begin::Modal - Add task-->
         <div class="modal fade modal-lg" id="kt_modal_producto_coleccion" tabindex="-1" aria-hidden="true">
             <!--begin::Modal dialog-->
-            <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
                 <!--begin::Modal content-->
                 <div class="modal-content">
                     <!--begin::Modal header-->
                     <div class="modal-header" id="kt_modal_add_user_header">
                         <h2 class="fw-bold" >Productos de coleccion - [[coleccion]]</h2>
-
                         <!--begin::Close-->
                         <div class="btn btn-close" data-bs-dismiss="modal"></div>
                         <!--end::Close-->
                     </div>
                     <!--end::Modal header-->
                     <!--begin::Modal body-->
-                    <div class="modal-body scroll-y mx-5 mx-xl-10" id="kt_modal_producto_coleccion_body">
+                    <div class="modal-body" id="kt_modal_producto_coleccion_body">
                         <!--begin::Card body-->
-                        <div class="card-body py-4">
+                        <div class="card-body px-5 py-4">
                             <!--begin::Table-->
                             <v-client-table v-model="productos" :columns="columns2" :options="options2"> 
                                 <div slot="categoria" slot-scope="props">
@@ -127,7 +126,7 @@
                     </div>
                     <!--end::Modal body-->
                     <div class="modal-footer">
-                        <button type="reset" class="btn btn-secondary me-3" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="reset" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                     </div>
                 </div>
                 <!--end::Modal content-->
@@ -165,7 +164,7 @@
                     sortable: ['nombre', 'descripcion'],
                     filterable: ['nombre', 'descripcion'],
                     skin: 'table table-sm table-rounded table-striped border align-middle table-row-bordered fs-6',
-                    columnsDropdown: true,
+                    columnsDropdown: false,
                     resizableColumns: false,
                     sortIcon: {
                         base: 'ms-3 fas',
@@ -206,7 +205,7 @@
                     sortable: ['nombre', 'categoria'],
                     filterable: ['sku', 'nombre'],
                     skin: 'table table-sm table-rounded table-striped border align-middle table-row-bordered fs-6',
-                    columnsDropdown: true,
+                    columnsDropdown: false,
                     resizableColumns: false,
                     sortIcon: {
                         base: 'ms-3 fas',
