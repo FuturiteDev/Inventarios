@@ -287,6 +287,7 @@ class InventarioController extends Controller
                         'categoria' => $primerRegistro->producto->categoria,
                         'subcategoria' => $primerRegistro->producto->subcategoria,
                         'total_existencias' => $items->sum('cantidad_disponible'),
+                        'colecciones' => $primerRegistro->producto->colecciones,
                     ];
                 })->values();
 
