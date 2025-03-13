@@ -15,11 +15,11 @@ use Ongoing\Inventarios\Repositories\TraspasosRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\ProductosPendientesTraspasoRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\InventarioRepositoryEloquent;
 use App\Repositories\UsuariosautorizadosRepositoryEloquent;
+use App\Repositories\UsuarioRepositoryEloquent;
 
-use Ongoing\Inventarios\Entities\Productos;
 use Ongoing\Sucursales\Entities\Sucursales;
 use Ongoing\Inventarios\Events\TraspasoRecibido;
-use App\Repositories\UsuarioRepositoryEloquent;
+use Ongoing\Inventarios\Events\TraspasoNuevo;
 
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\Messaging\CloudMessage;
@@ -205,6 +205,9 @@ class TraspasosController extends Controller
                 $prodPendiente->delete();
             }
 
+            //evento para procesar el traspaso
+            TraspasoNuevo::dispatch($traspaso);
+
             $usuarioAutorizado = $this->usuariosAutorizados 
             ->whereJsonContains('configuracion->sucursales', (int) $sucursal_destino_id)
             ->first();
@@ -327,10 +330,7 @@ class TraspasosController extends Controller
             return response()->json([
                 'status' => true,
                 'results' => [
-                    'traspaso' => $traspaso,
-                    'productos_recibidos' => $productosRecibidos,
-                    'productos_inexistentes_ids' => $productosInexistentes
-
+                    'traspaso' => $traspaso
                 ],
                 'message' => 'Productos recibidos y traspaso actualizado correctamente.'
             ], 200);
@@ -551,6 +551,39 @@ class TraspasosController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => "[ERROR] TraspasosController->getTraspasoSucursal() | " . $e->getMessage() . " | " . $e->getLine(),
+                'results' => null
+            ], 500);
+        }
+    }
+
+
+    public function demo()
+    {
+        try {
+
+            $productosInexistentes = [];
+
+            $traspaso = $this->traspasos->find(36);
+
+            
+
+            //evento para confirmar que se recibio el traspaso
+            TraspasoRecibido::dispatch($traspaso);
+
+            return response()->json([
+                'status' => true,
+                'results' => [
+                    'traspaso' => $traspaso
+
+                ],
+                'message' => 'ok.'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::info("TraspasosController->demo() | " . $e->getMessage() . " | " . $e->getLine());
+
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] TraspasosController->demo() | " . $e->getMessage() . " | " . $e->getLine(),
                 'results' => null
             ], 500);
         }
