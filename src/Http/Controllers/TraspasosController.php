@@ -592,11 +592,11 @@ class TraspasosController extends Controller
         }
     }
 
-    public function listTraspasosPorChofer($empleadoId)
+    public function listTraspasosPorChofer(Request $request)
     {
         try {
             $traspasos = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino', 'traspasoProductos'])
-                ->where('empleado_id', $empleadoId)
+                ->where('empleado_id', $request->empleado_id)
                 ->where('estatus', 1)
                 ->get();
 

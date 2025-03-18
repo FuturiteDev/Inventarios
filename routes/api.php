@@ -73,5 +73,5 @@ Route::prefix('traspasos')->group(function () {
     Route::get('/sucursal/{sucursal_id}', [TraspasosController::class, 'getTraspasoSucursal']);
     Route::get('/sucursal/pendientes/{sucursal_id}', [TraspasosController::class, 'productosPendientesTraspaso']);
     Route::post('/pendientes/registrar', [TraspasosController::class, 'registrarPendientesTraspaso']);
-    Route::get('/asignados/{empleado_id}', [TraspasosController::class, 'listTraspasosPorChofer']);
+    Route::post('/chofer-asignado', [TraspasosController::class, 'listTraspasosPorChofer']);
 });
