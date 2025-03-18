@@ -149,11 +149,7 @@ class InventarioController extends Controller
     public function agregarInventarios(Request $request)
     {
         try {
-
-            // OPCIONAL: EMPLEADO_NUMERO
-            // VALIDAR SI SE RECIBE EMPLEADO_NUMERO, MANDAR NOTIFICACION MOVIL
-            // SE AGREGO INVENTARIO, PRODUCTO Y DATA
-
+            
             // Validaciones
             $validator = Validator::make($request->all(), [
                 'sucursal_id' => 'required|exists:sucursales,id',

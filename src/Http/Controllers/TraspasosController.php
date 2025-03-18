@@ -71,39 +71,38 @@ class TraspasosController extends Controller
                     'empleado:id,nombre,no_empleado',
                     'empleadoAsignado:id,nombre,no_empleado',
                     // 'traspasoProductos:id,foto,traspaso_id'
-                    ])
+                ])
                 ->find($traspaso_id);
 
 
-                $traspasoProductos = $traspaso->traspasoProductos()->with('producto')->get();
+            $traspasoProductos = $traspaso->traspasoProductos()->with('producto')->get();
 
-                $detalle = [];
-                foreach ($traspasoProductos->groupBy('producto_id') as $gpo) {
-                    $tmpProd = $gpo->first()->producto->only('id', 'nombre', 'sku');
-                    $tmpProd['cantidad_total'] = 0;
-                    $tmpProd['fechas'] = [];
-                    
-                    foreach ($gpo as $row) {
-                        $tmpProd['cantidad_total'] += $row->cantidad;
-                        $tmpProd['fechas'][] = [
-                            'id' => $row->id,
-                            'fecha_caducidad' => $row->fecha_caducidad,
-                            'cantidad' => $row->cantidad,
-                            'cantidad_recibida' => $row->cantidad_recibida,
-                            'foto' => $row->foto
-                        ];
-                    }
-                
-                    $detalle[] = $tmpProd;
+            $detalle = [];
+            foreach ($traspasoProductos->groupBy('producto_id') as $gpo) {
+                $tmpProd = $gpo->first()->producto->only('id', 'nombre', 'sku');
+                $tmpProd['cantidad_total'] = 0;
+                $tmpProd['fechas'] = [];
+
+                foreach ($gpo as $row) {
+                    $tmpProd['cantidad_total'] += $row->cantidad;
+                    $tmpProd['fechas'][] = [
+                        'id' => $row->id,
+                        'fecha_caducidad' => $row->fecha_caducidad,
+                        'cantidad' => $row->cantidad,
+                        'cantidad_recibida' => $row->cantidad_recibida,
+                        'foto' => $row->foto
+                    ];
                 }
-                
-                $traspaso->detalle = $detalle;
-                
-                return response()->json([
-                    'status' => true,
-                    'results' => $traspaso
-                ], 200);
-                
+
+                $detalle[] = $tmpProd;
+            }
+
+            $traspaso->detalle = $detalle;
+
+            return response()->json([
+                'status' => true,
+                'results' => $traspaso
+            ], 200);
         } catch (\Exception $e) {
             Log::info("TraspasosController->getTraspaso() | " . $e->getMessage() . " | " . $e->getLine());
 
@@ -167,7 +166,7 @@ class TraspasosController extends Controller
             $inputTraspasos['asignado_a'] = $request->asignado_a;
             $inputTraspasos['comentarios'] = $request->comentarios;
 
-            if(empty($request->productos)){
+            if (empty($request->productos)) {
                 return response()->json([
                     'status' => false,
                     'message' => "No se han enviado productos para traspasar.",
@@ -179,31 +178,31 @@ class TraspasosController extends Controller
             foreach ($request->productos as $row) {
                 $inputProdTraspasos = [];
                 $prodPendiente = $this->productosPendientes->find($row['producto_id']);
-                if($row['cantidad'] > 0){
+                if ($row['cantidad'] > 0) {
                     $inputProdTraspasos['traspaso_id'] = $traspaso->id;
                     $inputProdTraspasos['producto_id'] = $prodPendiente->producto_id;
                     $inputProdTraspasos['fecha_caducidad'] = $prodPendiente->fecha_caducidad;
                     $inputProdTraspasos['cantidad'] = $row['cantidad'];
                     $inputProdTraspasos['cantidad_recibida'] = 0;
 
-                    if(!empty($row['foto'])){
+                    if (!empty($row['foto'])) {
                         $cadena = "";
                         foreach ($row['foto'] as $byte) {
                             $cadena .= chr($byte);
                         }
                         $fname = md5(uniqid('', true)) . '.jpg';
-                        Storage::disk('public')->put("traspasos/fotos/{$fname}" , $cadena);
+                        Storage::disk('public')->put("traspasos/fotos/{$fname}", $cadena);
                         $inputProdTraspasos['foto'] = "traspasos/fotos/{$fname}";
                     }
 
-                    $inv = $this->inventario->scopeQuery(function($query) use($row){
+                    $inv = $this->inventario->scopeQuery(function ($query) use ($row) {
                         return $query->limit($row['cantidad']);
                     })->findWhere(['sucursal_id' => $sucursal_origen_id, 'producto_id' => $prodPendiente->producto_id, 'fecha_caducidad' => $prodPendiente->fecha_caducidad, ['cantidad_disponible', '>', 0], 'estatus' => 1]);
 
                     $inputProdTraspasos['inventario_ids'] = $inv->modelKeys();
                     $this->traspasosProductos->create($inputProdTraspasos);
 
-                    $inv->each(function($item){
+                    $inv->each(function ($item) {
                         $item->estatus = 2;
                         $item->save();
                     });
@@ -214,15 +213,15 @@ class TraspasosController extends Controller
             //evento para procesar el traspaso
             TraspasoNuevo::dispatch($traspaso);
 
-            $usuarioAutorizado = $this->usuariosAutorizados 
-            ->whereJsonContains('configuracion->sucursales', (int) $sucursal_destino_id)
-            ->first();
-            
-           $traspaso->load(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos']);
-            
+            $usuarioAutorizado = $this->usuariosAutorizados
+                ->whereJsonContains('configuracion->sucursales', (int) $sucursal_destino_id)
+                ->first();
+
+            $traspaso->load(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos']);
+
             if ($usuarioAutorizado) {
                 $usuario_id = $usuarioAutorizado->user_id;
-    
+
                 $notificacion = [
                     'usuario_id' => $usuario_id ?? null,
                     'traspaso_id' => $traspaso->id ?? null,
@@ -276,25 +275,25 @@ class TraspasosController extends Controller
 
                 $row->cantidad_recibida = $productoData['cantidad_recibida'];
 
-                if(!empty($productoData['foto'])){
+                if (!empty($productoData['foto'])) {
                     $cadena = "";
                     foreach ($productoData['foto'] as $byte) {
                         $cadena .= chr($byte);
                     }
                     $fname = md5(uniqid('', true)) . '.jpg';
-                    Storage::disk('public')->put("traspasos/fotos/{$fname}" , $cadena);
+                    Storage::disk('public')->put("traspasos/fotos/{$fname}", $cadena);
                     $row->foto = "traspasos/fotos/{$fname}";
                 }
 
                 $row->save();
                 $inv_ids_rechazados = [];
                 foreach ($row->inventario_ids as $i => $invId) {
-                    if($row->cantidad_recibida > $i){
+                    if ($row->cantidad_recibida > $i) {
                         $inv = $this->inventario->find($invId);
                         $inv->estatus = $traspaso->tipo == 3 ? 0 : 1;
                         $inv->sucursal_id = $traspaso->sucursal_destino_id;
                         $inv->save();
-                    }else{
+                    } else {
                         $inv_ids_rechazados[] = $invId;
                     }
                 }
@@ -309,23 +308,22 @@ class TraspasosController extends Controller
                         'fecha_caducidad' => $row->fecha_caducidad
                     ];
                 }
-                
             }
 
-            if(!empty($productosRechazados)){
+            if (!empty($productosRechazados)) {
                 $newTraspaso = $traspaso->replicate();
                 $newTraspaso->tipo = 3;
                 $newTraspaso->sucursal_origen_id = $traspaso->sucursal_destino_id;
                 $matriz = Sucursales::where('matriz', 1)->where('estatus', 1)->first();
-                if(!empty($matriz)){
+                if (!empty($matriz)) {
                     $newTraspaso->sucursal_destino_id = $matriz->id;
-                }else{
+                } else {
                     $newTraspaso->sucursal_destino_id = $traspaso->sucursal_origen_id;
                 }
 
                 $newTraspaso->comentarios .= "\n\n Merma generada por productos rechazados en traspaso: {$traspaso->id}.";
                 $newTraspaso->save();
-                foreach($productosRechazados as $row){
+                foreach ($productosRechazados as $row) {
                     $newTraspaso->traspasoProductos()->create($row);
                 }
             }
@@ -378,15 +376,15 @@ class TraspasosController extends Controller
             $grouped = $productosPendientes->groupBy('sucursal_destino');
 
             $productosxsucursal = [];
-            foreach($grouped as $productosPendienteSuc){
+            foreach ($grouped as $productosPendienteSuc) {
                 $tmpProductosSuc = [
                     'sucursal_destino_id' => $productosPendienteSuc->first()->sucursalDestino->id,
                     'sucursal_destino_nombre' => $productosPendienteSuc->first()->sucursalDestino->nombre,
                     'productos' => []
                 ];
                 $tmpProductosPend = [];
-                foreach($productosPendienteSuc as $row){
-                    if(empty($tmpProductosPend[$row->producto->id])){
+                foreach ($productosPendienteSuc as $row) {
+                    if (empty($tmpProductosPend[$row->producto->id])) {
                         $tmpProductosPend[$row->producto->id] = [
                             'producto_id' => $row->producto->id,
                             'nombre' => $row->producto->nombre,
@@ -401,16 +399,15 @@ class TraspasosController extends Controller
                     $tmpProductosPend[$row->producto->id]['cantidad'] += $row->cantidad;
 
                     $stockProd = $this->inventario->findWhere(['sucursal_id' => $sucursal->id, 'producto_id' => $row->producto->id, ['cantidad_disponible', '>', 0], 'fecha_caducidad' => $row->fecha_caducidad]);
-                    
+
                     $tmpProductosPend[$row->producto->id]['fechas'][] = [
                         'producto_pendiente_id' => $row->id,
                         'fecha_caducidad' => $row->fecha_caducidad,
                         'cantidad' => $row->cantidad,
                         'stock' => $stockProd->sum('cantidad_disponible')
                     ];
-                    
                 }
-                
+
                 $tmpProductosSuc['productos'] = array_values($tmpProductosPend);
 
                 $productosxsucursal[] = $tmpProductosSuc;
@@ -446,16 +443,16 @@ class TraspasosController extends Controller
             $cantidad = $request->cantidad;
             $fecha_caducidad = $request->fecha_caducidad;
 
-            if(!empty($request->id)){
+            if (!empty($request->id)) {
                 $prodPendiente = $this->productosPendientes->find($request->id);
                 $prodPendiente->cantidad = $cantidad;
                 $prodPendiente->save();
-            }else{
+            } else {
                 $prodPendiente = $this->productosPendientes->findWhere(['sucursal_origen' => $sucursal_origen, 'sucursal_destino' => $sucursal_destino, 'producto_id' => $producto_id, 'fecha_caducidad' => $fecha_caducidad])->first();
-                if(!empty($prodPendiente)){
+                if (!empty($prodPendiente)) {
                     $prodPendiente->cantidad += $cantidad;
                     $prodPendiente->save();
-                }else{
+                } else {
                     $prodPendiente = $this->productosPendientes->create(
                         [
                             'sucursal_origen' => $sucursal_origen,
@@ -571,7 +568,7 @@ class TraspasosController extends Controller
 
             $traspaso = $this->traspasos->find(36);
 
-            
+
 
             //evento para confirmar que se recibio el traspaso
             TraspasoRecibido::dispatch($traspaso);
@@ -595,4 +592,27 @@ class TraspasosController extends Controller
         }
     }
 
+    public function listTraspasosPorChofer($empleadoId)
+    {
+        try {
+            $traspasos = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino', 'traspasoProductos'])
+                ->where('empleado_id', $empleadoId)
+                ->where('estatus', 1)
+                ->get();
+
+            return response()->json([
+                'status' => true,
+                'results' => $traspasos,
+                'message' => 'Traspasos asignados al chofer obtenidos correctamente.',
+            ], 200);
+        } catch (\Exception $e) {
+            Log::info("TraspasosController->listTraspasosPorChofer() | " . $e->getMessage() . " | " . $e->getLine());
+
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] TraspasosController->listTraspasosPorChofer() | " . $e->getMessage() . " | " . $e->getLine(),
+                'results' => null
+            ], 500);
+        }
+    }
 }
