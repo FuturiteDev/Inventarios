@@ -596,7 +596,7 @@ class TraspasosController extends Controller
     {
         try {
             $traspasos = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino', 'traspasoProductos'])
-                ->where('empleado_id', $request->empleado_id)
+                ->where('asignado_a', $request->empleado_id)
                 ->where('estatus', 1)
                 ->get();
 
