@@ -86,9 +86,12 @@
                                         <label class="form-check-label text-gray-700 fw-bold">Productos de Tienda</label>
                                     </div>
                                 </div>
+                                <div class="flex-fill text-end">
+                                    <button type="button" class="btn btn-success btn-sm" @click="printTableExistencias"><i class="fa-solid fa-print"></i> Imprimir</button>
+                                </div>
                             </div>
                             <!--begin::Toolbar-->
-                            <v-client-table v-model="listaInventario" :columns="columns" :options="options">
+                            <v-client-table v-model="listaInventario" :columns="columns" :options="options" ref="existencias">
                                 <div slot="nombre" slot-scope="props">[[props.row.producto.nombre]]</div>
                                 <div slot="sku" slot-scope="props">[[props.row.producto.sku]]</div>
                                 <div slot="cantidad" slot-scope="props">[[props.row.cantidad_existente]]</div>
@@ -152,9 +155,12 @@
                                         <label class="form-check-label text-gray-700 fw-bold">Productos de Tienda</label>
                                     </div>
                                 </div>
+                                <div class="flex-fill text-end">
+                                    <button type="button" class="btn btn-success btn-sm" @click="printTableGeneral"><i class="fa-solid fa-print"></i> Imprimir</button>
+                                </div>
                             </div>
                             <!--begin::Toolbar-->
-                            <v-client-table v-model="listaGeneral" :columns="columnsGlobal" :options="optionsGlobal">
+                            <v-client-table v-model="listaGeneral" :columns="columnsGlobal" :options="optionsGlobal" ref="general">
                                 <div v-for="item in sucursales" :slot="item.id" slot-scope="props">
                                     [[props.row.sucursales.find((i) => i.sucursal_id == item.id)?.cantidad_existente ?? '']]
                                 </div>
@@ -237,9 +243,12 @@
                                         <label class="form-check-label text-gray-700 fw-bold">Productos de Tienda</label>
                                     </div>
                                 </div>
+                                <div class="flex-fill text-end">
+                                    <button type="button" class="btn btn-success btn-sm" @click="printTablePocasExistencias"><i class="fa-solid fa-print"></i> Imprimir</button>
+                                </div>
                             </div>
                             <!--end::Toolbar-->
-                            <v-client-table v-model="listaPocaExistencia" :columns="columnsPocaExistencia" :options="options">
+                            <v-client-table v-model="listaPocaExistencia" :columns="columnsPocaExistencia" :options="options" ref="pocaExistencia">
                                 <div slot="nombre" slot-scope="props">[[props.row.producto.nombre]]</div>
                                 <div slot="sku" slot-scope="props">[[props.row.producto.sku]]</div>
                                 <div slot="cantidad" slot-scope="props">[[props.row.cantidad_existente]]</div>
@@ -777,6 +786,136 @@
                             }
                         }
                     );
+                },
+                printTableExistencias(){
+                    let vm = this;
+                    let sucursal = vm.sucursales.find(item => item.id == vm.filterSucursalExistencias);
+                    let cols = vm.$refs.existencias.columns.slice(0, vm.$refs.existencias.columns.length-1);
+                    
+                    var content = '<div style="font-family: Inter, Helvetica, sans-serif;">';
+                    content += '<div style="padding: 0 35px;">';
+                    content += '<h3 style="margin-bottom: 0;text-align: center;">Existencias por Sucursal</h3>';
+                    content += `<h4 style="text-align: center;">${sucursal?.nombre ?? '-'}</h4>`;
+                    content += '</div>';
+                    content += '<div style="padding-bottom: 16px;padding-top: 16px;padding-right: 8px;padding-left: 8px;">';
+                    content += '<table style="border-radius: 7.6px;border-collapse: collapse;border: 1px solid #e6e6e6;vertical-align: middle;width: 100%;margin-bottom: 16px;">';
+                    content += '<thead>';
+                    content += '<tr>';
+                    cols.forEach(col => {
+                        content += `<th style="padding: 8px 8px;font-weight: 600;text-transform: uppercase;font-size: 14px;text-align: center;border-bottom: 1px solid #8b8b8b;">${vm.$refs.existencias.options.headings[col]}</th>`;
+                    });
+                    content += '</tr>';
+                    content += '</thead>';
+                    content += '<tbody>';
+                    vm.$refs.existencias.allFilteredData.forEach(item => {
+                        content += '<tr>';
+                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.id}</td>`;
+                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.producto.nombre}</td>`;
+                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.producto.sku}</td>`;
+                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.cantidad_existente ?? '0'}</td>`;
+                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${vm.$options.filters.fecha(item.fecha_caducidad)}</td>`;
+                        content += '</tr>';
+                    });
+                    content += '</tbody>';
+                    content += '</table>';
+                    content += '</div>';
+                    content += '</div>';
+
+                    var WinPrint = window.open('', '', 'left=0,top=0,width=970,height=660,toolbar=0,scrollbars=0,status=0');
+                    WinPrint.document.write(content);
+                    WinPrint.document.close();
+                    WinPrint.focus();
+                    WinPrint.print();
+                    WinPrint.close();                    
+                },
+                printTableGeneral(){
+                    let vm = this;
+                    let sucursal = vm.sucursales.find(item => item.id == vm.filterSucursalExistencias);
+                    let cols = vm.$refs.general.columns.slice();
+                    
+                    var content = '<div style="font-family: Inter, Helvetica, sans-serif;">';
+                    content += '<div style="padding: 0 35px;"><h3 text-align: center;">Existencias Generales</h3></div>';
+                    content += '<div style="padding-bottom: 16px;padding-top: 16px;padding-right: 8px;padding-left: 8px;">';
+                    content += '<table style="border-radius: 7.6px;border-collapse: collapse;border: 1px solid #e6e6e6;vertical-align: middle;width: 100%;margin-bottom: 16px;table-layout: fixed;">';
+                    content += '<thead>';
+                    content += '<tr>';
+                    cols.forEach(col => {
+                        content += `<th style="padding: 8px 8px;font-weight: 600;text-transform: uppercase;font-size: ${80/cols.length}%;text-align: center;border-bottom: 1px solid #8b8b8b;">${vm.$refs.general.options.headings[col]}</th>`;
+                    });
+                    content += '</tr>';
+                    content += '</thead>';
+                    content += '<tbody>';
+
+                    vm.$refs.general.allFilteredData.forEach(item => {
+                        content += '<tr>';
+                        cols.forEach(col => {
+                            if(isNaN(parseInt(col))) {
+                                content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item[col] ?? ''}</td>`;
+                            } else {
+                                let sid = parseInt(col);
+                                content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.sucursales?.find((i) => i.sucursal_id == sid)?.cantidad_existente ?? ''}</td>`;
+                            }
+                        });
+                        content += '</tr>';
+                    });
+
+                    content += '</tbody>';
+                    content += '</table>';
+                    content += '</div>';
+                    content += '</div>';
+
+                    var WinPrint = window.open('', '', 'left=0,top=0,width=970,height=660,toolbar=0,scrollbars=0,status=0');
+                    WinPrint.document.write(content);
+                    WinPrint.document.close();
+                    WinPrint.focus();
+                    WinPrint.print();
+                    WinPrint.close();
+                },
+                printTablePocasExistencias(){
+                    let vm = this;
+                    let sucursal = vm.sucursales.find(item => item.id == vm.filterSucursalPocaExistencias);
+                    let cols = vm.$refs.pocaExistencia.columns;
+                    
+                    var content = '<div style="font-family: Inter, Helvetica, sans-serif;">';
+                    content += '<div style="padding: 0 35px;">';
+                    content += '<h3 style="margin-bottom: 0;text-align: center;">Pocas Existencias por Sucursal</h3>';
+                    content += `<h4 style="text-align: center;">${sucursal?.nombre ?? '-'}</h4>`;
+                    content += '<div>';
+                    content += '<span style="font-weight: 600;">Cantidad minima:</span>';
+                    content += `<span style="padding: 0 8px;">${vm.filterCantidadMinima}</span>`;
+                    content += '</div>';
+                    content += '</div>';
+                    content += '<div style="padding-bottom: 16px;padding-top: 16px;padding-right: 8px;padding-left: 8px;">';
+                    content += '<table style="border-radius: 7.6px;border-collapse: collapse;border: 1px solid #e6e6e6;vertical-align: middle;width: 100%;margin-bottom: 16px;">';
+                    content += '<thead>';
+                    content += '<tr>';
+                    cols.forEach(col => {
+                        content += `<th style="padding: 8px 8px;font-weight: 600;text-transform: uppercase;font-size: 14px;text-align: center;border-bottom: 1px solid #8b8b8b;">${vm.$refs.pocaExistencia.options.headings[col]}</th>`;
+                    });
+                    content += '</tr>';
+                    content += '</thead>';
+                    content += '<tbody>';
+
+                    vm.$refs.pocaExistencia.allFilteredData.forEach(item => {
+                        content += '<tr>';
+                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.id}</td>`;
+                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.producto?.nombre ?? ''}</td>`;
+                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.producto?.sku ?? ''}</td>`;
+                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.cantidad_existente ?? '0'}</td>`;
+                        content += '</tr>';
+                    });
+
+                    content += '</tbody>';
+                    content += '</table>';
+                    content += '</div>';
+                    content += '</div>';
+
+                    var WinPrint = window.open('', '', 'left=0,top=0,width=970,height=660,toolbar=0,scrollbars=0,status=0');
+                    WinPrint.document.write(content);
+                    WinPrint.document.close();
+                    WinPrint.focus();
+                    WinPrint.print();
+                    WinPrint.close();
                 },
             },
             computed: {

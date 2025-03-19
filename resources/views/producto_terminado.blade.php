@@ -19,14 +19,8 @@
                     <!--begin::Form-->
                     <form id="add_inventario_form" class="form" action="#" @submit.prevent="">
                         <div class="row fv-row mb-7">
-                            <div class="col-12">
-                                <label class="form-label">Sucursal</label>
-                                <div class="form-control form-control-solid">[[inventario_sucursal_nombre]]</div>
-                            </div>
-                        </div>
-                        <div class="row fv-row mb-7">
                             <label class="required form-label">Productos</label>
-                            <div class="col-10">
+                            <div class="col-8">
                                 <v-select-extra
                                     v-model="selected_producto"
                                     name="productos"
@@ -34,6 +28,12 @@
                                     :options="listaProductos"
                                     data-allow-clear="true">
                                 </v-select-extra>
+                            </div>
+                            <div class="col-2 align-content-center">
+                                <div class="form-check form-check-custom form-check-success">
+                                    <input class="border-success form-check-input" type="checkbox" v-model="showTienda"/>
+                                    <label class="form-check-label text-gray-700 fw-bold">Productos de Tienda</label>
+                                </div>
                             </div>
                             <div class="col-2 align-content-center">
                                 <button type="button" class="btn btn-light-success border border-success ms-5" @click="addProducto"><i class="fa-solid fa-plus"></i> Agregar</button>
@@ -173,11 +173,11 @@
 
                 sucursalFilter: null,
                 fechaFilter: null,
+                showTienda: false,
                 selected_producto: null,
                 inventario_datepickers: [],
 
                 inventario_sucursal_id: null,
-                inventario_sucursal_nombre: null,
                 inventario_productos: [],
 
                 validator: null,
@@ -216,10 +216,8 @@
                                 let index = vm.sucursales.findIndex(item => item.matriz == 1);
                                 if(index != -1){
                                     vm.inventario_sucursal_id = vm.sucursales[index].id;
-                                    vm.inventario_sucursal_nombre = vm.sucursales[index].nombre;
                                 } else {
                                     vm.inventario_sucursal_id = vm.sucursales[0].id;
-                                    vm.inventario_sucursal_nombre = vm.sucursales[0].nombre;
                                 }
                             });
                         }, 'json'
@@ -431,7 +429,13 @@
                     return this.sucursales.map(item => ({id: item.id, text: item.nombre}));
                 },
                 listaProductos(){
-                    return this.productos.map(item => ({id: item.id, text: item.nombre, extra: item.sku}));
+                    if(this.showTienda){
+                        return this.productos.filter(function (item) {
+                            let tags = item.extras_json?.find(el => el.slug == "tags");
+                            return tags && tags?.valor.includes("TIENDA");
+                        }).map(item => ({id: item.id, text: item.nombre, extra: item.sku ?? ''}));
+                    }
+                    return this.productos.map(item => ({id: item.id, text: item.nombre, extra: item.sku ?? ''}));
                 },
                 listaInventario(){
                     if(this.fechaFilter){
