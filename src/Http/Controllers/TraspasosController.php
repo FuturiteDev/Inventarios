@@ -25,6 +25,7 @@ use Kreait\Firebase\Factory;
 use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Firebase\Messaging\AndroidConfig;
 use Kreait\Firebase\Messaging\ApnsConfig;
+use Ongoing\Empleados\Entities\Empleado;
 
 class TraspasosController extends Controller
 {
@@ -163,8 +164,11 @@ class TraspasosController extends Controller
             $inputTraspasos['sucursal_destino_id'] = $sucursal_destino_id;
             $inputTraspasos['tipo'] = $request->tipo;
             $inputTraspasos['empleado_id'] = $request->empleado_id;
-            $inputTraspasos['asignado_a'] = $request->asignado_a;
             $inputTraspasos['comentarios'] = $request->comentarios;
+
+            if ($request->filled('asignado_a')) { 
+                $inputTraspasos['asignado_a'] = Empleado::where('no_empleado', $request->asignado_a)->first()?->id;
+            }
 
             if (empty($request->productos)) {
                 return response()->json([
