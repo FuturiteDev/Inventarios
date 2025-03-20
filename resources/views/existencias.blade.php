@@ -24,7 +24,8 @@
                             <div class="card-title flex-column">
                                 <h3 class="ps-2">Existencias por Sucursal</h3>
                             </div>
-                            <div class="card-toolbar">
+                            <div class="card-toolbar gap-2">
+                                <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#kt_modal_ver_traspaso">Ver traspasos</button>
                                 <div class="px-2 min-w-200px">
                                     <v-select 
                                         v-model="filterSucursalExistencias"
@@ -86,7 +87,7 @@
                                         <label class="form-check-label text-gray-700 fw-bold">Productos de Tienda</label>
                                     </div>
                                 </div>
-                                <div class="flex-fill text-end">
+                                <div class="flex-fill text-end gap-5">
                                     <button type="button" class="btn btn-success btn-sm" @click="printTableExistencias"><i class="fa-solid fa-print"></i> Imprimir</button>
                                 </div>
                             </div>
@@ -321,6 +322,103 @@
         </div>
         <!--end::Modal - Add task-->
 
+        <!--begin::Modal - Add traspaso-->
+        <div class="modal fade" id="kt_modal_ver_traspaso" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="fw-bold" v-if="!confirmar_traspaso">Traspasos pendientes</h2>
+                        <h2 class="fw-bold" v-else>Confirmar traspaso - [[confirmar_traspaso.sucursal_destino_nombre]]</h2>
+                        <div class="btn btn-close" data-bs-dismiss="modal"></div>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row" v-if="!confirmar_traspaso&&traspasos_pendientes">
+                            <div class="col-lg-6" v-if="traspasos_pendientes.productos_pendientes&&traspasos_pendientes.productos_pendientes.length>0">
+                                <div class="card card-bordered" v-for="traspaso in traspasos_pendientes.productos_pendientes">
+                                    <div class="p-4 d-flex">
+                                        <div class="flex-fill">
+                                            <div class="fs-6 fw-bold">[[traspaso.sucursal_destino_nombre]]</div>
+                                            <div class="fw-semibold text-muted">[[traspaso.productos.reduce((sum, item) => sum + (item.cantidad ?? 0), 0)]] productos</div>
+                                        </div>
+                                        <div class="text-end">
+                                            <button type="button" class="btn btn-primary btn-sm btn-icon" @click="showTraspaso(traspaso)">
+                                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12" v-else>
+                                <div class="fs-6 fw-semibold text-center">Sin traspasos pendientes</div>
+                            </div>
+                        </div>
+                        <form id="kt_modal_ver_traspaso_form" class="form" action="#" @submit.prevent="" v-else-if="confirmar_traspaso">
+                            <table class="table table-row-dashed table-row-gray-300 table-bordered mb-7">
+                                <thead>
+                                    <tr>
+                                        <th tabindex="0" class="VueTables__heading text-center align-middle">Producto</th>
+                                        <th tabindex="0" class="VueTables__heading text-center align-middle">Fecha</th>
+                                        <th tabindex="0" class="VueTables__heading text-center align-middle">Cantidad</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="align-middle" v-for="producto in confirmar_traspaso.productos" :key="'p_' + producto.id">
+                                        <td>
+                                            <div>[[producto.nombre]]</div>
+                                            <div class="text-muted">[[producto.sku]]</div>
+                                        </td>
+                                        <td>[[producto.fecha_caducidad | fecha]]</td>
+                                        <td>
+                                            <span class="fv-row">
+                                                <input type="number" v-model="producto.cantidad" class="form-control" placeholder="Cantidad" :name="`p_cantidad_${producto.producto_pendiente_id}`">
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div class="fv-row mb-7" id="select_tipo_traspaso">
+                                <label class="form-label required">Tipo de traspaso</label>
+                                <v-select
+                                    v-model="confirmar_traspaso.tipo"
+                                    name="tipo_traspaso"
+                                    :options="tipo_traspasos"
+                                    data-allow-clear="false"
+                                    data-placeholder="Tipo de traspaso"
+                                    data-dropdown-parent="#select_tipo_traspaso"
+                                    data-minimum-results-for-search ="Infinity">
+                                </v-select>
+                            </div>
+
+                            <div class="fv-row mb-7" id="select_asignar">
+                                <label class="form-label required">Asignar a</label>
+                                <v-select
+                                    v-model="confirmar_traspaso.asignado_a"
+                                    name="asignado_a"
+                                    :options="listaEmpleados"
+                                    data-allow-clear="false"
+                                    data-dropdown-parent="#select_asignar"
+                                    data-placeholder="Chofer asignado">
+                                </v-select>
+                            </div>
+
+                            <div class="fv-row mb-7">
+                                <label class="form-label">Comentarios</label>
+                                <textarea name="comentarios" rows="5" class="form-control" v-model="confirmar_traspaso.comentarios" style="resize: none"></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer" v-if="confirmar_traspaso">
+                        <button type="button" class="btn btn-primary" @click="confirmarTraspaso" :disabled="loading" :data-kt-indicator="loading ? 'on' : 'off'">
+                            <span class="indicator-label">Guardar</span>
+                            <span class="indicator-progress">Guardando <span class="spinner-border spinner-border-sm align-middle"></span></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--end::Modal - Add traspaso-->
+
     </div>
 @endsection
 
@@ -339,6 +437,13 @@
                 inventario_pocaexistencia: [],
                 sucursales: [],
                 colecciones: [],
+                traspasos_pendientes: [],
+                empleados: [],
+                tipo_traspasos: [
+                    {id: 1, text: 'A otra Sucursal'},
+                    {id: 2, text: 'Para cliente'},
+                    {id: 3, text: 'Merma'},
+                ],
                 // categorias: [],
                 // subcategorias_existencias: [],
                 // subcategorias_general: [],
@@ -415,8 +520,10 @@
                 filterCantidadMinima: 5,
 
                 traspaso_model: {},
+                confirmar_traspaso: null,
 
                 validator: null,
+                validatorConfirm: null,
                 loading: false,
                 blockUISucursal: null,
                 blockUIGeneral: null,
@@ -460,13 +567,72 @@
                     picker2.clear();
                 } );
 
-                vm.formValidate();
+                $("#kt_modal_ver_traspaso").on('hidden.bs.modal', event => {
+                    vm.confirmar_traspaso = null;
+                });
+
+                vm.initFormValidate();
                 vm.getSucursales();
+                vm.getEmpleados();
                 //vm.getCategorias();
                 vm.getColecciones();
                 vm.getInventarioGeneral();
             },
             methods: {
+                initFormValidate() {
+                    let vm = this;
+                    if(vm.validator) {
+                        vm.validator.destroy();
+                        vm.validator = null;
+                    }
+                    
+                    vm.validator = FormValidation.formValidation(
+                        document.getElementById('kt_modal_add_traspaso_form'), {
+                            fields: {
+                                'sucursal': {
+                                    validators: {
+                                        notEmpty: {
+                                            message: 'La sucursal es requerida',
+                                            trim: true
+                                        }
+                                    }
+                                },
+                                'cantidad': {
+                                    validators: {
+                                        callback: {
+                                            callback: function (input) {
+                                                if(!input.value || input.value == '' || input.value == 0){
+                                                    return {
+                                                        valid: false,
+                                                        message: 'Cantidad invalida'
+                                                    };
+                                                }
+
+                                                if(input.value > vm.traspaso_model.cantidad_existente){
+                                                    return {
+                                                        valid: false,
+                                                        message: 'No hay inventario suficiente'
+                                                    };
+                                                }
+                                                return { valid: true, message: '' };
+                                            },
+                                        },
+                                        
+                                    }
+                                }
+                            },
+
+                            plugins: {
+                                trigger: new FormValidation.plugins.Trigger(),
+                                bootstrap: new FormValidation.plugins.Bootstrap5({
+                                    rowSelector: '.fv-row',
+                                    eleInvalidClass: '',
+                                    eleValidClass: ''
+                                })
+                            }
+                        }
+                    );
+                },
                 getSucursales() {
                     let vm = this;
                     $.get(
@@ -487,6 +653,18 @@
                     $.get('/api/colecciones/all', res => {
                         vm.colecciones = res.results;
                     }, 'json');
+                },
+                getEmpleados() {
+                    let vm = this;
+                    $.ajax({
+                        method: "GET",
+                        url: "/api/empleados/all",
+                        dataType: "JSON",
+                    }).done(function(res) {
+                        vm.empleados = res.results;
+                    }).fail(function(jqXHR, textStatus) {
+                        console.log("Request failed getEmpleados: " + textStatus, jqXHR);
+                    });
                 },
                 // getCategorias() {
                 //     let vm = this;
@@ -561,6 +739,9 @@
                     if(idSucursal){
                         vm.filterSucursalExistencias = idSucursal;
                     }
+
+                    vm.getTraspasosPendientesSucursal(idSucursal ?? vm.filterSucursalExistencias);
+
                     $.ajax({
                         url: '/api/inventarios/existencia-sucursal',
                         type: 'POST',
@@ -570,7 +751,7 @@
                     }).done(function (res) {
                         vm.inventario = res.results
                         .flatMap(item => item.inventario
-                            .map(i =>Object.assign(i, {
+                            .map(i => Object.assign(i, {
                                 producto: {
                                     id: item.id,
                                     nombre: item.nombre,
@@ -633,6 +814,21 @@
                         }
                     });
                 },
+                getTraspasosPendientesSucursal(idSucursal){
+                    let vm = this;
+                    $.ajax({
+                        url: `/api/traspasos/sucursal/pendientes/${idSucursal}`,
+                        type: 'GET',
+                    }).done(function (res) {
+                        vm.traspasos_pendientes = res.results;
+                    }).fail(function (jqXHR, textStatus) {
+                        if (textStatus != 'abort') {
+                            console.log("Request failed getTraspasosPendientesSucursal: " + textStatus, jqXHR);
+                        }
+                    }).always(function () {
+
+                    });
+                },
                 registrarTraspaso() {
                     let vm = this;
 
@@ -671,6 +867,56 @@
                                     }
                                 }).fail(function(jqXHR, textStatus) {
                                     console.log("Request failed registrarTraspaso: " + textStatus, jqXHR);
+                                    Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
+                                }).always(function(event, xhr, settings) {
+                                    vm.loading = false;
+                                });
+                            }
+                        });
+                    }
+                },
+                confirmarTraspaso() {
+                    let vm = this;
+
+                    if (vm.validatorConfirm) {
+                        vm.validatorConfirm.validate().then(function(status) {
+                            if (status == 'Valid') {
+                                vm.loading = true;
+                                vm.loading = true;
+                                $.ajax({
+                                    method: "POST",
+                                    url: "/api/traspasos/save",
+                                    data: {
+                                        sucursal_origen_id: vm.confirmar_traspaso.sucursal_origen_id,
+                                        sucursal_destino_id: vm.confirmar_traspaso.sucursal_destino_id,
+                                        asignado_a: vm.confirmar_traspaso.asignado_a,
+                                        tipo: vm.confirmar_traspaso.tipo,
+                                        comentarios: vm.confirmar_traspaso.comentarios,
+                                        productos: vm.confirmar_traspaso.productos.map(item => ({
+                                            producto_id: item.producto_pendiente_id,
+                                            cantidad: item.cantidad ?? 0,
+                                            cantidad_recibida: 0,
+                                            foto: null,
+                                        })),
+                                    }
+                                }).done(function(res) {
+                                    if (res.status === true) {
+                                        Swal.fire(
+                                            "¡Guardado!",
+                                            "Los datos del traspaso se han almacenado con éxito",
+                                            "success"
+                                        );
+                                        vm.getInventarioSucursal(true, vm.filterSucursalExistencias);
+                                        $('#kt_modal_ver_traspaso').modal('hide');
+                                    } else {
+                                        Swal.fire(
+                                            "¡Error!",
+                                            res?.message ?? "Ocurrió un error inesperado al procesar la solicitud.",
+                                            "warning"
+                                        );
+                                    }
+                                }).fail(function(jqXHR, textStatus) {
+                                    console.log("Request failed confirmarTraspaso: " + textStatus, jqXHR);
                                     Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
                                 }).always(function(event, xhr, settings) {
                                     vm.loading = false;
@@ -733,59 +979,29 @@
                         cantidad_existente: producto.cantidad_existente,
                     };
                 },
-                formValidate() {
-                    let vm = this;
-                    if(vm.validator) {
-                        vm.validator.destroy();
-                        vm.validator = null;
-                    }
-                    
-                    vm.validator = FormValidation.formValidation(
-                        document.getElementById('kt_modal_add_traspaso_form'), {
-                            fields: {
-                                'sucursal': {
-                                    validators: {
-                                        notEmpty: {
-                                            message: 'La sucursal es requerida',
-                                            trim: true
-                                        }
-                                    }
-                                },
-                                'cantidad': {
-                                    validators: {
-                                        callback: {
-                                            callback: function (input) {
-                                                if(!input.value || input.value == '' || input.value == 0){
-                                                    return {
-                                                        valid: false,
-                                                        message: 'Cantidad invalida'
-                                                    };
-                                                }
-
-                                                if(input.value > vm.traspaso_model.cantidad_existente){
-                                                    return {
-                                                        valid: false,
-                                                        message: 'No hay inventario suficiente'
-                                                    };
-                                                }
-                                                return { valid: true, message: '' };
-                                            },
-                                        },
-                                        
-                                    }
-                                }
-                            },
-
-                            plugins: {
-                                trigger: new FormValidation.plugins.Trigger(),
-                                bootstrap: new FormValidation.plugins.Bootstrap5({
-                                    rowSelector: '.fv-row',
-                                    eleInvalidClass: '',
-                                    eleValidClass: ''
-                                })
-                            }
-                        }
-                    );
+                showTraspaso(traspaso){
+                    this.confirmar_traspaso = {
+                        sucursal_origen_id: this.traspasos_pendientes.sucursal_origen_id,
+                        sucursal_origen_nombre: this.traspasos_pendientes.sucursal_origen_nombre,
+                        sucursal_destino_id: traspaso.sucursal_destino_id,
+                        sucursal_destino_nombre: traspaso.sucursal_destino_nombre,
+                        productos_cantidad: traspaso.productos.reduce((sum, item) => sum + (item.cantidad ?? 0), 0),
+                        productos: traspaso.productos.flatMap(item => {
+                            return item.fechas.map(i => {
+                                return {
+                                    producto_id: item.producto_id,
+                                    nombre: item.nombre,
+                                    sku: item.sku,
+                                    categoria: item.categoria,
+                                    subcategoria: item.subcategoria,
+                                    producto_pendiente_id: i.producto_pendiente_id,
+                                    fecha_caducidad: i.fecha_caducidad,
+                                    cantidad: i.cantidad,
+                                    stock: i.stock,
+                                };
+                            });
+                        }),
+                    };
                 },
                 printTableExistencias(){
                     let vm = this;
@@ -991,6 +1207,9 @@
                 listaColecciones() {
                     return this.colecciones.map(item => ({ id: item.id, text: item.nombre }));
                 },
+                listaEmpleados(){
+                    return this.empleados.map(item => ({id: item.no_empleado, text: item.nombre_completo}));
+                },
                 // listaCategorias() {
                 //     return this.categorias.map(item => ({ id: item.id, text: item.nombre }));
                 // },
@@ -1079,6 +1298,52 @@
                 //         this.subcategorias_pocaexistencias = [];
                 //     }
                 // }
+                confirmar_traspaso(n,o){
+                    let vm = this;
+                    if(n){
+                        vm.$nextTick(() => {
+                            if(vm.validatorConfirm) {
+                                vm.validatorConfirm.destroy();
+                                vm.validatorConfirm = null;
+                            }
+                            
+                            vm.validatorConfirm = FormValidation.formValidation(
+                                document.getElementById('kt_modal_ver_traspaso_form'), {
+                                fields: {
+                                    'tipo_traspaso': {
+                                        validators: {
+                                            notEmpty: {
+                                                message: 'El tipo de traspaso es requerido',
+                                                trim: true
+                                            }
+                                        }
+                                    },
+                                    'asignado_a': {
+                                        validators: {
+                                            notEmpty: {
+                                                message: 'El chofer es requerido',
+                                                trim: true
+                                            }
+                                        }
+                                    },
+                                },
+
+                                plugins: {
+                                    trigger: new FormValidation.plugins.Trigger(),
+                                    bootstrap: new FormValidation.plugins.Bootstrap5({
+                                        rowSelector: '.fv-row',
+                                        eleInvalidClass: '',
+                                        eleValidClass: ''
+                                    })
+                                }
+                            });
+                        });
+                    } else {
+                        if(vm.validatorConfirm){
+                            vm.validatorConfirm.resetForm();
+                        }
+                    }
+                }
             },
             filters: {
                 fecha: function (value, usrFormat) {
