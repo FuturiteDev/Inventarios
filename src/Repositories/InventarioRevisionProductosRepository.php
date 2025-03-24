@@ -5,11 +5,11 @@ namespace Ongoing\Inventarios\Repositories;
 use Prettus\Repository\Contracts\RepositoryInterface;
 
 /**
- * Interface LogRegistroInventarioRepository.
+ * Interface InventarioRevisionProductosRepository.
  *
  * @package namespace App\Repositories;
  */
-interface LogRegistroInventarioRepository extends RepositoryInterface
+interface InventarioRevisionProductosRepository extends RepositoryInterface
 {
     //
 }

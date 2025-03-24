@@ -16,16 +16,18 @@ use Illuminate\Http\Request;
 use Ongoing\Sucursales\Entities\Sucursales;
 use Ongoing\Sucursales\Repositories\SucursalesRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\ProductosRepositoryEloquent;
+use App\Repositories\NotificacionesRepositoryEloquent;
+use Ongoing\Inventarios\Repositories\InventarioRevisionesRepositoryEloquent;
+use Ongoing\Inventarios\Repositories\InventarioRevisionProductosRepositoryEloquent;
+
 use App\Mail\SendBrevoMail;
 use App\Repositories\UsuarioRepositoryEloquent;
 use Ongoing\Empleados\Entities\Empleado;
-use App\Repositories\NotificacionesRepositoryEloquent;
 
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Firebase\Messaging\AndroidConfig;
 use Kreait\Firebase\Messaging\ApnsConfig;
-
 
 class InventarioController extends Controller
 {
@@ -34,6 +36,8 @@ class InventarioController extends Controller
     protected $productos;
     protected $usuarios;
     protected $notificaciones;
+    protected $inventarioRevisiones;
+    protected $inventarioRevisionProductos;
 
     /**
      * Summary of __construct
@@ -45,13 +49,17 @@ class InventarioController extends Controller
         SucursalesRepositoryEloquent $sucursales,
         ProductosRepositoryEloquent $productos,
         UsuarioRepositoryEloquent $usuarios,
-        NotificacionesRepositoryEloquent $notificaciones
+        NotificacionesRepositoryEloquent $notificaciones,
+        InventarioRevisionesRepositoryEloquent $inventarioRevisiones,
+        InventarioRevisionProductosRepositoryEloquent $inventarioRevisionProductos
     ) {
         $this->inventario = $inventario;
         $this->sucursales = $sucursales;
         $this->productos = $productos;
         $this->usuarios = $usuarios;
         $this->notificaciones = $notificaciones;
+        $this->inventarioRevisiones = $inventarioRevisiones;
+        $this->inventarioRevisionProductos = $inventarioRevisionProductos;
     }
 
     /**
@@ -140,7 +148,6 @@ class InventarioController extends Controller
         }
     }
 
-
     /**
      * Registro de inventarios de productos terminados
      * @param \Illuminate\Http\Request $request
@@ -149,7 +156,7 @@ class InventarioController extends Controller
     public function agregarInventarios(Request $request)
     {
         try {
-            
+
             // Validaciones
             $validator = Validator::make($request->all(), [
                 'sucursal_id' => 'required|exists:sucursales,id',
@@ -251,57 +258,6 @@ class InventarioController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => "[ERROR] InventarioController->eliminarInventarios() | " . $e->getMessage() . " | " . $e->getLine(),
-                'results' => null
-            ], 500);
-        }
-    }
-
-    public function revisionSucursal($sucursalId)
-    {
-        try {
-            $sucursal = Sucursales::find($sucursalId);
-
-            if (!$sucursal) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Sucursal no encontrada.'
-                ], 404);
-            }
-
-            $productos = Inventario::with(['producto.categoria', 'producto.subcategoria'])
-                ->where('sucursal_id', $sucursalId)
-                ->where('estatus', 1)
-                ->get()
-                ->groupBy('producto_id')
-                ->map(function ($items) {
-                    $primerRegistro = $items->first();
-
-                    return [
-                        'id' => $primerRegistro->producto->id,
-                        'sku' => $primerRegistro->producto->sku,
-                        'nombre' => $primerRegistro->producto->nombre,
-                        'categoria' => $primerRegistro->producto->categoria,
-                        'subcategoria' => $primerRegistro->producto->subcategoria,
-                        'total_existencias' => $items->sum('cantidad_disponible'),
-                        'colecciones' => $primerRegistro->producto->colecciones,
-                    ];
-                })->values();
-
-            return response()->json([
-                'status' => true,
-                'results' => [
-                    'sucursal_id' => $sucursal->id,
-                    'nombre' => $sucursal->nombre,
-                    'productos' => $productos,
-                ],
-                'message' => 'Lista de productos activos con existencias en la sucursal.'
-            ], 200);
-        } catch (\Exception $e) {
-            Log::info("InventarioController->revisionSucursal() | " . $e->getMessage() . " | " . $e->getLine());
-
-            return response()->json([
-                'status' => false,
-                'message' => "[ERROR] InventarioController->revisionSucursal() | " . $e->getMessage() . " | " . $e->getLine(),
                 'results' => null
             ], 500);
         }
@@ -452,13 +408,124 @@ class InventarioController extends Controller
         }
     }
 
-    public function revisionInventario(Request $request)
+    public function revisionSucursal($sucursalId)
+    {
+        try {
+            $sucursal = Sucursales::find($sucursalId);
+
+            if (!$sucursal) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Sucursal no encontrada.'
+                ], 404);
+            }
+
+            $inventario = $this->inventarioRevisiones->where('sucursal_id', $sucursalId)
+                ->where('estatus', 0)
+                ->first();
+
+            $revisionProductos = $inventario ? $inventario->revisionProductos : collect();
+
+            $productos = Inventario::with(['producto.categoria', 'producto.subcategoria'])
+                ->where('sucursal_id', $sucursalId)
+                ->where('estatus', 1)
+                ->where('cantidad_disponible', '>', 0)
+                ->get()
+                ->groupBy('producto_id')
+                ->map(function ($items) use ($revisionProductos) {
+                    $primerRegistro = $items->first();
+
+                    $productoRevision = $revisionProductos->firstWhere('producto_id', $primerRegistro->producto->id);
+
+                    return [
+                        'id' => $primerRegistro->producto->id,
+                        'sku' => $primerRegistro->producto->sku,
+                        'nombre' => $primerRegistro->producto->nombre,
+                        'categoria' => $primerRegistro->producto->categoria,
+                        'subcategoria' => $primerRegistro->producto->subcategoria,
+                        'total_existencias' => $items->sum('cantidad_disponible'),
+                        'colecciones' => $primerRegistro->producto->colecciones,
+                        'imagen' => $productoRevision ? $productoRevision->imagen : null,
+                        'cantidad_reportada' => $productoRevision ? $productoRevision->existencia_actual : null,
+                    ];
+                })->values();
+
+            return response()->json([
+                'status' => true,
+                'results' => [
+                    'sucursal_id' => $sucursal->id,
+                    'nombre' => $sucursal->nombre,
+                    'productos' => $productos,
+                ],
+                'message' => 'Lista de productos activos con existencias en la sucursal.'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::info("InventarioController->revisionSucursal() | " . $e->getMessage() . " | " . $e->getLine());
+
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] InventarioController->revisionSucursal() | " . $e->getMessage() . " | " . $e->getLine(),
+                'results' => null
+            ], 500);
+        }
+    }
+
+    public function inventarioRevisionGuardar(Request $request)
+    {
+        try {
+
+            $sucursal_id = $request->sucursal_id;
+            $productos = $request->productos;
+
+            $inventarioRevision = $this->inventarioRevisiones->updateOrCreate([
+                'sucursal_id' => $sucursal_id,
+                'empleado_id' => null,
+                'estatus' => 0
+            ]);
+
+            foreach ($productos as $producto) {
+                $archivoPath = null;
+                if (!empty($producto['imagen'])) {
+                    $idUnico = uniqid('', true);
+                    $nombreImagen = $idUnico . '_' . $producto['imagen']->getClientOriginalName();
+                    $archivoPath = $producto['imagen']->storeAs('revisiones', $nombreImagen, 'public');
+                    $pathStorage = '/storage/' . $archivoPath;
+                }
+
+                $this->inventarioRevisionProductos->updateOrCreate(
+                    [
+                        'inventario_revision_id' => $inventarioRevision->id,
+                        'producto_id' => $producto['id']
+                    ],
+                    [
+                        'existencia_actual' => $producto['existencia_actual'],
+                        'existencia_real' => 0,
+                        'imagen' => $pathStorage
+                    ]
+                );
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Inventario de revisión guardado correctamente.',
+                'inventario_revision' => $inventarioRevision
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error("InventarioController->inventarioRevisionGuardar() | " . $e->getMessage() . " | " . $e->getLine());
+
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] Ocurrió un problema al guardar la revisión de inventario.",
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    public function inventarioRevisionFinalizar(Request $request)
     {
         try {
             $empleado_id = $request->empleado_id;
             $sucursal_id = $request->sucursal_id;
-            $productos = $request->productos;
-            $comentarios = $request->comentarios ?? null;
 
             $empleado = Empleado::where('id', $empleado_id)->with('jefe')->first();
             $sucursal = Sucursales::find($sucursal_id);
@@ -470,41 +537,74 @@ class InventarioController extends Controller
                 ], 400);
             }
 
-            $productosConDiferencias = [];
+            $inventarioRevision = $this->inventarioRevisiones->where('sucursal_id', $sucursal_id)
+                ->where('estatus', 0)
+                ->first();
 
-            foreach ($productos as $producto) {
-                $id_producto = $producto['id_producto'];
-                $cantidad_real = $producto['cantidad_real'];
-                $cantidad_reportada = $producto['cantidad_reportada'];
-
-                // $this->inventario->updateOrCreate(
-                //     ['sucursal_id' => $sucursal_id, 'producto_id' => $id_producto],
-                //     ['cantidad_total' => $cantidad_real, 'cantidad_disponible' => $cantidad_real]
-                // );
-
-                if ($cantidad_reportada < $cantidad_real) {
-                    // DB::table('log_registro_inventarios')->insert([
-                    //     'empleado_id' => $empleado_id,
-                    //     'sucursal_id' => $sucursal_id,
-                    //     'producto_id' => $id_producto,
-                    //     'existencia_actual' => $cantidad_real,
-                    //     'existencia_real' => $cantidad_reportada,
-                    //     'comentarios' => $comentarios,
-                    //     'created_at' => now(),
-                    // ]);
-
-                    $productoInfo = $this->productos->find($id_producto);
-                    $productosConDiferencias[] = [
-                        'codigo' => $productoInfo->sku ?? 'N/A',
-                        'nombre' => $productoInfo->nombre ?? 'N/A',
-                        'cantidad_sistema' => $cantidad_real,
-                        'cantidad_reportada' => $cantidad_reportada
-                    ];
-                }
+            if (!$inventarioRevision) {
+                return response()->json([
+                    'status' => true,
+                    'message' => "Revisión de inventario registrada correctamente."
+                ], 200);
             }
 
-            Log::info("Empleado: " . $empleado);
-            Log::info("Jefe: " . $empleado->jefe);
+            $productosConDiferencias = [];
+            $productos = $inventarioRevision->revisionProductos;
+
+            foreach ($productos as $producto) {
+                $inventario = Inventario::where('sucursal_id', $sucursal_id)
+                    ->where('producto_id', $producto->producto_id)
+                    ->where('estatus', 1)
+                    ->where('cantidad_disponible', '>', 0)
+                    ->get();
+
+                $cantidadReal = $inventario->sum('cantidad_disponible'); 
+
+                if ($producto->existencia_actual == $cantidadReal) {
+                    $producto->update(['existencia_real' => $cantidadReal]);
+                    continue;
+                }
+
+                if ($cantidadReal > $producto->existencia_actual) {
+                    $diferencia = $cantidadReal - $producto->existencia_actual;
+
+                    $productosInventario = $inventario->take($diferencia);
+                    foreach ($productosInventario as $inventarioItem) {
+                        $inventarioItem->update(['cantidad_disponible' => 0]);
+                    }
+
+                    $producto->update(['existencia_real' => $cantidadReal]);
+                } elseif ($cantidadReal < $producto->existencia_actual) {
+                    $diferencia = $producto->existencia_actual - $cantidadReal;
+
+                    $inventarioAntiguo = $inventario->sortBy('created_at')->first();
+
+                    $fechaElaboracion = $inventarioAntiguo->fecha_elaboracion;
+                    $fechaCaducidad = $inventarioAntiguo->fecha_caducidad;
+
+                    for ($i = 0; $i < $diferencia; $i++) {
+                        Inventario::create([
+                            'sucursal_id' => $sucursal_id,
+                            'producto_id' => $producto->producto_id,
+                            'cantidad_total' => 1,
+                            'cantidad_disponible' => 1,
+                            'estatus' => 1,
+                            'fecha_elaboracion' => $fechaElaboracion,
+                            'fecha_caducidad' => $fechaCaducidad
+                        ]);
+                    }
+
+                    $producto->update(['existencia_real' => $cantidadReal]);
+                }
+
+                $productoInfo = $this->productos->find($producto->producto_id);
+                $productosConDiferencias[] = [
+                    'codigo' => $productoInfo->sku ?? 'N/A',
+                    'nombre' => $productoInfo->nombre ?? 'N/A',
+                    'cantidad_sistema' => $cantidadReal,
+                    'cantidad_reportada' => $producto->existencia_actual
+                ];
+            }
 
             if (!empty($productosConDiferencias)) {
                 $destinatarios = [
@@ -513,7 +613,6 @@ class InventarioController extends Controller
                             'email' => $empleado->jefe->email ?? 'N/A',
                             'name' => $empleado->jefe->nombre_completo ?? 'N/A'
                         ],
-                        // Correos fijos
                         [
                             'email' => "betina@apetit.com.mx",
                             'name' => "Betina"
@@ -524,9 +623,6 @@ class InventarioController extends Controller
                         ]
                     ]
                 ];
-
-                Log::info('Productos con diferencias:', $productosConDiferencias);
-
 
                 $arrData = [
                     'title' => "Inconsistencia en revisión de inventario",
@@ -545,6 +641,11 @@ class InventarioController extends Controller
                 SendBrevoMail::send($destinatarios, $arrData);
             }
 
+            $inventarioRevision->update([
+                'empleado_id' => $empleado_id,
+                'estatus' => 1
+            ]);
+
             return response()->json([
                 'status' => true,
                 'message' => "Revisión de inventario registrada correctamente."
@@ -557,6 +658,7 @@ class InventarioController extends Controller
             ], 500);
         }
     }
+
 
     public function sendNotification($request)
     {

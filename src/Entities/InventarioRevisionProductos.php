@@ -7,11 +7,11 @@ use Prettus\Repository\Contracts\Transformable;
 use Prettus\Repository\Traits\TransformableTrait;
 
 /**
- * Class LogRegistroInventario.
+ * Class InventarioRevisionProductos.
  *
  * @package namespace App\Entities;
  */
-class LogRegistroInventario extends Model implements Transformable
+class InventarioRevisionProductos extends Model implements Transformable
 {
     use TransformableTrait;
 
@@ -20,6 +20,9 @@ class LogRegistroInventario extends Model implements Transformable
      *
      * @var array
      */
-    protected $fillable = [];
+    
+    protected $table = 'inventario_revision_productos';
+
+    protected $fillable = ['inventario_revision_id', 'producto_id', 'existencia_actual', 'existencia_real', 'imagen'];
 
 }

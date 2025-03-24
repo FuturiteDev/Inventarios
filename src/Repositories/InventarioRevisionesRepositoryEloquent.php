@@ -4,16 +4,16 @@ namespace Ongoing\Inventarios\Repositories;
 
 use Prettus\Repository\Eloquent\BaseRepository;
 use Prettus\Repository\Criteria\RequestCriteria;
-use Ongoing\Inventarios\Repositories\LogRegistroInventarioRepository;
-use Ongoing\Inventarios\Entities\LogRegistroInventario;
-use App\Validators\LogRegistroInventarioValidator;
+use Ongoing\Inventarios\Repositories\InventarioRevisionesRepository;
+use Ongoing\Inventarios\Entities\InventarioRevisiones;
+use App\Validators\InventarioRevisionesValidator;
 
 /**
- * Class LogRegistroInventarioRepositoryEloquent.
+ * Class InventarioRevisionesRepositoryEloquent.
  *
  * @package namespace App\Repositories;
  */
-class LogRegistroInventarioRepositoryEloquent extends BaseRepository implements LogRegistroInventarioRepository
+class InventarioRevisionesRepositoryEloquent extends BaseRepository implements InventarioRevisionesRepository
 {
     /**
      * Specify Model class name
@@ -22,7 +22,7 @@ class LogRegistroInventarioRepositoryEloquent extends BaseRepository implements 
      */
     public function model()
     {
-        return LogRegistroInventario::class;
+        return InventarioRevisiones::class;
     }
 
     
