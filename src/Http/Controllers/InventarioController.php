@@ -485,12 +485,17 @@ class InventarioController extends Controller
             ]);
 
             foreach ($productos as $producto) {
-                $archivoPath = null;
-                if (!empty($producto['imagen']) && $producto['imagen'] instanceof \Illuminate\Http\UploadedFile) {
+
+                Log::info($productos);
+                
+                if (!empty($producto['imagen'])) {
+                    $cadena = implode('', array_map('chr', $producto['imagen']));
+                    
                     $nombreImagen = md5(uniqid('', true)) . '.jpg';
-                    Storage::disk('public')->putFileAs('revisiones', $producto['imagen'], $nombreImagen);
+                    Storage::disk('public')->put("revisiones/{$nombreImagen}", $cadena);
                     $pathStorage = "/storage/revisiones/{$nombreImagen}";
                 }
+
 
                 $this->inventarioRevisionProductos->updateOrCreate(
                     [
@@ -500,7 +505,7 @@ class InventarioController extends Controller
                     [
                         'existencia_actual' => $producto['existencia_actual'],
                         'existencia_real' => 0,
-                        'imagen' => $pathStorage
+                        'imagen' => $pathStorage ?? null
                     ]
                 );
             }
