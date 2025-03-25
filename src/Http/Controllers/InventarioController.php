@@ -28,6 +28,7 @@ use Kreait\Firebase\Factory;
 use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Firebase\Messaging\AndroidConfig;
 use Kreait\Firebase\Messaging\ApnsConfig;
+use Illuminate\Support\Facades\Storage;
 
 class InventarioController extends Controller
 {
@@ -485,11 +486,10 @@ class InventarioController extends Controller
 
             foreach ($productos as $producto) {
                 $archivoPath = null;
-                if (!empty($producto['imagen'])) {
-                    $idUnico = uniqid('', true);
-                    $nombreImagen = $idUnico . '_' . $producto['imagen']->getClientOriginalName();
-                    $archivoPath = $producto['imagen']->storeAs('revisiones', $nombreImagen, 'public');
-                    $pathStorage = '/storage/' . $archivoPath;
+                if (!empty($producto['imagen']) && $producto['imagen'] instanceof \Illuminate\Http\UploadedFile) {
+                    $nombreImagen = md5(uniqid('', true)) . '.jpg';
+                    Storage::disk('public')->putFileAs('revisiones', $producto['imagen'], $nombreImagen);
+                    $pathStorage = "/storage/revisiones/{$nombreImagen}";
                 }
 
                 $this->inventarioRevisionProductos->updateOrCreate(
