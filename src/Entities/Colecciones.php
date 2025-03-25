@@ -23,6 +23,7 @@ class Colecciones extends Model implements Transformable
     protected $fillable = [
         'nombre',
         'descripcion',
+        'imagen',
         'estatus'
     ];
 
