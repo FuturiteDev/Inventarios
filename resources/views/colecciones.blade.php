@@ -21,8 +21,16 @@
 
                 <!--begin::Card body-->
                 <div class="card-body py-4">
+                    <div class="px-4 py-2">
+                        <button class="btn btn-success" @click="syncShopify" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Sincronizar con Shopify">
+                            Sincronizar <i class="ki-solid ki-arrows-circle"></i>
+                        </button>
+                    </div>
                     <!--begin::Table-->
                     <v-client-table v-model="colecciones" :columns="columns" :options="options">
+                        <div slot="imagen" slot-scope="props">
+                             <img :src="props.row.imagen" class=" rounded mw-100px mh-100px"/>
+                        </div>
                         <div slot="acciones" slot-scope="props">
                             <button type="button" class="btn btn-icon btn-sm btn-primary btn-sm me-2" title="Ver productos" data-bs-toggle="modal" data-bs-target="#kt_modal_producto_coleccion" @click="getProductos(props.row, true)">
                                 <i class="fas fa-eye"></i>
@@ -147,16 +155,18 @@
             delimiters: ['[[', ']]'],
             data: () => ({
                 colecciones:[],
-                columns: ['id', 'nombre', 'descripcion', 'acciones'],
+                columns: ['id', 'imagen', 'nombre', 'descripcion', 'acciones'],
                 options: {
                     headings: {
                         id: 'ID',
+                        imagen: 'Imagen',
                         nombre: 'Coleccion',
                         descripcion: 'Descripción',
                         acciones: 'Acciones',
                     },
                     columnsClasses: {
                         id: 'align-middle px-2 ',
+                        imagen: 'align-middle text-center ',
                         nombre: 'align-middle ',
                         descripcion: 'align-middle ',
                         acciones: 'align-middle text-center px-2 ',
@@ -341,6 +351,28 @@
                         if (vm.blockUIModal && vm.blockUIModal.isBlocked()) {
                             vm.blockUIModal.release();
                         }
+                    });
+                },
+                syncShopify(){
+                    let vm = this;
+                    const loadingEl = document.createElement("div");
+                    document.body.prepend(loadingEl);
+                    loadingEl.classList.add("page-loader");
+                    loadingEl.classList.add("bg-gray-900");
+                    loadingEl.classList.add("bg-opacity-50");
+                    loadingEl.innerHTML = `
+                    <span class="bg-white d-flex flex-center flex-column px-10 py-5 rounded">
+                    <span class="spinner-border text-primary" role="status"></span>
+                    <span class="fs-6 fw-semibold mt-5 text-gray-800">Sincronizando...</span>
+                    </span>`;
+                    KTApp.showPageLoading();
+                    
+                    $.get('/api/shopify/colecciones', res => {
+
+                    }, 'json').always(function() {
+                        KTApp.hidePageLoading();
+                        loadingEl.remove();
+                        vm.getColecciones(true);
                     });
                 },
                 createColeccion() {
