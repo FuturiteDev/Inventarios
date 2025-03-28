@@ -564,38 +564,6 @@ class TraspasosController extends Controller
     }
 
 
-    public function demo()
-    {
-        try {
-
-            $productosInexistentes = [];
-
-            $traspaso = $this->traspasos->find(36);
-
-
-
-            //evento para confirmar que se recibio el traspaso
-            TraspasoRecibido::dispatch($traspaso);
-
-            return response()->json([
-                'status' => true,
-                'results' => [
-                    'traspaso' => $traspaso
-
-                ],
-                'message' => 'ok.'
-            ], 200);
-        } catch (\Exception $e) {
-            Log::info("TraspasosController->demo() | " . $e->getMessage() . " | " . $e->getLine());
-
-            return response()->json([
-                'status' => false,
-                'message' => "[ERROR] TraspasosController->demo() | " . $e->getMessage() . " | " . $e->getLine(),
-                'results' => null
-            ], 500);
-        }
-    }
-
     public function listTraspasosPorChofer(Request $request)
     {
         try {

@@ -23,6 +23,7 @@ use Ongoing\Inventarios\Repositories\InventarioRevisionProductosRepositoryEloque
 use App\Mail\SendBrevoMail;
 use App\Repositories\UsuarioRepositoryEloquent;
 use Ongoing\Empleados\Entities\Empleado;
+use Ongoing\Inventarios\Events\InventarioRevisado;
 
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\Messaging\CloudMessage;
@@ -548,8 +549,8 @@ class InventarioController extends Controller
 
             if (!$inventarioRevision) {
                 return response()->json([
-                    'status' => true,
-                    'message' => "Revisión de inventario registrada correctamente."
+                    'status' => false,
+                    'message' => "Revisión no encontrada. Verifique."
                 ], 200);
             }
 
@@ -650,6 +651,9 @@ class InventarioController extends Controller
                 'empleado_id' => $empleado_id,
                 'estatus' => 1
             ]);
+
+            //evento para procesar la revision de inventarios
+            InventarioRevisado::dispatch($inventarioRevision);
 
             return response()->json([
                 'status' => true,
