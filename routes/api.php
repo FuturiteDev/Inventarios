@@ -36,6 +36,7 @@ Route::prefix('colecciones')->group(function () {
     Route::get('/productos/{coleccion_id}', [ColeccionesController::class, 'getProductosColeccion'])->name('get_productos_coleccion');
     Route::post('/save', [ColeccionesController::class, 'saveColecciones'])->name('save-colecciones');
     Route::post('/delete', [ColeccionesController::class, 'delete'])->name('delete_colection');
+    Route::get('/publicadas', [ColeccionesController::class, 'getPublicadas'])->name('get_published_colections');
 });
 
 

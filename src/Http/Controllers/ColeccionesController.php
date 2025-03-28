@@ -61,6 +61,33 @@ class ColeccionesController extends Controller
     }
 
     /**
+     * /api/colecciones/publicadas
+     *
+     * Lista todas las colecciones activas
+     *
+     * @return JSON
+     **/
+    public function getPublicadas()
+    {
+        try {
+            $colecciones = $this->colecciones->findWhere(['estatus' => 1, 'publicado' => 1]);
+
+            return response()->json([
+                'status' => true,
+                'results' => $colecciones
+            ], 200);
+        } catch (\Exception $e) {
+            Log::info("ColeccionesController->getAll() | " . $e->getMessage() . " | " . $e->getLine());
+
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] ColeccionesController->getAll() | " . $e->getMessage() . " | " . $e->getLine(),
+                'results' => null
+            ], 500);
+        }
+    }
+
+    /**
      * /api/colecciones/productos/{coleccion_id}
      *
      * Lista los productos relacionados a una colección
