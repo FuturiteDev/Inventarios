@@ -24,6 +24,7 @@ class Colecciones extends Model implements Transformable
         'nombre',
         'descripcion',
         'imagen',
+        'publicado',        //para saber si la coleccion es visible o no en el punto de venta (sucursal)
         'estatus'
     ];
 
