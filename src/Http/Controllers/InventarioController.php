@@ -355,21 +355,6 @@ class InventarioController extends Controller
                 }
             }
 
-            $cantidadReal = $this->inventario
-                ->where('sucursal_id', $sucursal_id)
-                ->where('producto_id', $producto_id)
-                ->where('fecha_caducidad', $fecha_caducidad)
-                ->where('cantidad_disponible', 1)
-                ->sum('cantidad_total');
-
-            DB::table('log_registro_inventarios')->insert([
-                'sucursal_id' => $sucursal_id,
-                'producto_id' => $producto_id,
-                'existencia_actual' => $cantidadActual,
-                'existencia_real' => $cantidadReal,
-                'empleado_id' => $empleado->id,
-                'comentarios' => $comentarios,
-            ]);
 
             $detalleInventario = $this->inventario
                 ->where('sucursal_id', $sucursal_id)
