@@ -395,6 +395,58 @@ class InventarioController extends Controller
         }
     }
 
+    public function getRevisiones()
+    {
+        try {
+            $revisiones = $this->inventarioRevisiones->with(['empleado', 'sucursal'])->get();
+
+            return response()->json([
+                'status' => true,
+                'message' => $revisiones
+            ], 200);
+        } catch (\Exception $e) {
+            Log::info("InventarioController->revisionSucursal() | " . $e->getMessage() . " | " . $e->getLine());
+
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] InventarioController->revisionSucursal() | " . $e->getMessage() . " | " . $e->getLine(),
+                'results' => null
+            ], 500);
+        }
+    }
+
+    public function getRevisionesDetalles($revision_id)
+    {
+        try {
+            $revisiones = $this->inventarioRevisiones
+                ->with(['empleado', 'sucursal', 'revisionProductos'])
+                ->where('id', $revision_id)
+                ->first();
+
+            if (!$revisiones) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Revisión no encontrada',
+                ], 404);
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => $revisiones
+            ], 200);
+        } catch (\Exception $e) {
+            Log::info("InventarioController->getRevisionesDetalles() | " . $e->getMessage() . " | " . $e->getLine());
+
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] InventarioController->getRevisionesDetalles() | " . $e->getMessage() . " | " . $e->getLine(),
+                'results' => null
+            ], 500);
+        }
+    }
+
+
+
     public function revisionSucursal($sucursalId)
     {
         try {
@@ -473,10 +525,10 @@ class InventarioController extends Controller
             foreach ($productos as $producto) {
 
                 Log::info($productos);
-                
+
                 if (!empty($producto['imagen'])) {
                     $cadena = implode('', array_map('chr', $producto['imagen']));
-                    
+
                     $nombreImagen = md5(uniqid('', true)) . '.jpg';
                     Storage::disk('public')->put("revisiones/{$nombreImagen}", $cadena);
                     $pathStorage = "/storage/revisiones/{$nombreImagen}";
@@ -511,7 +563,7 @@ class InventarioController extends Controller
             ], 500);
         }
     }
-    
+
     public function inventarioRevisionFinalizar(Request $request)
     {
         try {
@@ -549,7 +601,7 @@ class InventarioController extends Controller
                     ->where('cantidad_disponible', '>', 0)
                     ->get();
 
-                $cantidadReal = $inventario->sum('cantidad_disponible'); 
+                $cantidadReal = $inventario->sum('cantidad_disponible');
 
                 if ($producto->existencia_actual == $cantidadReal) {
                     $producto->update(['existencia_real' => $cantidadReal]);

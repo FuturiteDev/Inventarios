@@ -65,6 +65,8 @@ Route::prefix('inventarios')->group(function () {
     Route::get('/revision/sucursal/{sucursal_id}', [InventarioController::class, 'revisionSucursal']);
     Route::post('/revision-guardar', [InventarioController::class, 'inventarioRevisionGuardar']);
     Route::post('/revision-finalizar',  [InventarioController::class, 'inventarioRevisionFinalizar']);
+    Route::get('/revisiones',  [InventarioController::class, 'getRevisiones']);
+    Route::get('/revisiones-detalles/{revision_id}',  [InventarioController::class, 'getRevisionesDetalles']);
 
 });
 
