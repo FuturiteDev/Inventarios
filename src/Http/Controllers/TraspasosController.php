@@ -27,6 +27,8 @@ use Kreait\Firebase\Messaging\AndroidConfig;
 use Kreait\Firebase\Messaging\ApnsConfig;
 use Ongoing\Empleados\Entities\Empleado;
 
+use function PHPUnit\Framework\isEmpty;
+
 class TraspasosController extends Controller
 {
     protected $usuarios;
@@ -166,7 +168,7 @@ class TraspasosController extends Controller
             $inputTraspasos['empleado_id'] = $request->empleado_id;
             $inputTraspasos['comentarios'] = $request->comentarios;
 
-            if ($request->filled('asignado_a')) { 
+            if ($request->filled('asignado_a')) {
                 $inputTraspasos['asignado_a'] = Empleado::where('no_empleado', $request->asignado_a)->first()?->id;
             }
 
@@ -584,6 +586,36 @@ class TraspasosController extends Controller
                 'status' => false,
                 'message' => "[ERROR] TraspasosController->listTraspasosPorChofer() | " . $e->getMessage() . " | " . $e->getLine(),
                 'results' => null
+            ], 500);
+        }
+    }
+
+
+    public function cancelarTraspaso($traspaso_id)
+    {
+        try {
+            $traspaso = $this->traspasos->where('estatus', '!=', 0)->find($traspaso_id);
+
+            if (!$traspaso) {
+                return response()->json([
+                    'status' => false,
+                    'message' => "El traspaso no existe o ya ha sido cancelado.",
+                ], 200);
+            }
+
+            $traspaso->estatus = 0;
+            $traspaso->save();
+
+            return response()->json([
+                'status' => true,
+                'message' => "Traspaso eliminado correctamente.",
+            ], 200);
+        } catch (\Exception $e) {
+            Log::info("TraspasosController->cancelarTraspaso() | " . $e->getMessage() . " | " . $e->getLine());
+
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] TraspasosController->cancelarTraspaso() | " . $e->getMessage() . " | " . $e->getLine(),
             ], 500);
         }
     }
