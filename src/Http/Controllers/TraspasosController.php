@@ -125,21 +125,18 @@ class TraspasosController extends Controller
     {
         try {
 
-            $traspasos = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino'])
-                ->where('estatus', 1)
-                ->where('sucursal_destino_id', $sucursal_id)
-                ->get();
+            $traspasos = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino'])->findWhere(['estatus' => 1, 'sucursal_destino_id' => $sucursal_id]);
 
-            if ($traspasos->isEmpty()) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'No se encontraron traspasos.'
-                ], 200);
-            }
+            $lista = $traspasos->map(function($item){
+                $tmp = $item->toArray();
+                $tmp['empleado_id'] = $item->empleado_id ?? 0;
+                $tmp['asignado_a'] = $item->asignado_a ?? 0;
+                return $tmp;
+            })->values();
 
             return response()->json([
                 'status' => true,
-                'results' => $traspasos,
+                'results' => $lista,
                 'message' => 'Traspasos obtenidos correctamente.',
             ], 200);
         } catch (\Exception $e) {
