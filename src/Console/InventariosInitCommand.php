@@ -82,6 +82,12 @@ class InventariosInitCommand extends Command
                 'url' => '/inventarios/existencias-sucursal',
                 'padre_id' => $nav_gpo->id, 
                 'permisos' => []
+            ],
+            [
+                'descripcion' => 'Sucursales auditadas', 
+                'url' => '/inventarios/sucursales-auditadas',
+                'padre_id' => $nav_gpo->id, 
+                'permisos' => []
             ]
         ];
 
