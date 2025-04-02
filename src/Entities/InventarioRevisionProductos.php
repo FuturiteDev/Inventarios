@@ -20,9 +20,13 @@ class InventarioRevisionProductos extends Model implements Transformable
      *
      * @var array
      */
-    
+
     protected $table = 'inventario_revision_productos';
 
     protected $fillable = ['inventario_revision_id', 'producto_id', 'existencia_actual', 'existencia_real', 'imagen'];
 
+    public function producto()
+    {
+        return $this->belongsTo(Productos::class, 'producto_id');
+    }
 }
