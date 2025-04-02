@@ -193,6 +193,10 @@
                         loading: "Cargando...",
                         columns: "Columnas",
                     },
+                    orderBy: {
+                        column: 'nombre',
+                        ascending: true,
+                    }
                 },
 
                 productos:[],
