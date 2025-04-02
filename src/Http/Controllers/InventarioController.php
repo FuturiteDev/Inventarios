@@ -408,7 +408,7 @@ class InventarioController extends Controller
     public function getRevisiones()
     {
         try {
-            $revisiones = $this->inventarioRevisiones->with(['empleado', 'sucursal'])->get();
+            $revisiones = $this->inventarioRevisiones->with(['empleado', 'sucursal'])->findByField('estatus', 1);
 
             return response()->json([
                 'status' => true,

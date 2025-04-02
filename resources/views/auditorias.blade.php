@@ -29,7 +29,7 @@
                         <div slot="id" slot-scope="props">[[props.row.id]]</div>
                         <div slot="sucursal" slot-scope="props">[[props.row.sucursal?.nombre]]</div>
                         <div slot="empleado" slot-scope="props">[[props.row.empleado?.nombre_completo]]</div>
-                        <div slot="created_at" slot-scope="props">[[props.row.created_at | fecha]]</div>
+                        <div slot="updated_at" slot-scope="props">[[props.row.updated_at | fecha]]</div>
                         <div slot="acciones" slot-scope="props">
                             <button type="button" class="btn btn-icon btn-sm btn-primary" title="Ver detalle" data-bs-toggle="modal" data-bs-target="#kt_modal_show" @click="getDetalleAuditoria(props.row.id)">
                                 <i class="fas fa-eye"></i>
@@ -98,25 +98,25 @@
                     {id: 2, text: 'Para cliente'},
                     {id: 3, text: 'Merma'},
                 ],
-                columns: ['id','sucursal','empleado','created_at','acciones'],
+                columns: ['id','sucursal','empleado','updated_at','acciones'],
                 options: {
                     headings: {
                         id: 'ID',
                         sucursal: 'Sucursal',
                         empleado: 'Empleado',
-                        created_at: 'Fecha de realización',
+                        updated_at: 'Fecha de realización',
                         acciones: 'Acciones',
                     },
                     columnsClasses: {
                         id: 'align-middle text-center px-2 ',
                         sucursal: 'align-middle text-center ',
                         empleado: 'align-middle text-center ',
-                        created_at: 'align-middle text-center ',
+                        updated_at: 'align-middle text-center ',
                         acciones: 'align-middle text-center px-2 ',
                     },
-                    sortable: ['id', 'sucursal','empleado','created_at'],
+                    sortable: ['id', 'sucursal','empleado','updated_at'],
                     orderBy: {
-                        column: 'id',
+                        column: 'updated_at',
                         ascending: false
                     },
                     filterable: ['sucursal', 'empleado'],
