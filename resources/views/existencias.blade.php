@@ -156,6 +156,11 @@
                                         <label class="form-check-label text-gray-700 fw-bold">Productos de Tienda</label>
                                     </div>
                                 </div>
+                                <div class="px-4">
+                                    <button class="btn btn-icon btn-secondary" @click="getInventarioGeneral(true)" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Actualizar">
+                                        <i class="ki-solid ki-arrows-circle"></i>
+                                    </button>
+                                </div>
                                 <div class="flex-fill text-end">
                                     <button type="button" class="btn btn-success btn-sm" @click="printTableGeneral"><i class="fa-solid fa-print"></i> Imprimir</button>
                                 </div>
@@ -981,6 +986,7 @@
                 },
                 showTraspaso(traspaso){
                     this.confirmar_traspaso = {
+                        asignado_a: "8080",
                         sucursal_origen_id: this.traspasos_pendientes.sucursal_origen_id,
                         sucursal_origen_nombre: this.traspasos_pendientes.sucursal_origen_nombre,
                         sucursal_destino_id: traspaso.sucursal_destino_id,
