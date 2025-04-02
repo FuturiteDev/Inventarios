@@ -29,6 +29,10 @@
                         <div slot="created_at" slot-scope="props">[[props.row.created_at | fecha]]</div>
                         <div slot="acciones" slot-scope="props">
                             <button type="button" class="btn btn-icon btn-sm btn-primary btn-sm me-2" title="Ver Traspaso" data-bs-toggle="modal" data-bs-target="#kt_modal_ver_traspaso" @click="initModalTraspaso(props.row)"><i class="fas fa-eye"></i></button>
+                            <button type="button" class="btn btn-icon btn-sm btn-danger" title="Cancelar Traspaso" :disabled="loading" @click="cancelTraspaso(props.row.id)" :data-kt-indicator="props.row.cancelando ? 'on' : 'off'">
+                                <span class="indicator-label"><i class="fa-solid fa-trash-alt"></i></span>
+                                <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
+                            </button>
                         </div>
                     </v-client-table>
                     <!--end::Table-->
@@ -283,7 +287,54 @@
                 initModalTraspaso(traspaso){
                     this.show_traspaso = traspaso;
                     this.getTraspasoDetalle(traspaso.id);
-                }
+                },
+                cancelTraspaso(idTraspaso) {
+                    let vm = this;
+                    Swal.fire({
+                        title: '¿Estas seguro de que deseas cancelar el traspaso?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Si, continuar',
+                        cancelButtonText: 'Cancelar',
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            vm.loading = true;
+                            let index = vm.traspasos.findIndex(item => item.id == idTraspaso);
+                            if(index >= 0){
+                                vm.$set(vm.traspasos[index], 'cancelando', true);
+                            }
+                            $.ajax({
+                                method: "POST",
+                                url: `/api/traspasos/cancelar/${idTraspaso}`,
+                            }).done(function(res) {
+                                Swal.fire(
+                                    'Traspaso cancelado',
+                                    'El traspaso ha sido cancelado con éxito',
+                                    'success'
+                                );
+                                index = vm.traspasos.findIndex(item => item.id == idTraspaso);
+                                if(index >= 0){
+                                    vm.$set(vm.traspasos[index], 'cancelando', false);
+                                }
+                                vm.$nextTick(() => {
+                                    vm.getTraspasos();
+                                });
+                            }).fail(function(jqXHR, textStatus) {
+                                console.log("Request failed cancelTraspaso: " + textStatus, jqXHR);
+                                Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
+
+                                index = vm.traspasos.findIndex(item => item.id == idTraspaso);
+                                if(index >= 0){
+                                    vm.$set(vm.traspasos[index], 'cancelando', false);
+                                }
+                            }).always(function(event, xhr, settings) {
+                                vm.loading = false;
+                            });
+                        }
+                    })
+                },
             },
             computed: {
                 
