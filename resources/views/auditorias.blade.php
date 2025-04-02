@@ -115,6 +115,10 @@
                         acciones: 'align-middle text-center px-2 ',
                     },
                     sortable: ['id', 'sucursal','empleado','created_at'],
+                    orderBy: {
+                        column: 'id',
+                        ascending: false
+                    },
                     filterable: ['sucursal', 'empleado'],
                     skin: 'table table-sm table-rounded table-striped table-row-bordered',
                     columnsDropdown: true,
