@@ -971,12 +971,12 @@
                         }
                     })
                 },
-                modalTraspaso(producto){
+                modalTraspaso(item){
                     this.traspaso_model = {
-                        producto_id: producto.producto_id,
-                        fecha_caducidad: producto.fecha_caducidad,
-                        producto_nombre: producto.nombre,
-                        cantidad_existente: producto.cantidad_existente,
+                        producto_id: item.producto_id,
+                        fecha_caducidad: item.fecha_caducidad,
+                        producto_nombre: item.producto.nombre,
+                        cantidad_existente: item.cantidad_existente,
                     };
                 },
                 showTraspaso(traspaso){
