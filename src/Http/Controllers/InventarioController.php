@@ -419,13 +419,13 @@ class InventarioController extends Controller
     {
         try {
             $revisiones = $this->inventarioRevisiones
-            ->with([
-                'empleado',
-                'sucursal',
-                'revisionProductos.producto:id,nombre,sku'
-            ])
-            ->where('id', $revision_id)
-            ->first();
+                ->with([
+                    'empleado',
+                    'sucursal',
+                    'revisionProductos.producto:id,nombre,sku'
+                ])
+                ->where('id', $revision_id)
+                ->first();
 
             if (!$revisiones) {
                 return response()->json([

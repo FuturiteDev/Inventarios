@@ -9,6 +9,7 @@ use Storage;
 use File;
 use Log;
 use Ongoing\Inventarios\Entities\Inventario;
+use Ongoing\Inventarios\Entities\ProductosPendientesTraspaso;
 use Ongoing\Inventarios\Repositories\ProductosMultimediaRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\ProductosRepositoryEloquent;
 use Ongoing\Inventarios\Repositories\ProductosPendientesTraspasoRepositoryEloquent;
@@ -391,14 +392,37 @@ class ProductosController extends Controller
                 ->where('sucursal_id', $sucursalId)
                 ->where('producto_id', $productoId)
                 ->where('estatus', 1)
+                ->where('cantidad_disponible', '>', 0)
                 ->get();
 
-            $inventarioAgrupado = $inventarios->groupBy('fecha_caducidad')->map(function ($items, $fechaCaducidad) {
+            $inventarioAgrupado = $inventarios->groupBy(function ($item) {
+                return $item->fecha_caducidad ?? '';
+            })->map(function ($items, $fechaCaducidad) {
                 return [
                     'fecha_caducidad' => $fechaCaducidad,
                     'total_existencias' => $items->sum('cantidad_disponible'),
                 ];
-            })->values();
+            })->filter(fn($item) => $item['total_existencias'] > 0)
+                ->values();
+
+            $productosPendientes = $this->productosPendientesTraspaso->where('producto_id', $productoId)
+                ->where('sucursal_origen', $sucursalId)
+                ->with(['sucursalDestino'])
+                ->get()
+                ->groupBy(function ($item) {
+                    return $item->fecha_caducidad ?? '';
+                })
+                ->map(function ($items, $fechaCaducidad) {
+                    return [
+                        'fecha_caducidad' => $fechaCaducidad,
+                        'sucursales_destino' => $items->groupBy('sucursal_destino')->map(function ($itemsDestino, $sucursalDestino) {
+                            return [
+                                'sucursal_destino' => $itemsDestino->first()->sucursalDestino->nombre,
+                                'cantidad' => $itemsDestino->sum('cantidad'),
+                            ];
+                        })->values()
+                    ];
+                })->values();
 
             $producto = $this->productos->with(['categoria', 'subcategoria', 'multimedia'])->find($productoId);
 
@@ -415,6 +439,7 @@ class ProductosController extends Controller
                 'subcategoria' => $producto->subcategoria,
                 'total_existencias_sucursal' => $inventarios->sum('cantidad_disponible'),
                 'inventario' => $inventarioAgrupado,
+                'pendientes_traspaso' => $productosPendientes
             ];
 
             return response()->json([
@@ -432,6 +457,9 @@ class ProductosController extends Controller
             ], 500);
         }
     }
+
+
+
 
 
     public function establecerPortada(Request $request)

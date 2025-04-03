@@ -26,6 +26,7 @@ use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Firebase\Messaging\AndroidConfig;
 use Kreait\Firebase\Messaging\ApnsConfig;
 use Ongoing\Empleados\Entities\Empleado;
+use Ongoing\Inventarios\Entities\ProductosPendientesTraspaso;
 
 use function PHPUnit\Framework\isEmpty;
 
@@ -613,6 +614,35 @@ class TraspasosController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => "[ERROR] TraspasosController->cancelarTraspaso() | " . $e->getMessage() . " | " . $e->getLine(),
+            ], 500);
+        }
+    }
+
+    public function cancelarTraspasoProducto($productoTraspasoId)
+    {
+        try {
+
+            $pendienteTraspaso = ProductosPendientesTraspaso::find($productoTraspasoId);
+
+            if (!$pendienteTraspaso) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'El traspaso pendiente del producto ya ha sido cancelado o no existe.'
+                ], 200);
+            }
+
+            $pendienteTraspaso->delete();
+            return response()->json([
+                'status' => true,
+                'message' => 'El traspaso pendiente del producto ha sido eliminado correctamente.'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::info("ProductosController->cancelarTraspasoProducto() | " . $e->getMessage() . " | " . $e->getLine());
+
+            return response()->json([
+                'status' => false,
+                'message' => "[ERROR] ProductosController->cancelarTraspasoProducto() | " . $e->getMessage() . " | " . $e->getLine(),
+                'results' => null
             ], 500);
         }
     }
