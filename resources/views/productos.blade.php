@@ -1080,7 +1080,7 @@
                     return this.subcategorias.map(item => ({ id: item.id, text: item.nombre, caracteristicas: item.caracteristicas_json }));
                 },
                 listaColecciones() {
-                    return this.colecciones.map(item => ({ id: item.id, text: item.nombre }));
+                    return this.colecciones.map(item => ({ id: item.id, text: item.nombre })).sort( (a, b) => a.text < b.text ? -1 : (a.text > b.text) ? 1 : 0);
                 },
             }
         });

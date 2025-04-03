@@ -322,7 +322,7 @@
                     return this.sucursales.map(item => ({id: item.id, text: item.nombre}));
                 },
                 listaColecciones() {
-                    return this.colecciones.map(item => ({ id: item.id, text: item.nombre }));
+                    return this.colecciones.map(item => ({ id: item.id, text: item.nombre })).sort( (a, b) => a.text < b.text ? -1 : (a.text > b.text) ? 1 : 0);
                 },
                 listaEmpleados(){
                     return this.empleados.map(item => ({id: item.no_empleado, text: item.nombre_completo}));
