@@ -453,11 +453,10 @@
                 // subcategorias_existencias: [],
                 // subcategorias_general: [],
                 // subcategorias_pocaexistencias: [],
-                columns: ['id','nombre','sku','cantidad_existente','fecha_caducidad','acciones'],
-                columnsPocaExistencia: ['id','nombre','sku','cantidad_existente'],
+                columns: ['sku','nombre','cantidad_existente','fecha_caducidad','acciones'],
+                columnsPocaExistencia: ['sku','nombre','cantidad_existente'],
                 options: {
                     headings: {
-                        id: 'ID',
                         sku: 'SKU',
                         nombre: 'Producto',
                         cantidad_existente: 'Cantidad Existente',
@@ -465,14 +464,13 @@
                         acciones: 'Acciones',
                     },
                     columnsClasses: {
-                        id: 'align-middle px-2 ',
                         sku: 'align-middle text-center ',
                         nombre: 'align-middle ',
                         cantidad_existente: 'align-middle text-center ',
                         fecha_caducidad: 'align-middle text-center ',
                         acciones: 'align-middle text-center px-2 ',
                     },
-                    sortable: ['sku', 'fecha_caducidad','cantidad_existente'],
+                    sortable: ['sku', 'fecha_caducidad','cantidad_existente','nombre'],
                     filterable: ['nombre', 'sku'],
                     skin: 'table table-sm table-rounded table-striped border align-middle table-row-bordered fs-6',
                     columnsDropdown: true,
@@ -503,6 +501,32 @@
                             let value = row.producto?.sku?.toLowerCase();
                             return value?.includes(query.toLowerCase());
                         },
+                    },
+                    customSorting: {
+                        nombre: function (ascending) {
+                            return function (a, b) {
+                                let nameA = a.producto?.nombre?.toLowerCase();
+                                let nameB = b.producto?.nombre?.toLowerCase();
+
+                                return ascending
+                                    ? nameA > nameB ? 1 : nameA == nameB ? 0 : -1
+                                    : nameA < nameB ? 1 : nameA == nameB ? 0 : -1;
+                            }
+                        },
+                        sku: function (ascending) {
+                            return function (a, b) {
+                                let nameA = a.producto?.sku?.toLowerCase();
+                                let nameB = b.producto?.sku?.toLowerCase();
+
+                                return ascending
+                                    ? nameA > nameB ? 1 : nameA == nameB ? 0 : -1
+                                    : nameA < nameB ? 1 : nameA == nameB ? 0 : -1;
+                            }
+                        },
+                    },
+                    orderBy: {
+                        column: 'sku',
+                        ascending: true
                     },
                 },
 
@@ -1211,7 +1235,7 @@
                     return list;
                 },
                 listaColecciones() {
-                    return this.colecciones.map(item => ({ id: item.id, text: item.nombre }));
+                    return this.colecciones.map(item => ({ id: item.id, text: item.nombre })).sort( (a, b) => a.text < b.text ? -1 : (a.text > b.text) ? 1 : 0);
                 },
                 listaEmpleados(){
                     return this.empleados.map(item => ({id: item.no_empleado, text: item.nombre_completo}));
@@ -1279,6 +1303,10 @@
                         filterable: ['nombre', 'sku'],
                         columnsDropdown: true,
                         resizableColumns: false,
+                        orderBy: {
+                            column: 'sku',
+                            ascending: true
+                        },
                     };
                 },
             },

@@ -84,6 +84,16 @@ class InventarioController extends Controller
         return view('inventarios::existencias');
     }
 
+    /**
+     * Summary of index
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
+     */
+    function auditoriaSucursal()
+    {
+        Gate::authorize('access-granted', '/inventarios/existencias-sucursal');
+        return view('inventarios::auditorias');
+    }
+
     public function getProductosConExistencias(Request $request)
     {
         try {
@@ -398,7 +408,7 @@ class InventarioController extends Controller
     public function getRevisiones()
     {
         try {
-            $revisiones = $this->inventarioRevisiones->with(['empleado', 'sucursal'])->get();
+            $revisiones = $this->inventarioRevisiones->with(['empleado', 'sucursal'])->findByField('estatus', 1);
 
             return response()->json([
                 'status' => true,

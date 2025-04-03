@@ -8,5 +8,6 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/colecciones', [Ongoing\Inventarios\Http\Controllers\ColeccionesController::class, 'index'])->name('colecciones.list');
     Route::get('/producto-terminado', [Ongoing\Inventarios\Http\Controllers\InventarioController::class, 'index']);
     Route::get('/existencias-sucursal', [Ongoing\Inventarios\Http\Controllers\InventarioController::class, 'existenciasSucursal']);
+    Route::get('/sucursales-auditadas', [Ongoing\Inventarios\Http\Controllers\InventarioController::class, 'auditoriaSucursal']);
     Route::get('/traspasos', [Ongoing\Inventarios\Http\Controllers\TraspasosController::class, 'index']);
 });

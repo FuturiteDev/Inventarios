@@ -132,6 +132,7 @@ class TraspasosController extends Controller
                 $tmp = $item->toArray();
                 $tmp['empleado_id'] = $item->empleado_id ?? 0;
                 $tmp['asignado_a'] = $item->asignado_a ?? 0;
+                $tmp['comentarios'] = $item->comentarios ?? '';
                 return $tmp;
             })->values();
 
