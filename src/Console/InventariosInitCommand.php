@@ -137,23 +137,5 @@ class InventariosInitCommand extends Command
             }
             $nav->submenu()->whereNotIn('id', $ids_submenu)->delete();
         }
-
-        $nav_gpo = $nav_repo->firstOrCreate([
-            'descripcion' => 'Inventarios',
-            'url' => '/',
-            'padre_id' => 0,
-            'permisos' => []
-        ]);
-
-        foreach ($rutas as $row) {
-            $nav = $nav_repo->findByField('url', $row['url']);
-            if ($nav->count() == 0) {
-                $nav_repo->create($row);
-            }
-        }
-
-        $this->info("Proceso finalizado");
-
-        return 0;
     }
 }
