@@ -636,8 +636,8 @@ class InventarioController extends Controller
 
                     $inventarioAntiguo = $inventario->sortBy('created_at')->first();
 
-                    $fechaElaboracion = $inventarioAntiguo->fecha_elaboracion;
-                    $fechaCaducidad = $inventarioAntiguo->fecha_caducidad;
+                    $fechaElaboracion = !empty($inventarioAntiguo) ? $inventarioAntiguo->fecha_elaboracion : null;
+                    $fechaCaducidad = !empty($inventarioAntiguo) ? $inventarioAntiguo->fecha_caducidad : null;
 
                     for ($i = 0; $i < $diferencia; $i++) {
                         Inventario::create([
