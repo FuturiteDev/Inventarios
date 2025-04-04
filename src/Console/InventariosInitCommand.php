@@ -4,6 +4,7 @@ namespace Ongoing\Inventarios\Console;
 
 use Illuminate\Console\Command;
 use App\Repositories\NavegacionRepositoryEloquent;
+use App\Entities\Navegacion;
 
 class InventariosInitCommand extends Command
 {
@@ -39,64 +40,116 @@ class InventariosInitCommand extends Command
     public function handle(NavegacionRepositoryEloquent $nav_repo)
     {
 
-        $nav_gpo = $nav_repo->firstOrCreate([
-            'descripcion' => 'Inventarios', 
-            'url' => '/', 
-            'padre_id' => 0, 
-            'permisos' => []
-        ]);
-
-        $rutas = [
+        $menu_navegacion = [
             [
-                'descripcion' => 'Productos', 
-                'url' => '/inventarios/productos',
-                'padre_id' => $nav_gpo->id, 
-                'permisos' => []
-            ],
-            [
-                'descripcion' => 'Categorias', 
-                'url' => '/inventarios/categorias',
-                'padre_id' => $nav_gpo->id, 
-                'permisos' => []
-            ],
-            [
-                'descripcion' => 'Subcategorias', 
-                'url' => '/inventarios/subcategorias',
-                'padre_id' => $nav_gpo->id, 
-                'permisos' => []
-            ],
-            [
-                'descripcion' => 'Colecciones', 
-                'url' => '/inventarios/colecciones',
-                'padre_id' => $nav_gpo->id, 
-                'permisos' => []
-            ],
-            [
-                'descripcion' => 'Producto terminado', 
-                'url' => '/inventarios/producto-terminado',
-                'padre_id' => $nav_gpo->id, 
-                'permisos' => []
-            ],
-            [
-                'descripcion' => 'Inventario por sucursal', 
-                'url' => '/inventarios/existencias-sucursal',
-                'padre_id' => $nav_gpo->id, 
-                'permisos' => []
-            ],
-            [
-                'descripcion' => 'Sucursales auditadas', 
-                'url' => '/inventarios/sucursales-auditadas',
-                'padre_id' => $nav_gpo->id, 
-                'permisos' => []
+                'descripcion' => 'Control Interno',
+                'url' => '/',
+                'icono' => '',
+                'orden' => 1,
+                'submenu' => [
+                    [
+                        'descripcion' => 'Configuración de inventario',
+                        'url' => '/',
+                        'orden' => 1,
+                        'permisos' => [],
+                        'submenu' => [
+                            [
+                                'descripcion' => 'Productos',
+                                'url' => '/inventarios/productos',
+                                'orden' => 1,
+                                'permisos' => []
+                            ],
+                            [
+                                'descripcion' => 'Categorias',
+                                'url' => '/inventarios/categorias',
+                                'orden' => 2,
+                                'permisos' => []
+                            ],
+                            [
+                                'descripcion' => 'Subcategorias',
+                                'url' => '/inventarios/subcategorias',
+                                'orden' => 3,
+                                'permisos' => []
+                            ],
+                            [
+                                'descripcion' => 'Colecciones',
+                                'url' => '/inventarios/colecciones',
+                                'orden' => 4,
+                                'permisos' => []
+                            ]
+                        ]
+                    ],
+                    [
+                        'descripcion' => 'Gestión de inventario',
+                        'url' => '/',
+                        'orden' => 2,
+                        'permisos' => [],
+                        'submenu' => [
+                            [
+                                'descripcion' => 'Inventario central y catering',
+                                'url' => '/inventarios/producto-terminado',
+                                'orden' => 1,
+                                'permisos' => []
+                            ],
+                            [
+                                'descripcion' => 'Distribución del inventario',
+                                'url' => '/inventarios/existencias-sucursal',
+                                'orden' => 2,
+                                'permisos' => []
+                            ],
+                            [
+                                'descripcion' => 'Traspasos',
+                                'url' => '/inventarios/traspasos',
+                                'orden' => 3,
+                                'permisos' => []
+                            ],
+                            [
+                                'descripcion' => 'Inventario reportado',
+                                'url' => '/inventarios/sucursales-auditadas',
+                                'orden' => 4,
+                                'permisos' => []
+                            ]
+                        ]
+                    ]
+                ],
             ]
         ];
 
-        foreach($rutas as $row){
+        foreach ($menu_navegacion as $row) {
+            $submenu = $row['submenu'] ?? [];
+            unset($row['submenu']);
+            $nav = Navegacion::firstOrCreate(['url' => $row['url'], 'descripcion' => $row['descripcion']], $row);
+            $nav->fill($row)->save();
+            $ids_submenu = [];
+            foreach ($submenu as $sub) {
+                $sub_submenu = $sub['submenu'] ?? [];
+                unset($sub['submenu']);
+                $sub_nav = $nav->submenu()->firstOrCreate(['url' => $sub['url'], 'descripcion' => $sub['descripcion']], $sub);
+                $sub_nav->fill($sub)->save();
+                $ids_submenu[] = $sub_nav->id;
+                $ids_sub_sub = [];
+                foreach ($sub_submenu as $sub_sub) {
+                    $sub_sub_nav = $sub_nav->submenu()->firstOrCreate(['url' => $sub_sub['url'], 'descripcion' => $sub_sub['descripcion']], $sub_sub);
+                    $sub_sub_nav->fill($sub_sub)->save();
+                    $ids_sub_sub[] = $sub_sub_nav->id;
+                }
+                $sub_nav->submenu()->whereNotIn('id', $ids_sub_sub)->delete();
+            }
+            $nav->submenu()->whereNotIn('id', $ids_submenu)->delete();
+        }
+
+        $nav_gpo = $nav_repo->firstOrCreate([
+            'descripcion' => 'Inventarios',
+            'url' => '/',
+            'padre_id' => 0,
+            'permisos' => []
+        ]);
+
+        foreach ($rutas as $row) {
             $nav = $nav_repo->findByField('url', $row['url']);
-            if($nav->count() == 0){
+            if ($nav->count() == 0) {
                 $nav_repo->create($row);
             }
-            
         }
 
         $this->info("Proceso finalizado");
