@@ -711,10 +711,10 @@ class InventarioController extends Controller
                 'message' => "Revisión de inventario registrada correctamente."
             ], 200);
         } catch (\Exception $e) {
-            Log::error("InventarioController->revisionInventario() | " . $e->getMessage() . " | Línea: " . $e->getLine());
+            Log::error("InventarioController->inventarioRevisionFinalizar() | " . $e->getMessage() . " | Línea: " . $e->getLine());
             return response()->json([
                 'status' => false,
-                'message' => "[ERROR] InventarioController->revisionInventario() | " . $e->getMessage()
+                'message' => "[ERROR] InventarioController->inventarioRevisionFinalizar() | " . $e->getMessage()
             ], 500);
         }
     }
