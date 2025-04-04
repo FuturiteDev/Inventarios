@@ -182,10 +182,10 @@ class InventarioController extends Controller
 
             if ($validator->fails()) {
                 return response()->json([
-                    'status' => true,
+                    'status' => false,
                     'message' => "Algun producto no existe en la base de datos",
                     "info" => $validator->errors(),
-                ], 400);
+                ], 200);
             }
 
             if ($request->numero_empleado) {
@@ -442,7 +442,7 @@ class InventarioController extends Controller
                 return response()->json([
                     'status' => false,
                     'message' => 'Revisión no encontrada',
-                ], 404);
+                ], 200);
             }
 
             return response()->json([
@@ -471,7 +471,7 @@ class InventarioController extends Controller
                 return response()->json([
                     'status' => false,
                     'message' => 'Sucursal no encontrada.'
-                ], 404);
+                ], 200);
             }
 
             $inventario = $this->inventarioRevisiones->where('sucursal_id', $sucursalId)
@@ -592,7 +592,7 @@ class InventarioController extends Controller
                 return response()->json([
                     'status' => false,
                     'message' => 'Empleado o sucursal no encontrados.'
-                ], 400);
+                ], 200);
             }
 
             $inventarioRevision = $this->inventarioRevisiones->where('sucursal_id', $sucursal_id)
