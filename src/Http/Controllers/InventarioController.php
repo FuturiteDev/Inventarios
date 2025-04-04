@@ -769,7 +769,7 @@ class InventarioController extends Controller
         try {
             $productos = $this->productos->where('estatus', 1)
                 ->with([
-                    'inventarios',
+                    'inventarios' => function($q){ $q->where('estatus', 1)->where('cantidad_disponible', '>', 0); },
                     'categoria:id,nombre,descripcion',
                     'subcategoria:id,nombre,descripcion'
                 ])
