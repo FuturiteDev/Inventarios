@@ -22,7 +22,7 @@
                     <div class="card card-flush" id="content-card-sucursal">
                         <div class="card-header align-items-center py-5 gap-2 gap-md-5">
                             <div class="card-title flex-column">
-                                <h3 class="ps-2">Existencias por Sucursal</h3>
+                                <h3 class="ps-2">Distribución de inventario</h3>
                             </div>
                             <div class="card-toolbar gap-2">
                                 <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#kt_modal_ver_traspaso">Ver traspasos</button>

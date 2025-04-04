@@ -7,7 +7,7 @@
             <div class="card card-flush" id="content-card">
                 <div class="card-header align-items-center py-5 gap-2 gap-md-5">
                     <div class="card-title flex-column">
-                        <h3 class="ps-2">Sucursales Auditadas</h3>
+                        <h3 class="ps-2">Inventario Reportado</h3>
                     </div>
                     <div class="card-toolbar gap-2">
                         <div class="px-2 min-w-200px">
