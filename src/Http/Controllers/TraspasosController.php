@@ -7,6 +7,7 @@ use App\Repositories\NotificacionesRepositoryEloquent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Log;
 
 use Ongoing\Inventarios\Entities\Inventario;
@@ -178,7 +179,9 @@ class TraspasosController extends Controller
                 ], 200);
             }
 
+            DB::beginTransaction();
             $traspaso = $this->traspasos->create($inputTraspasos);
+            $sin_stock = [];
 
             foreach ($request->productos as $row) {
                 $inputProdTraspasos = [];
@@ -204,45 +207,68 @@ class TraspasosController extends Controller
                         return $query->limit($row['cantidad']);
                     })->findWhere(['sucursal_id' => $sucursal_origen_id, 'producto_id' => $prodPendiente->producto_id, 'fecha_caducidad' => $prodPendiente->fecha_caducidad, ['cantidad_disponible', '>', 0], 'estatus' => 1]);
 
-                    $inputProdTraspasos['inventario_ids'] = $inv->modelKeys();
-                    $this->traspasosProductos->create($inputProdTraspasos);
-
-                    $inv->each(function ($item) {
-                        $item->estatus = 2;
-                        $item->save();
-                    });
+                    if($inv->count() == $row['cantidad']){
+                        $inputProdTraspasos['inventario_ids'] = $inv->modelKeys();
+                        $this->traspasosProductos->create($inputProdTraspasos);
+    
+                        $inv->each(function ($item) {
+                            $item->estatus = 2;
+                            $item->save();
+                        });
+                    }else{
+                        $prodPendiente->load(['producto' => function($q){ $q->select('id', 'sku', 'nombre', 'estatus'); }]);
+                        $sin_stock[] = [
+                            'producto_pendiente_id' => $prodPendiente->id,
+                            'cantidad_solicitada' => $row['cantidad'],
+                            'fecha_caducidad' => $prodPendiente->fecha_caducidad,
+                            'cantidad_disponible' => $inv->count(),
+                            'producto' => $prodPendiente->producto->toArray()
+                        ];
+                    }
                 }
                 $prodPendiente->delete();
             }
 
-            //evento para procesar el traspaso
-            TraspasoNuevo::dispatch($traspaso);
+            if(!empty($sin_stock)){
+                DB::rollBack();
+                return response()->json([
+                    'status' => false,
+                    'message' => "Productos sin stock suficiente para el traspaso.",
+                    'results' => $sin_stock
+                ], 200);
+            }else{
+                DB::commit();
 
-            $usuarioAutorizado = $this->usuariosAutorizados
-                ->whereJsonContains('configuracion->sucursales', (int) $sucursal_destino_id)
-                ->first();
+                //evento para procesar el traspaso
+                TraspasoNuevo::dispatch($traspaso);
 
-            $traspaso->load(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos']);
+                $usuarioAutorizado = $this->usuariosAutorizados
+                    ->whereJsonContains('configuracion->sucursales', (int) $sucursal_destino_id)
+                    ->first();
 
-            if ($usuarioAutorizado) {
-                $usuario_id = $usuarioAutorizado->user_id;
+                $traspaso->load(['sucursalOrigen', 'sucursalDestino', 'empleado', 'traspasoProductos']);
 
-                $notificacion = [
-                    'usuario_id' => $usuario_id ?? null,
-                    'traspaso_id' => $traspaso->id ?? null,
-                    'titulo' => "Nuevo traspaso desde sucursal " . $traspaso->sucursalOrigen->nombre,
-                    'mensaje' => "Se ha creado correctamente el traspaso con el ID: " . $traspaso->id
-                ];
-                $this->sendNotification($notificacion);
+                if ($usuarioAutorizado) {
+                    $usuario_id = $usuarioAutorizado->user_id;
+
+                    $notificacion = [
+                        'usuario_id' => $usuario_id ?? null,
+                        'traspaso_id' => $traspaso->id ?? null,
+                        'titulo' => "Nuevo traspaso desde sucursal " . $traspaso->sucursalOrigen->nombre,
+                        'mensaje' => "Se ha creado correctamente el traspaso con el ID: " . $traspaso->id
+                    ];
+                    $this->sendNotification($notificacion);
+                }
+
+
+                return response()->json([
+                    'status' => true,
+                    'results' => $traspaso,
+                    'message' => "Traspaso guardado correctamente",
+                ], 200);
             }
-
-
-            return response()->json([
-                'status' => true,
-                'results' => $traspaso,
-                'message' => "Traspaso guardado correctamente",
-            ], 200);
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::info("TraspasosController->saveTraspaso() | " . $e->getMessage() . " | " . $e->getLine());
 
             return response()->json([
