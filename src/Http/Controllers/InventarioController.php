@@ -103,7 +103,8 @@ class InventarioController extends Controller
                     'subcategoria',
                     'inventarios' => function ($query) use ($request) {
                         $query->where('sucursal_id', $request->sucursal_id)
-                            ->where('estatus', 1);
+                            ->where('estatus', 1)
+                            ->where('cantidad_disponible', '>', 0);
                     }
                 ])
                 ->get();
