@@ -3,7 +3,6 @@
 namespace Ongoing\Inventarios\Console;
 
 use Illuminate\Console\Command;
-use App\Repositories\NavegacionRepositoryEloquent;
 use App\Entities\Navegacion;
 
 class InventariosInitCommand extends Command
@@ -37,7 +36,7 @@ class InventariosInitCommand extends Command
      *
      * @return int
      */
-    public function handle(NavegacionRepositoryEloquent $nav_repo)
+    public function handle()
     {
 
         $menu_navegacion = [
