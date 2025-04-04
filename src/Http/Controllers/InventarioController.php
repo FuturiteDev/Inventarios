@@ -539,7 +539,7 @@ class InventarioController extends Controller
 
             foreach ($productos as $producto) {
 
-                Log::info($productos);
+                // Log::info($productos);
 
                 if (!empty($producto['imagen'])) {
                     $cadena = implode('', array_map('chr', $producto['imagen']));

@@ -403,7 +403,7 @@ class TraspasosController extends Controller
 
                     $tmpProductosPend[$row->producto->id]['cantidad'] += $row->cantidad;
 
-                    $stockProd = $this->inventario->findWhere(['sucursal_id' => $sucursal->id, 'producto_id' => $row->producto->id, ['cantidad_disponible', '>', 0], 'fecha_caducidad' => $row->fecha_caducidad]);
+                    $stockProd = $this->inventario->findWhere(['sucursal_id' => $sucursal->id, 'producto_id' => $row->producto->id, ['estatus' => 1, 'cantidad_disponible', '>', 0], 'fecha_caducidad' => $row->fecha_caducidad]);
 
                     $tmpProductosPend[$row->producto->id]['fechas'][] = [
                         'producto_pendiente_id' => $row->id,
