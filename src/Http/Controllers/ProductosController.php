@@ -305,23 +305,65 @@ class ProductosController extends Controller
     public function searchProducts(Request $request)
     {
         try {
+            $param = $request->param;
+            $sucursalId = $request->sucursal_id;
 
-            $producto = $this->productos
-                ->where('sku', 'like', '%' . $request->param . '%')
-                ->orWhere('nombre', 'like', '%' . $request->param . '%')
+            $productos = $this->productos
+                ->where(function ($query) use ($param) {
+                    $query->where('sku', 'like', '%' . $param . '%')
+                        ->orWhere('nombre', 'like', '%' . $param . '%');
+                })
                 ->with([
-                    'categoria' => function ($query) {
-                        $query->select('id', 'nombre', 'descripcion');
-                    },
-                    'subcategoria' => function ($query) {
-                        $query->select('id', 'categoria_id', 'nombre', 'descripcion');
-                    }
+                    'categoria:id,nombre,descripcion',
+                    'subcategoria:id,categoria_id,nombre,descripcion',
                 ])
-                ->get();
+                ->where('estatus', 1)
+                ->get()
+                ->map(function ($producto) use ($sucursalId) {
+                    if ($sucursalId) {
+                        $inventario = $producto->inventarios()
+                            ->where('sucursal_id', $sucursalId)
+                            ->where('estatus', 1)
+                            ->where('cantidad_disponible', 1)
+                            ->with('sucursal:id,nombre')
+                            ->first();
+
+                        $cantidad = $producto->inventarios()
+                            ->where('sucursal_id', $sucursalId)
+                            ->where('estatus', 1)
+                            ->where('cantidad_disponible', 1)
+                            ->count();
+
+                        $producto->inventarios = [
+                            [
+                                'sucursal_id' => $sucursalId,
+                                'sucursal_nombre' => optional($inventario->sucursal)->nombre,
+                                'cantidad_disponible' => $cantidad
+                            ]
+                        ];
+                    } else {
+                        $inventarios = $producto->inventarios()
+                            ->where('estatus', 1)
+                            ->where('cantidad_disponible', 1)
+                            ->with('sucursal:id,nombre')
+                            ->get()
+                            ->groupBy('sucursal_id')
+                            ->map(function ($items, $sucursalId) {
+                                return [
+                                    'sucursal_id' => $sucursalId,
+                                    'sucursal_nombre' => optional($items->first()->sucursal)->nombre,
+                                    'cantidad_disponible' => $items->count()
+                                ];
+                            })->values();
+
+                        $producto->inventarios = $inventarios;
+                    }
+                    return $producto;
+                });
 
             return response()->json([
                 'status' => true,
-                'results' => $producto
+                'results' => $productos
             ], 200);
         } catch (\Exception $e) {
             Log::info("ProductosController->searchProducts() | " . $e->getMessage() . " | " . $e->getLine());
@@ -333,6 +375,7 @@ class ProductosController extends Controller
             ], 500);
         }
     }
+
 
     public function registrarProductosTraspaso(Request $request)
     {
