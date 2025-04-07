@@ -15,7 +15,7 @@ class AddColumnInventarioIdsToTraspasosProductosTable extends Migration
     {
         Schema::table('traspasos_productos', function (Blueprint $table) {
             $table->date('fecha_caducidad')->nullable()->after('cantidad');
-            $table->string('inventario_ids')->nullable()->after('foto');
+            $table->text('inventario_ids')->nullable()->after('foto');
         });
     }
 
