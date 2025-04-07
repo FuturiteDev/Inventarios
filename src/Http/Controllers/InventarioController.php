@@ -406,25 +406,41 @@ class InventarioController extends Controller
         }
     }
 
-    public function getRevisiones()
+    public function getRevisiones(Request $request)
     {
         try {
-            $revisiones = $this->inventarioRevisiones->with(['empleado', 'sucursal'])->findByField('estatus', 1);
+            $fechaInicio = $request->fecha_inicio;
+            $fechaFin = $request->fecha_fin;
+            $estatus = $request->estatus;
+
+            $query = $this->inventarioRevisiones->with(['empleado', 'sucursal']);
+
+            if ($fechaInicio && $fechaFin) {
+                $query->whereBetween('updated_at', [$fechaInicio, $fechaFin]);
+            }
+
+            if (!is_null($estatus)) {
+                $query->where('estatus', $estatus);
+            }
+
+            $revisiones = $query->get();
 
             return response()->json([
                 'status' => true,
                 'message' => $revisiones
             ], 200);
         } catch (\Exception $e) {
-            Log::info("InventarioController->revisionSucursal() | " . $e->getMessage() . " | " . $e->getLine());
+            Log::info("InventarioController->getRevisiones() | " . $e->getMessage() . " | " . $e->getLine());
 
             return response()->json([
                 'status' => false,
-                'message' => "[ERROR] InventarioController->revisionSucursal() | " . $e->getMessage() . " | " . $e->getLine(),
+                'message' => "[ERROR] InventarioController->getRevisiones() | " . $e->getMessage() . " | " . $e->getLine(),
                 'results' => null
             ], 500);
         }
     }
+
+
 
     public function getRevisionesDetalles($revision_id)
     {
@@ -770,7 +786,9 @@ class InventarioController extends Controller
         try {
             $productos = $this->productos->where('estatus', 1)
                 ->with([
-                    'inventarios' => function($q){ $q->where('estatus', 1)->where('cantidad_disponible', '>', 0); },
+                    'inventarios' => function ($q) {
+                        $q->where('estatus', 1)->where('cantidad_disponible', '>', 0);
+                    },
                     'categoria:id,nombre,descripcion',
                     'subcategoria:id,nombre,descripcion'
                 ])
