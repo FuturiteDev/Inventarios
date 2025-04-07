@@ -364,6 +364,7 @@
                                         <th tabindex="0" class="VueTables__heading text-center align-middle">Producto</th>
                                         <th tabindex="0" class="VueTables__heading text-center align-middle">Fecha</th>
                                         <th tabindex="0" class="VueTables__heading text-center align-middle">Cantidad</th>
+                                        <th tabindex="0" class="VueTables__heading text-center align-middle"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -377,6 +378,12 @@
                                             <span class="fv-row">
                                                 <input type="number" v-model="producto.cantidad" class="form-control" placeholder="Cantidad" :name="`p_cantidad_${producto.producto_pendiente_id}`">
                                             </span>
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-icon btn-light-danger btn-sm" :disabled="loading" @click="deleteProductoTraspasoPendiente(producto.producto_pendiente_id)" :data-kt-indicator="producto.eliminando ? 'on' : 'off'">
+                                                <span class="indicator-label"><i class="fas fa-trash-alt"></i></i></span>
+                                                <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
+                                            </button>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -930,11 +937,30 @@
                                     }
                                 }).done(function(res) {
                                     if (res.status === true) {
-                                        Swal.fire(
-                                            "¡Guardado!",
-                                            "Los datos del traspaso se han almacenado con éxito",
-                                            "success"
-                                        );
+                                        let data = res.results;
+
+                                        Swal.fire({
+                                            title: `Traspaso #${data.id} guardado`,
+                                            icon: 'success',
+                                            html: `
+                                                <p>
+                                                    <span><b>Sucursal de origen:</b></span>
+                                                    <span>${data.sucursal_origen.nombre}</span>
+                                                </p>
+                                                <p>
+                                                    <span><b>Sucursal de destino:</b></span>
+                                                    <span>${data.sucursal_destino.nombre}</span>
+                                                </p>
+                                                <p>
+                                                    <span><b>Chofer:</b></span>
+                                                    <span>${vm.confirmar_traspaso.asignado_a}</span>
+                                                </p>
+                                                <p>
+                                                    <span><b>Estatus:</b></span>
+                                                    <span>${data.estatus_desc}</span>
+                                                </p>
+                                            `,
+                                        });
                                         vm.getInventarioSucursal(true, vm.filterSucursalExistencias);
                                         $('#kt_modal_ver_traspaso').modal('hide');
                                     } else {
@@ -993,6 +1019,51 @@
                                 index = vm.inventario.findIndex(item => item.id == idInventario);
                                 if(index >= 0){
                                     vm.$set(vm.inventario[index], 'eliminando', false);
+                                }
+                            }).always(function(event, xhr, settings) {
+                                vm.loading = false;
+                            });
+                        }
+                    })
+                },
+                deleteProductoTraspasoPendiente(idProducto) {
+                    let vm = this;
+                    Swal.fire({
+                        title: '¿Estas seguro de que deseas eliminar el producto del traspaso?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Si, eliminar',
+                        cancelButtonText: 'Cancelar',
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            vm.loading = true;
+                            let index = vm.confirmar_traspaso.productos.findIndex(item => item.producto_pendiente_id == idProducto);
+                            if(index >= 0){
+                                vm.$set(vm.confirmar_traspaso.productos[index], 'eliminando', true);
+                            }
+                            $.ajax({
+                                method: "GET",
+                                url: `/api/traspasos/cancelar-pendiente/${idProducto}`,
+                            }).done(function(res) {
+                                Swal.fire(
+                                    'Registro eliminado',
+                                    'El registro del producto ha sido eliminado con éxito',
+                                    'success'
+                                );
+
+                                index = vm.confirmar_traspaso.productos.findIndex(item => item.producto_pendiente_id == idProducto);
+                                if(index >= 0){
+                                    vm.$delete(vm.confirmar_traspaso.productos, index);
+                                }
+                            }).fail(function(jqXHR, textStatus) {
+                                console.log("Request failed deleteProductoTraspasoPendiente: " + textStatus, jqXHR);
+                                Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
+
+                                index = vm.confirmar_traspaso.productos.findIndex(item => item.producto_pendiente_id == idInventario);
+                                if(index >= 0){
+                                    vm.$set(vm.confirmar_traspaso.productos[index], 'eliminando', false);
                                 }
                             }).always(function(event, xhr, settings) {
                                 vm.loading = false;
