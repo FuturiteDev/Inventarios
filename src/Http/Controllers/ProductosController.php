@@ -321,43 +321,17 @@ class ProductosController extends Controller
                 ->get()
                 ->map(function ($producto) use ($sucursalId) {
                     if ($sucursalId) {
-                        $inventario = $producto->inventarios()
-                            ->where('sucursal_id', $sucursalId)
-                            ->where('estatus', 1)
-                            ->where('cantidad_disponible', 1)
-                            ->with('sucursal:id,nombre')
-                            ->first();
-
                         $cantidad = $producto->inventarios()
                             ->where('sucursal_id', $sucursalId)
                             ->where('estatus', 1)
                             ->where('cantidad_disponible', 1)
                             ->count();
 
-                        $producto->inventarios = [
-                            [
-                                'sucursal_id' => $sucursalId,
-                                'sucursal_nombre' => optional($inventario->sucursal)->nombre,
-                                'cantidad_disponible' => $cantidad
-                            ]
-                        ];
+                        $producto->stock_total = $cantidad;
                     } else {
-                        $inventarios = $producto->inventarios()
-                            ->where('estatus', 1)
-                            ->where('cantidad_disponible', 1)
-                            ->with('sucursal:id,nombre')
-                            ->get()
-                            ->groupBy('sucursal_id')
-                            ->map(function ($items, $sucursalId) {
-                                return [
-                                    'sucursal_id' => $sucursalId,
-                                    'sucursal_nombre' => optional($items->first()->sucursal)->nombre,
-                                    'cantidad_disponible' => $items->count()
-                                ];
-                            })->values();
-
-                        $producto->inventarios = $inventarios;
+                        $producto->stock_total = 0;
                     }
+
                     return $producto;
                 });
 
@@ -375,6 +349,7 @@ class ProductosController extends Controller
             ], 500);
         }
     }
+
 
 
     public function registrarProductosTraspaso(Request $request)
