@@ -5,37 +5,67 @@
         <!--begin::Content-->
         <div id="kt_app_content" class="app-content">
             <!--begin::Card-->
+
             <div class="card card-flush" id="content-card">
                 <!--begin::Card header-->
                 <div class="card-header align-items-center py-5 gap-2 gap-md-5">
                     <div class="card-title flex-column">
                         <h3 class="ps-2">Traspasos</h3>
                     </div>
-                    <div class="card-toolbar">
-
+                    <div class="card-toolbar gap-2">
+                        <div class="min-w-200px me-5">
+                            <v-select
+                                v-model="filterEstatus"
+                                :options="estatus"
+                                data-allow-clear="true"
+                                data-placeholder="Filtrar por estatus">
+                            </v-select>
+                        </div>
+                        <div class="min-w-200px">
+                            <div class="input-group">
+                                <input class="form-control form-control-sm" id="frmPeriodo" placeholder="Periodo" />
+                                <span class="input-group-text"><i class="fas fa-calendar fs-4"></i></span>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-icon btn-primary" @click="getTraspasos(true)">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
                     </div>
                 </div>
                 <!--end::Card header-->
 
                 <!--begin::Card body-->
-                <div class="card-body py-4">
-                    <!--begin::Table-->
-                    <v-client-table v-model="traspasos" :columns="columns" :options="options">
-                        <div slot="id" slot-scope="props">[[props.row.id]]</div>
-                        <div slot="origen" slot-scope="props">[[props.row.sucursal_origen?.nombre]]</div>
-                        <div slot="destino" slot-scope="props">[[props.row.sucursal_destino?.nombre]]</div>
-                        <div slot="tipo" slot-scope="props"><div>[[ tipos.find(item => item.id == props.row.tipo)?.text ?? '--']]</div></div>
-                        <div slot="estatus" slot-scope="props">[[props.row.estatus_desc]]</div>
-                        <div slot="created_at" slot-scope="props">[[props.row.created_at | fecha]]</div>
-                        <div slot="acciones" slot-scope="props">
-                            <button type="button" class="btn btn-icon btn-sm btn-primary btn-sm me-2" title="Ver Traspaso" data-bs-toggle="modal" data-bs-target="#kt_modal_ver_traspaso" @click="initModalTraspaso(props.row)"><i class="fas fa-eye"></i></button>
-                            <button type="button" class="btn btn-icon btn-sm btn-danger" title="Cancelar Traspaso" :disabled="loading" @click="cancelTraspaso(props.row.id)" :data-kt-indicator="props.row.cancelando ? 'on' : 'off'">
-                                <span class="indicator-label"><i class="fa-solid fa-trash-alt"></i></span>
-                                <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
-                            </button>
+                <div class="card-body">
+                    <ul class="mt-5 nav nav-fill nav-tabs" id="myTab" role="tablist">
+                        <li class="nav-item" v-for="(sucursal,index) in sucursales">
+                            <a class="nav-link" :class="{'active':index==0}" data-bs-toggle="tab" :href="'#sucursal'+sucursal.id" role="tab">[[sucursal.nombre]]</a>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="myTabContent">
+                        <!--begin::Tab-->
+                        <div class="tab-pane fade" :class="{'show active':index==0}" :id="'sucursal'+sucursal.id" role="tabpanel" v-for="(sucursal,index) in sucursales">
+                            <!--begin::Table-->
+                            <v-client-table v-model="listaTraspasosGroup[sucursal.id]" :columns="columns" :options="options" v-if="listaTraspasosGroup[sucursal.id]">
+                                <div slot="id" slot-scope="props">[[props.row.id]]</div>
+                                <div slot="sucursal_origen" slot-scope="props">[[props.row.sucursal_origen?.nombre]]</div>
+                                <div slot="sucursal_destino" slot-scope="props">[[props.row.sucursal_destino?.nombre]]</div>
+                                <div slot="tipo" slot-scope="props">
+                                    <div>[[ tipos.find(item => item.id == props.row.tipo)?.text ?? '--']]</div>
+                                </div>
+                                <div slot="estatus" slot-scope="props">[[props.row.estatus_desc]]</div>
+                                <div slot="created_at" slot-scope="props">[[props.row.created_at | fecha]]</div>
+                                <div slot="acciones" slot-scope="props">
+                                    <button type="button" class="btn btn-icon btn-sm btn-primary btn-sm me-2" title="Ver Traspaso" data-bs-toggle="modal" data-bs-target="#kt_modal_ver_traspaso" @click="initModalTraspaso(props.row)"><i class="fas fa-eye"></i></button>
+                                    <button type="button" class="btn btn-icon btn-sm btn-danger" title="Cancelar Traspaso" :disabled="loading" @click="cancelTraspaso(props.row.id)" :data-kt-indicator="props.row.cancelando ? 'on' : 'off'">
+                                        <span class="indicator-label"><i class="fa-solid fa-trash-alt"></i></span>
+                                        <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
+                                    </button>
+                                </div>
+                            </v-client-table>
+                            <!--end::Table-->
                         </div>
-                    </v-client-table>
-                    <!--end::Table-->
+                        <!--end::Tab-->
+                    </div>
                 </div>
                 <!--end::Card body-->
             </div>
@@ -150,23 +180,28 @@
             delimiters: ['[[', ']]'],
             data: () => ({
                 sesion: {!! Auth::user() !!},
-                traspasos:[],
-                tipos: [
-                    {id: 1, text: 'A otra Sucursal'},
-                    {id: 2, text: 'Para cliente'},
-                    {id: 3, text: 'Merma'},
+                estatus: [
+                    { id: '1', text: 'En proceso' },
+                    { id: '2', text: 'Finalizado' },
                 ],
-                columns: ['id','origen','destino','tipo','estatus','created_at','acciones'],
+                traspasos: [],
+                tipos: [
+                    { id: 1, text: 'A otra Sucursal' },
+                    { id: 2, text: 'Para cliente' },
+                    { id: 3, text: 'Merma' },
+                ],
+                sucursales: [],
+                columns: ['id', 'sucursal_origen', 'sucursal_destino', 'tipo', 'estatus', 'created_at', 'acciones'],
                 options: {
                     headings: {
-                        origen: 'Sucursal de origen',
-                        destino: 'Sucursal de destino',
+                        sucursal_origen: 'Sucursal de origen',
+                        sucursal_destino: 'Sucursal de destino',
                         created_at: 'Fecha',
                     },
                     columnsClasses: {
                         id: 'align-middle text-center px-2 ',
-                        origen: 'align-middle text-center ',
-                        destino: 'align-middle text-center ',
+                        sucursal_origen: 'align-middle text-center ',
+                        sucursal_destino: 'align-middle text-center ',
                         tipo: 'align-middle text-center ',
                         estatus: 'align-middle text-center ',
                         fecha: 'align-middle text-center ',
@@ -199,6 +234,10 @@
                 traspaso_model: {},
                 show_traspaso: {},
 
+                filterFechaInicio: null,
+                filterFechaFin: null,
+                filterEstatus: '1',
+
                 loading: false,
                 blockUI: null,
                 requestGet: null,
@@ -212,10 +251,64 @@
                     vm.blockUI = new KTBlockUI(container);
                 }
 
-                vm.getTraspasos(true);
+                vm.initDaterangepicker();
+                vm.getSucursales();
             },
             methods: {
-                getTraspasos(showLoader){
+                initDaterangepicker() {
+                    var vm = this;
+                    var input = $("#frmPeriodo");
+
+                    input.daterangepicker({
+                        autoUpdateInput: false,
+                        locale: {
+                            cancelLabel: 'Limpiar',
+                            applyLabel: 'Aplicar',
+                            customRangeLabel: 'Personalizado'
+                        },
+                        ranges: {
+                            "7 Dias": [moment().subtract(6, "days"), moment()],
+                            "15 Dias": [moment().subtract(14, "days"), moment()],
+                            "30 Dias": [moment().subtract(29, "days"), moment()],
+                            "Este mes": [moment().startOf("month"), moment().endOf("month")],
+                            "Mes anterior": [moment().subtract(1, "month").startOf("month"), moment().subtract(1, "month").endOf("month")]
+                        }
+                    });
+
+                    input.on('apply.daterangepicker', function (ev, picker) {
+                        input.val(picker.startDate.format('DD/MM/YYYY') + ' - ' + picker.endDate.format('DD/MM/YYYY'));
+
+                        let startDate = picker.startDate.clone();
+                        let endDate = picker.endDate.clone();
+
+                        vm.filterFechaInicio = startDate.startOf('day').format('YYYY-MM-DD HH:mm:ss');
+                        vm.filterFechaFin = endDate.endOf('day').format('YYYY-MM-DD HH:mm:ss');
+                    });
+                    input.on('cancel.daterangepicker', function (ev, picker) {
+                        input.val('');
+                        vm.filterFechaInicio = '';
+                        vm.filterFechaFin = '';
+                    });
+
+                    // Initial values
+                    let initialInicio = moment().subtract(6, "days").startOf('day');
+                    let initialFin = moment().endOf('day');
+                    input.val(initialInicio.format('DD/MM/YYYY') + ' - ' + initialFin.format('DD/MM/YYYY'));
+                    vm.filterFechaInicio = initialInicio.format('YYYY-MM-DD HH:mm:ss');
+                    vm.filterFechaFin =initialFin.format('YYYY-MM-DD HH:mm:ss');
+
+                    vm.getTraspasos(true);
+                },
+                getSucursales() {
+                    let vm = this;
+                    $.get(
+                        '/api/sucursales/all',
+                        res => {
+                            vm.sucursales = res.results;
+                        }, 'json'
+                    );
+                },
+                getTraspasos(showLoader) {
                     let vm = this;
                     if (showLoader) {
                         if (!vm.blockUI) {
@@ -240,8 +333,13 @@
                     vm.requestGet = $.ajax({
                         url: "/api/traspasos/list",
                         type: "POST",
+                        data: {
+                            fecha_inicio: vm.filterFechaInicio,
+                            fecha_fin: vm.filterFechaFin
+                        }
                     }).done(function (res) {
-                        vm.traspasos = res.results ?? [];
+                        let results = res.results ?? [];
+                        vm.traspasos = results;
                     }).fail(function (jqXHR, textStatus) {
                         if (textStatus != "abort") {
                             console.log("Request failed getTraspasos: " + textStatus, jqXHR);
@@ -254,7 +352,7 @@
                         }
                     });
                 },
-                getTraspasoDetalle(traspaso_id){
+                getTraspasoDetalle(traspaso_id) {
                     let vm = this;
                     $.ajax({
                         url: `/api/traspasos/get/${traspaso_id}`,
@@ -263,19 +361,17 @@
                         vm.show_traspaso = res.results;
 
                         vm.show_traspaso.productos = res.results.detalle
-                        .flatMap(item => item.fechas
-                            .map(i => ({
-                                nombre: item.nombre,
-                                sku: item.sku,
-                                id: i.id,
-                                fecha_caducidad: i.fecha_caducidad,
-                                cantidad: i.cantidad,
-                                cantidad_recibida: i.cantidad_recibida,
+                            .flatMap(item => item.fechas
+                                .map(i => ({
+                                    nombre: item.nombre,
+                                    sku: item.sku,
+                                    id: i.id,
+                                    fecha_caducidad: i.fecha_caducidad,
+                                    cantidad: i.cantidad,
+                                    cantidad_recibida: i.cantidad_recibida,
 
-                            }))
-                        );
-
-                        console.log(res.results);
+                                }))
+                            );
                     }).fail(function (jqXHR, textStatus) {
                         if (textStatus != 'abort') {
                             console.log("Request failed getTraspasoDetalle: " + textStatus, jqXHR);
@@ -284,7 +380,7 @@
                         vm.loading = false;
                     });
                 },
-                initModalTraspaso(traspaso){
+                initModalTraspaso(traspaso) {
                     this.show_traspaso = traspaso;
                     this.getTraspasoDetalle(traspaso.id);
                 },
@@ -302,34 +398,34 @@
                         if (result.isConfirmed) {
                             vm.loading = true;
                             let index = vm.traspasos.findIndex(item => item.id == idTraspaso);
-                            if(index >= 0){
+                            if (index >= 0) {
                                 vm.$set(vm.traspasos[index], 'cancelando', true);
                             }
                             $.ajax({
                                 method: "POST",
                                 url: `/api/traspasos/cancelar/${idTraspaso}`,
-                            }).done(function(res) {
+                            }).done(function (res) {
                                 Swal.fire(
                                     'Traspaso cancelado',
                                     'El traspaso ha sido cancelado con éxito',
                                     'success'
                                 );
                                 index = vm.traspasos.findIndex(item => item.id == idTraspaso);
-                                if(index >= 0){
+                                if (index >= 0) {
                                     vm.$set(vm.traspasos[index], 'cancelando', false);
                                 }
                                 vm.$nextTick(() => {
                                     vm.getTraspasos();
                                 });
-                            }).fail(function(jqXHR, textStatus) {
+                            }).fail(function (jqXHR, textStatus) {
                                 console.log("Request failed cancelTraspaso: " + textStatus, jqXHR);
                                 Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
 
                                 index = vm.traspasos.findIndex(item => item.id == idTraspaso);
-                                if(index >= 0){
+                                if (index >= 0) {
                                     vm.$set(vm.traspasos[index], 'cancelando', false);
                                 }
-                            }).always(function(event, xhr, settings) {
+                            }).always(function (event, xhr, settings) {
                                 vm.loading = false;
                             });
                         }
@@ -337,7 +433,21 @@
                 },
             },
             computed: {
-                
+                listaTraspasosGroup() {
+                    let vm = this;
+                    if (vm.traspasos && vm.traspasos.length > 0) {
+                        let list = vm.traspasos;
+                        if (vm.filterEstatus) {
+                            list = vm.traspasos.filter(item => item.estatus == vm.filterEstatus);
+                        }
+                        if (vm.filterFechaInicio && vm.filterFechaFin) {
+                            list = vm.traspasos.filter(item => moment(item.created_at).isBetween(vm.filterFechaInicio, vm.filterFechaFin));
+                        }
+                        return Object.groupBy(list, ({ sucursal_destino_id }) => sucursal_destino_id);
+                    } else {
+                        return {};
+                    }
+                }
             },
             filters: {
                 fecha: function (value, usrFormat) {
