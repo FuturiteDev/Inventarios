@@ -238,6 +238,7 @@ class TraspasosController extends Controller
                 ], 200);
             }else{
                 DB::commit();
+                $traspaso->refresh();
 
                 //evento para procesar el traspaso
                 TraspasoNuevo::dispatch($traspaso);
