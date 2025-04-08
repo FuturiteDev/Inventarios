@@ -10,16 +10,14 @@
                         <h3 class="ps-2">Inventario Reportado</h3>
                     </div>
                     <div class="card-toolbar gap-2">
-                        <div class="px-2 min-w-200px">
-                            <!-- <v-select 
-                                v-model="filterSucursal"
-                                :options="listaSucursales"
-                                data-allow-clear="false"
-                                data-placeholder="Filtrar por sucursal">
-                            </v-select> -->
+                        <div class="min-w-200px">
+                            <div class="input-group">
+                                <input class="form-control form-control-sm" id="frmPeriodo" placeholder="Periodo" />
+                                <span class="input-group-text"><i class="fas fa-calendar fs-4"></i></span>
+                            </div>
                         </div>
-                        <button class="btn btn-icon btn-secondary" @click="getAuditorias(true)" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Actualizar">
-                            <i class="ki-solid ki-arrows-circle"></i>
+                        <button type="button" class="btn btn-icon btn-primary" @click="getAuditorias(true)">
+                            <i class="fa-solid fa-magnifying-glass"></i>
                         </button>
                     </div>
                 </div>
@@ -210,6 +208,9 @@
                     },
                 },
 
+                filterFechaInicio: null,
+                filterFechaFin: null,
+
                 auditoria_model: null,
                 loading: false,
                 blockUI: null,
@@ -232,12 +233,56 @@
                     vm.auditoria_model = null;
                 });
 
+                vm.initDaterangepicker();
                 vm.getSucursales();
                 vm.getEmpleados();
                 vm.getColecciones();
                 vm.getAuditorias(true);
             },
             methods: {
+                initDaterangepicker() {
+                    var vm = this;
+                    var input = $("#frmPeriodo");
+                    
+                    input.daterangepicker({
+                        autoUpdateInput: false,
+                        locale: {
+                            cancelLabel: 'Limpiar',
+                            applyLabel: 'Aplicar',
+                            customRangeLabel: 'Personalizado'
+                        },
+                        ranges: {
+                            "7 Dias": [moment().subtract(6, "days"), moment()],
+                            "15 Dias": [moment().subtract(14, "days"), moment()],
+                            "30 Dias": [moment().subtract(29, "days"), moment()],
+                            "Este mes": [moment().startOf("month"), moment().endOf("month")],
+                            "Mes anterior": [moment().subtract(1, "month").startOf("month"), moment().subtract(1, "month").endOf("month")]
+                        }
+                    });
+                    
+                    input.on('apply.daterangepicker', function (ev, picker) {
+                        input.val(picker.startDate.format('DD/MM/YYYY') + ' - ' + picker.endDate.format('DD/MM/YYYY'));
+                        
+                        let startDate = picker.startDate.clone();
+                        let endDate = picker.endDate.clone();
+                        
+                        vm.filterFechaInicio = startDate.startOf('day').format('YYYY-MM-DD HH:mm:ss');
+                        vm.filterFechaFin = endDate.endOf('day').format('YYYY-MM-DD HH:mm:ss');
+                    });
+                    input.on('cancel.daterangepicker', function (ev, picker) {
+                        input.val('');
+                        vm.filterFechaInicio = '';
+                        vm.filterFechaFin = '';
+                    });
+                    // Initial values
+                    let initialInicio = moment().subtract(6, "days").startOf('day');
+                    let initialFin = moment().endOf('day');
+                    input.val(initialInicio.format('DD/MM/YYYY') + ' - ' + initialFin.format('DD/MM/YYYY'));
+                    vm.filterFechaInicio = initialInicio.format('YYYY-MM-DD HH:mm:ss');
+                    vm.filterFechaFin =initialFin.format('YYYY-MM-DD HH:mm:ss');
+
+                    vm.getAuditorias(true);
+                },
                 getSucursales() {
                     let vm = this;
                     $.get(
@@ -284,6 +329,10 @@
                     $.ajax({
                         url: "/api/inventarios/revisiones",
                         type: "POST",
+                        data: {
+                            fecha_inicio: vm.filterFechaInicio,
+                            fecha_fin: vm.filterFechaFin,
+                        }
                     }).done(function (res) {
                         vm.auditorias = res.message;
                     }).fail(function (jqXHR, textStatus) {

@@ -440,9 +440,6 @@
                         if (vm.filterEstatus) {
                             list = vm.traspasos.filter(item => item.estatus == vm.filterEstatus);
                         }
-                        if (vm.filterFechaInicio && vm.filterFechaFin) {
-                            list = vm.traspasos.filter(item => moment(item.created_at).isBetween(vm.filterFechaInicio, vm.filterFechaFin));
-                        }
                         return Object.groupBy(list, ({ sucursal_destino_id }) => sucursal_destino_id);
                     } else {
                         return {};
