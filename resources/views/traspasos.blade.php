@@ -238,12 +238,12 @@
 
                     vm.loading = true;
                     vm.requestGet = $.ajax({
-                        url: '/api/traspasos/list',
-                        type: 'GET',
+                        url: "/api/traspasos/list",
+                        type: "POST",
                     }).done(function (res) {
                         vm.traspasos = res.results ?? [];
                     }).fail(function (jqXHR, textStatus) {
-                        if (textStatus != 'abort') {
+                        if (textStatus != "abort") {
                             console.log("Request failed getTraspasos: " + textStatus, jqXHR);
                         }
                     }).always(function () {
