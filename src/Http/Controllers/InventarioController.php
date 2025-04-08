@@ -411,16 +411,11 @@ class InventarioController extends Controller
         try {
             $fechaInicio = $request->fecha_inicio;
             $fechaFin = $request->fecha_fin;
-            $estatus = $request->estatus;
 
-            $query = $this->inventarioRevisiones->with(['empleado', 'sucursal']);
+            $query = $this->inventarioRevisiones->with(['empleado', 'sucursal'])->where('estatus', 1);
 
             if ($fechaInicio && $fechaFin) {
                 $query->whereBetween('updated_at', [$fechaInicio, $fechaFin]);
-            }
-
-            if (!is_null($estatus)) {
-                $query->where('estatus', $estatus);
             }
 
             $revisiones = $query->get();

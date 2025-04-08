@@ -565,12 +565,15 @@ class TraspasosController extends Controller
 
             $fechaInicio = $request->fecha_inicio;
             $fechaFin = $request->fecha_fin;
-
+            $estatus = $request->estatus ?? 1;
+            
             $query = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino']);
 
             if ($fechaInicio && $fechaFin) {
                 $query->whereBetween('created_at', [$fechaInicio, $fechaFin]);
             }
+
+            $query->where('estatus', $estatus);
 
             $traspasos = $query->get();
 
