@@ -241,7 +241,7 @@
                         url: '/api/traspasos/list',
                         type: 'GET',
                     }).done(function (res) {
-                        vm.traspasos = res.results;
+                        vm.traspasos = res.results ?? [];
                     }).fail(function (jqXHR, textStatus) {
                         if (textStatus != 'abort') {
                             console.log("Request failed getTraspasos: " + textStatus, jqXHR);

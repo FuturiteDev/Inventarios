@@ -58,6 +58,15 @@
                                 <label class="fs-7 fw-bold">Empleado</label>
                                 <div><span class="fw-semibold">[[auditoria_model.empleado.no_empleado]]</span> - [[auditoria_model.empleado.nombre_completo]]</div>
                             </div>
+                            <div class="col-6">
+                                <label class="fs-7 fw-bold">Fecha de inicio</label>
+                                <div>[[auditoria_model.created_at | fecha]]</div>
+                            </div>
+                            <div class="col-6">
+                                <label class="fs-7 fw-bold">Fecha de confirmación</label>
+                                <div>[[auditoria_model.updated_at | fecha]]</div>
+                            </div>
+                            
                         </div>
                         <div class="mb-8">
                             <v-client-table v-model="auditoria_model.revision_productos" :columns="columns_productos" :options="options_productos">
@@ -156,7 +165,7 @@
                     headings: {
                         producto: 'Producto',
                         sku: 'SKU',
-                        existencia_actual: 'Existencia Actual',
+                        existencia_actual: 'Existencia Reportada',
                         existencia_real: 'Existencia Real',
                         imagen: 'Imagen',
                     },
@@ -273,8 +282,8 @@
                     }
 
                     $.ajax({
-                        url: '/api/inventarios/revisiones',
-                        type: 'GET',
+                        url: "/api/inventarios/revisiones",
+                        type: "POST",
                     }).done(function (res) {
                         vm.auditorias = res.message;
                     }).fail(function (jqXHR, textStatus) {

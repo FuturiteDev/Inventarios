@@ -559,13 +559,20 @@ class TraspasosController extends Controller
         }
     }
 
-    public function listTraspasos()
+    public function listTraspasos(Request $request)
     {
         try {
 
-            $traspasos = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino'])
-                ->where('estatus', 1)
-                ->get();
+            $fechaInicio = $request->fecha_inicio;
+            $fechaFin = $request->fecha_fin;
+
+            $query = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino']);
+
+            if ($fechaInicio && $fechaFin) {
+                $query->whereBetween('created_at', [$fechaInicio, $fechaFin]);
+            }
+
+            $traspasos = $query->get();
 
             if ($traspasos->isEmpty()) {
                 return response()->json([

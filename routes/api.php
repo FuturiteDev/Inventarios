@@ -65,13 +65,12 @@ Route::prefix('inventarios')->group(function () {
     Route::get('/revision/sucursal/{sucursal_id}', [InventarioController::class, 'revisionSucursal']);
     Route::post('/revision-guardar', [InventarioController::class, 'inventarioRevisionGuardar']);
     Route::post('/revision-finalizar',  [InventarioController::class, 'inventarioRevisionFinalizar']);
-    Route::get('/revisiones',  [InventarioController::class, 'getRevisiones']);
     Route::get('/revisiones-detalles/{revision_id}',  [InventarioController::class, 'getRevisionesDetalles']);
-
+    Route::post('/revisiones',  [InventarioController::class, 'getRevisiones']);
 });
 
 Route::prefix('traspasos')->group(function () {
-    Route::get('/list', [TraspasosController::class, 'listTraspasos']);
+    Route::post('/list', [TraspasosController::class, 'listTraspasos']);
     Route::post('/save', [TraspasosController::class, 'saveTraspaso']);
     Route::get('/get/{traspaso_id}', [TraspasosController::class, 'getTraspaso']);
     Route::post('/recibir', [TraspasosController::class, 'recibirTraspaso']);
