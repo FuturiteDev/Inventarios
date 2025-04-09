@@ -55,11 +55,18 @@
                                 <div slot="estatus" slot-scope="props">[[props.row.estatus_desc]]</div>
                                 <div slot="created_at" slot-scope="props">[[props.row.created_at | fecha]]</div>
                                 <div slot="acciones" slot-scope="props">
-                                    <button type="button" class="btn btn-icon btn-sm btn-primary btn-sm me-2" title="Ver Traspaso" data-bs-toggle="modal" data-bs-target="#kt_modal_ver_traspaso" @click="initModalTraspaso(props.row)"><i class="fas fa-eye"></i></button>
-                                    <button type="button" class="btn btn-icon btn-sm btn-danger" title="Cancelar Traspaso" :disabled="loading" @click="cancelTraspaso(props.row.id)" :data-kt-indicator="props.row.cancelando ? 'on' : 'off'">
-                                        <span class="indicator-label"><i class="fa-solid fa-trash-alt"></i></span>
-                                        <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
-                                    </button>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-icon btn-sm btn-primary" title="Ver Traspaso" data-bs-toggle="modal" data-bs-target="#kt_modal_ver_traspaso" @click="initModalTraspaso(props.row)">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-icon btn-sm btn-info" title="Recibir Traspaso" data-bs-toggle="modal" data-bs-target="#kt_modal_recibir_traspaso" @click="initModalTraspaso(props.row)" v-if="sucursal.matriz == 1">
+                                            <i class="fa-solid fa-truck-arrow-right"></i></span>
+                                        </button>
+                                        <button type="button" class="btn btn-icon btn-sm btn-danger" title="Cancelar Traspaso" :disabled="loading" @click="cancelTraspaso(props.row.id)" :data-kt-indicator="props.row.cancelando ? 'on' : 'off'">
+                                            <span class="indicator-label"><i class="fa-solid fa-trash-alt"></i></span>
+                                            <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
+                                        </button>
+                                    </div>
                                 </div>
                             </v-client-table>
                             <!--end::Table-->
@@ -166,6 +173,96 @@
         </div>
         <!--end::Modal - Show task-->
 
+        <!--begin::Modal - Show task-->
+        <div class="modal fade" id="kt_modal_recibir_traspaso" tabindex="-1" aria-hidden="true">
+            <!--begin::Modal dialog-->
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+                <!--begin::Modal content-->
+                <div class="modal-content">
+                    <!--begin::Modal header-->
+                    <div class="modal-header">
+                        <h2 class="fw-bold">Recibir Traspaso - [[recibir_traspaso?.id ?? '']]</h2>
+
+                        <!--begin::Close-->
+                        <div class="btn btn-close" data-bs-dismiss="modal"></div>
+                        <!--end::Close-->
+                    </div>
+                    <!--end::Modal header-->
+                    <!--begin::Modal body-->
+                    <div class="modal-body" v-if="recibir_traspaso">
+                        <form id="kt_modal_recibir_traspaso_form" class="form" action="#" @submit.prevent="">
+                            <div class="row g-7 mb-7">
+                                <div class="col-6">
+                                    <label class="fs-6 fw-bold">Sucursal origen</label>
+                                    <div>[[recibir_traspaso.sucursal_origen?.nombre]]</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="fs-6 fw-bold">Sucursal destino</label>
+                                    <div>[[recibir_traspaso.sucursal_destino?.nombre]]</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="fs-6 fw-bold">Tipo de traspaso</label>
+                                    <div>[[ tipos.find(item => item.id == recibir_traspaso.tipo)?.text ?? '--']]</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="fs-6 fw-bold">Estatus de traspaso</label>
+                                    <div>[[recibir_traspaso.estatus_desc]]</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="fs-6 fw-bold">Empleado asignado</label>
+                                    <div>
+                                        <span class="fw-bold">[[recibir_traspaso.empleado_asignado?.no_empleado ?? '--']]</span>
+                                        <span> - [[recibir_traspaso.empleado_asignado?.nombre_completo ?? '--']]</span>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="fs-6 fw-bold">Productos</label>
+                                    <table class="border border-1 no-footer table table-bordered table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th tabindex="0" class="VueTables__heading text-center align-middle">Producto</th>
+                                                <th tabindex="0" class="VueTables__heading text-center align-middle">Fecha de caducidad</th>
+                                                <th tabindex="0" class="VueTables__heading text-center align-middle">Cantidad</th>
+                                                <th tabindex="0" class="VueTables__heading text-center align-middle"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="align-middle" v-for="producto in recibir_traspaso.productos" :key="'producto_' + producto.id">
+                                                <td>
+                                                    <div>[[producto.nombre]]</div>
+                                                    <div class="text-muted">[[producto.sku]]</div>
+                                                </td>
+                                                <td>[[producto.fecha_caducidad | fecha]]</td>
+                                                <td>
+                                                    <span class="fv-row">
+                                                        <input type="number" v-model="producto.cantidad" class="form-control" placeholder="Cantidad" :name="`p_cantidad_${producto.id}`">
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="col-12 fv-row">
+                                    <label class="fs-6 fw-bold">Comentarios</label>
+                                    <textarea class="form-control" rows="3" id="comentarios" name="comentarios" v-model="recibir_traspaso.comentarios"></textarea>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <!--end::Modal body-->
+                    <div class="modal-footer" v-if="recibir_traspaso">
+                        <button type="button" class="btn btn-primary" :disabled="loading" @click="recibirTraspaso" :data-kt-indicator="loading ? 'on' : 'off'">
+                            <span class="indicator-label">Recibir</span>
+                            <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
+                        </button>
+                    </div>
+                </div>
+                <!--end::Modal content-->
+            </div>
+            <!--end::Modal dialog-->
+        </div>
+        <!--end::Modal - Show task-->
+
     </div>
 @endsection
 
@@ -233,11 +330,13 @@
 
                 traspaso_model: {},
                 show_traspaso: {},
+                recibir_traspaso: null,
 
                 filterFechaInicio: null,
                 filterFechaFin: null,
                 filterEstatus: '1',
 
+                validator: null,
                 loading: false,
                 blockUI: null,
                 requestGet: null,
@@ -299,6 +398,11 @@
 
                     vm.getTraspasos(true);
                 },
+                initModalTraspaso(traspaso) {
+                    this.show_traspaso = traspaso;
+                    this.recibir_traspaso = null;
+                    this.getTraspasoDetalle(traspaso.id);
+                },
                 getSucursales() {
                     let vm = this;
                     $.get(
@@ -307,6 +411,53 @@
                             vm.sucursales = res.results;
                         }, 'json'
                     );
+                },
+                initFormValidate() {
+                    let vm = this;
+                    if(vm.validator) {
+                        vm.validator.destroy();
+                        vm.validator = null;
+                    }
+                    
+                    vm.validator = FormValidation.formValidation(
+                        document.getElementById('kt_modal_recibir_traspaso_form'), {
+                            fields: {
+                                'comentarios': {
+                                    validators: {
+                                        notEmpty: {
+                                            message: 'Campo requerido',
+                                            trim: true
+                                        }
+                                    },
+                                }
+                            },
+
+                            plugins: {
+                                trigger: new FormValidation.plugins.Trigger(),
+                                bootstrap: new FormValidation.plugins.Bootstrap5({
+                                    rowSelector: '.fv-row',
+                                    eleInvalidClass: '',
+                                    eleValidClass: ''
+                                })
+                            }
+                        }
+                    );
+
+                    vm.recibir_traspaso.productos.forEach((item, index) => {
+                        vm.validator.addField(('p_cantidad_' + item.id), {
+                            validators: {
+                                notEmpty: {
+                                    message: 'La cantidad es requerida',
+                                    trim: true
+                                },
+                                greaterThan: {
+                                    message: 'Cantidad invalida',
+                                    min: 0
+                                }
+                            }
+                        });
+                    });
+
                 },
                 getTraspasos(showLoader) {
                     let vm = this;
@@ -335,7 +486,8 @@
                         type: "POST",
                         data: {
                             fecha_inicio: vm.filterFechaInicio,
-                            fecha_fin: vm.filterFechaFin
+                            fecha_fin: vm.filterFechaFin,
+                            estatus: vm.filterEstatus,
                         }
                     }).done(function (res) {
                         let results = res.results ?? [];
@@ -359,6 +511,25 @@
                         type: 'GET',
                     }).done(function (res) {
                         vm.show_traspaso = res.results;
+                        vm.recibir_traspaso = {
+                            id: res.results.id,
+                            sucursal_origen: res.results.sucursal_origen,
+                            sucursal_destino: res.results.sucursal_destino,
+                            estatus_desc: res.results.estatus_desc,
+                            empleado_asignado: res.results.empleado_asignado,
+                            tipo: res.results.tipo,
+                            productos: res.results.detalle
+                            .flatMap(item => item.fechas
+                                .map(i => ({
+                                    id: i.id,
+                                    nombre: item.nombre,
+                                    sku: item.sku,
+                                    fecha_caducidad: i.fecha_caducidad,
+                                    cantidad: i.cantidad,
+                                }))
+                            ),
+                            comentarios: null,
+                        }
 
                         vm.show_traspaso.productos = res.results.detalle
                             .flatMap(item => item.fechas
@@ -369,7 +540,6 @@
                                     fecha_caducidad: i.fecha_caducidad,
                                     cantidad: i.cantidad,
                                     cantidad_recibida: i.cantidad_recibida,
-
                                 }))
                             );
                     }).fail(function (jqXHR, textStatus) {
@@ -380,9 +550,44 @@
                         vm.loading = false;
                     });
                 },
-                initModalTraspaso(traspaso) {
-                    this.show_traspaso = traspaso;
-                    this.getTraspasoDetalle(traspaso.id);
+                recibirTraspaso() {
+                    let vm = this;
+                    vm.initFormValidate();
+
+                    if (vm.validator) {
+                        vm.validator.validate().then(function(status) {
+                            if (status == 'Valid') {
+                                vm.loading = true;
+                                $.ajax({
+                                    url: '/api/traspasos/recibir',
+                                    type: 'POST',
+                                    data: {
+                                        traspaso_id: vm.recibir_traspaso.id,
+                                        comentarios: vm.recibir_traspaso.comentarios,
+                                        productos: vm.recibir_traspaso.productos
+                                        .map(i => ({
+                                            id: i.id,
+                                            cantidad_recibida: i.cantidad,
+                                        })),
+                                    }
+                                }).done(function (res) {
+                                    Swal.fire(
+                                        'Traspaso recibido',
+                                        'El traspaso ha sido recibido con éxito',
+                                        'success'
+                                    );
+                                    vm.getTraspasos();
+                                    $('#kt_modal_recibir_traspaso').modal('hide');
+                                }).fail(function (jqXHR, textStatus) {
+                                    if (textStatus != 'abort') {
+                                        console.log("Request failed getTraspasoDetalle: " + textStatus, jqXHR);
+                                    }
+                                }).always(function () {
+                                    vm.loading = false;
+                                });
+                            }
+                        });
+                    }
                 },
                 cancelTraspaso(idTraspaso) {
                     let vm = this;
@@ -437,10 +642,12 @@
                     let vm = this;
                     if (vm.traspasos && vm.traspasos.length > 0) {
                         let list = vm.traspasos;
-                        if (vm.filterEstatus) {
-                            list = vm.traspasos.filter(item => item.estatus == vm.filterEstatus);
-                        }
-                        return Object.groupBy(list, ({ sucursal_destino_id }) => sucursal_destino_id);
+                        var obj = {};
+
+                        vm.sucursales.forEach(el => {
+                            obj[el.id] = vm.traspasos.filter(item => item.sucursal_destino_id == el.id);
+                        });
+                        return obj;
                     } else {
                         return {};
                     }
