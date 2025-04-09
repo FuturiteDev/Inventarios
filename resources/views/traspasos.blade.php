@@ -17,7 +17,7 @@
                             <v-select
                                 v-model="filterEstatus"
                                 :options="estatus"
-                                data-allow-clear="true"
+                                data-allow-clear="false"
                                 data-placeholder="Filtrar por estatus">
                             </v-select>
                         </div>
