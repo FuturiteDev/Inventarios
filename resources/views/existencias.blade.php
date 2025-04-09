@@ -63,24 +63,6 @@
                                         data-placeholder="Filtrar por coleccion">
                                     </v-select>
                                 </div>
-                                <!-- <div>
-                                    <v-select
-                                        class="pe-20"
-                                        v-model="filterCategoriaExistencias"
-                                        :options="listaCategorias"
-                                        data-allow-clear="true"
-                                        data-placeholder="Filtrar por categoría">
-                                    </v-select>
-                                </div>
-                                <div>
-                                    <v-select
-                                        class="pe-20"
-                                        v-model="filterSubcategoriaExistencias"
-                                        :options="listaSubcategorias1"
-                                        data-allow-clear="true"
-                                        data-placeholder="Filtrar por subcategoria">
-                                    </v-select>
-                                </div> -->
                                 <div class="align-content-center">
                                     <div class="form-check form-switch form-check-custom form-check-solid">
                                         <input class="form-check-input" type="checkbox" v-model="showProductosTiendaExistencias"/>
@@ -132,24 +114,6 @@
                                         data-placeholder="Filtrar por coleccion">
                                     </v-select>
                                 </div>
-                                <!-- <div>
-                                    <v-select
-                                        class="pe-20"
-                                        v-model="filterCategoriaGeneral"
-                                        :options="listaCategorias"
-                                        data-allow-clear="true"
-                                        data-placeholder="Filtrar por categoría">
-                                    </v-select>
-                                </div>
-                                <div>
-                                    <v-select
-                                        class="pe-20"
-                                        v-model="filterSubcategoriaGeneral"
-                                        :options="listaSubcategorias2"
-                                        data-allow-clear="true"
-                                        data-placeholder="Filtrar por subcategoria">
-                                    </v-select>
-                                </div> -->
                                 <div class="align-content-center">
                                     <div class="form-check form-switch form-check-custom form-check-solid">
                                         <input class="form-check-input" type="checkbox" v-model="showProductosTiendaGeneral"/>
@@ -257,7 +221,6 @@
                             <v-client-table v-model="listaPocaExistencia" :columns="columnsPocaExistencia" :options="options" ref="pocaExistencia">
                                 <div slot="nombre" slot-scope="props">[[props.row.producto.nombre]]</div>
                                 <div slot="sku" slot-scope="props">[[props.row.producto.sku]]</div>
-                                <div slot="cantidad" slot-scope="props">[[props.row.cantidad_existente]]</div>
                                 <div slot="cantidad_existente" slot-scope="props">[[props.row.cantidad_existente ?? '0']]</div>
                             </v-client-table>
                         </div>
@@ -437,7 +400,6 @@
 @section('scripts')
     <script src="/common_assets/js/vue-tables-2.min.js"></script>
     <script src="/common_assets/js/vue_components/v-select.js"></script>
-
     <script>
         const app = new Vue({
             el: '#app',
@@ -544,12 +506,6 @@
                 filterColeccionExistencias: null,
                 filterColeccionGeneral: null,
                 filterColeccionPocaExistencias: null,
-                // filterCategoriaExistencias: null,
-                // filterCategoriaGeneral: null,
-                // filterCategoriaPocaExistencias: null,
-                // filterSubcategoriaExistencias: null,
-                // filterSubcategoriaGeneral: null,
-                // filterSubcategoriaPocaExistencias: null,
                 showProductosTiendaExistencias: false,
                 showProductosTiendaGeneral: false,
                 showProductosTiendaPocaExistencias: false,
@@ -557,6 +513,7 @@
 
                 traspaso_model: {},
                 confirmar_traspaso: null,
+                table: null,
 
                 validator: null,
                 validatorConfirm: null,
@@ -702,30 +659,6 @@
                         console.log("Request failed getEmpleados: " + textStatus, jqXHR);
                     });
                 },
-                // getCategorias() {
-                //     let vm = this;
-                //     $.get('/api/categorias/all', res => {
-                //         vm.categorias = res.results;
-                //     }, 'json');
-                // },
-                // getSubcategorias1(categoriaID) {
-                //     let vm = this;
-                //     $.get(`/api/sub-categorias/categoria/${categoriaID}`, res => {
-                //         vm.subcategorias_existencias = res.results;
-                //     }, 'json');
-                // },
-                // getSubcategorias2(categoriaID) {
-                //     let vm = this;
-                //     $.get(`/api/sub-categorias/categoria/${categoriaID}`, res => {
-                //         vm.subcategorias_general = res.results;
-                //     }, 'json');
-                // },
-                // getSubcategorias3(categoriaID) {
-                //     let vm = this;
-                //     $.get(`/api/sub-categorias/categoria/${categoriaID}`, res => {
-                //         vm.subcategorias_pocaexistencias = res.results;
-                //     }, 'json');
-                // },
                 getInventarioGeneral(showLoader) {
                     let vm = this;
                     if (showLoader) {
@@ -1107,8 +1040,22 @@
                 printTableExistencias(){
                     let vm = this;
                     let sucursal = vm.sucursales.find(item => item.id == vm.filterSucursalExistencias);
-                    let cols = vm.$refs.existencias.columns.slice(0, vm.$refs.existencias.columns.length-1);
-                    
+                    let tableref = vm.$refs.existencias;
+                    let headings = tableref.options.headings;
+                    let visibleCols = [];
+                    tableref.$el.querySelectorAll('thead tr th').forEach(element => {
+                        visibleCols.push(element.innerText);
+                    });
+
+                    let cols = tableref.columns.map((col) => {
+                        let heading = headings[col];
+                        let visible = col != 'acciones' && visibleCols.some((item) => item.toLowerCase() == heading.toLowerCase());
+                        return {
+                            id: col,
+                            heading: heading,
+                            visible: visible
+                        };
+                    });
                     var content = '<div style="font-family: Inter, Helvetica, sans-serif;">';
                     content += '<div style="padding: 0 35px;">';
                     content += '<h3 style="margin-bottom: 0;text-align: center;">Existencias por Sucursal</h3>';
@@ -1119,18 +1066,39 @@
                     content += '<thead>';
                     content += '<tr>';
                     cols.forEach(col => {
-                        content += `<th style="padding: 8px 8px;font-weight: 600;text-transform: uppercase;font-size: 14px;text-align: center;border-bottom: 1px solid #8b8b8b;">${vm.$refs.existencias.options.headings[col]}</th>`;
+                        if (col.visible) {
+                            content += `<th style="padding: 8px 8px;font-weight: 600;text-transform: uppercase;font-size: 14px;text-align: center;border-bottom: 1px solid #8b8b8b;">${col.heading}</th>`;
+                        }
                     });
                     content += '</tr>';
                     content += '</thead>';
                     content += '<tbody>';
-                    vm.$refs.existencias.allFilteredData.forEach(item => {
+                    tableref.allFilteredData.forEach(item => {
                         content += '<tr>';
-                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.id}</td>`;
-                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.producto.nombre}</td>`;
-                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.producto.sku}</td>`;
-                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.cantidad_existente ?? '0'}</td>`;
-                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${vm.$options.filters.fecha(item.fecha_caducidad)}</td>`;
+                        cols.forEach(col => {
+                            if (col.visible) {
+                                switch (col.id) {
+                                    case 'id':
+                                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.id}</td>`;
+                                        break;
+                                    case 'nombre':
+                                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.producto.nombre}</td>`;
+                                        break;
+                                    case 'sku':
+                                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.producto.sku}</td>`;
+                                        break;
+                                    case 'cantidad_existente':
+                                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.cantidad_existente ?? '0'}</td>`;
+                                        break;
+                                    case 'fecha_caducidad':
+                                        let fecha = vm.$options.filters.fecha(item.fecha_caducidad);
+                                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${fecha}</td>`;
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }
+                        });
                         content += '</tr>';
                     });
                     content += '</tbody>';
@@ -1148,7 +1116,21 @@
                 printTableGeneral(){
                     let vm = this;
                     let sucursal = vm.sucursales.find(item => item.id == vm.filterSucursalExistencias);
-                    let cols = vm.$refs.general.columns.slice();
+                    let tableref = vm.$refs.general;
+                    let headings = tableref.options.headings;
+                    let visibleCols = [];
+                    tableref.$el.querySelectorAll('thead tr th').forEach(element => {
+                        visibleCols.push(element.innerText);
+                    });
+                    let cols = tableref.columns.map((col) => {
+                        let heading = headings[col];
+                        let visible = col != 'acciones' && visibleCols.some((item) => item.toLowerCase() == heading.toLowerCase());
+                        return {
+                            id: col,
+                            heading: heading,
+                            visible: visible
+                        };
+                    });
                     
                     var content = '<div style="font-family: Inter, Helvetica, sans-serif;">';
                     content += '<div style="padding: 0 35px;"><h3 text-align: center;">Existencias Generales</h3></div>';
@@ -1157,20 +1139,24 @@
                     content += '<thead>';
                     content += '<tr>';
                     cols.forEach(col => {
-                        content += `<th style="padding: 8px 8px;font-weight: 600;text-transform: uppercase;font-size: ${80/cols.length}%;text-align: center;border-bottom: 1px solid #8b8b8b;">${vm.$refs.general.options.headings[col]}</th>`;
+                        if (col.visible) {
+                            content += `<th style="padding: 8px 8px;font-weight: 600;text-transform: uppercase;font-size: ${80/cols.length}%;text-align: center;border-bottom: 1px solid #8b8b8b;">${col.heading}</th>`;
+                        }
                     });
                     content += '</tr>';
                     content += '</thead>';
                     content += '<tbody>';
 
-                    vm.$refs.general.allFilteredData.forEach(item => {
+                    tableref.allFilteredData.forEach(item => {
                         content += '<tr>';
                         cols.forEach(col => {
-                            if(isNaN(parseInt(col))) {
-                                content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item[col] ?? ''}</td>`;
-                            } else {
-                                let sid = parseInt(col);
-                                content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.sucursales?.find((i) => i.sucursal_id == sid)?.cantidad_existente ?? ''}</td>`;
+                            if (col.visible) {
+                                if(isNaN(parseInt(col.id))) {
+                                    content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item[col.id] ?? ''}</td>`;
+                                } else {
+                                    let sid = parseInt(col.id);
+                                    content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.sucursales?.find((i) => i.sucursal_id == sid)?.cantidad_existente ?? ''}</td>`;
+                                }
                             }
                         });
                         content += '</tr>';
@@ -1191,7 +1177,21 @@
                 printTablePocasExistencias(){
                     let vm = this;
                     let sucursal = vm.sucursales.find(item => item.id == vm.filterSucursalPocaExistencias);
-                    let cols = vm.$refs.pocaExistencia.columns;
+                    let tableref = vm.$refs.pocaExistencia;
+                    let headings = tableref.options.headings;
+                    let visibleCols = [];
+                    tableref.$el.querySelectorAll('thead tr th').forEach(element => {
+                        visibleCols.push(element.innerText);
+                    });
+                    let cols = tableref.columns.map((col) => {
+                        let heading = headings[col];
+                        let visible = col != 'acciones' && visibleCols.some((item) => item.toLowerCase() == heading.toLowerCase());
+                        return {
+                            id: col,
+                            heading: heading,
+                            visible: visible
+                        };
+                    });
                     
                     var content = '<div style="font-family: Inter, Helvetica, sans-serif;">';
                     content += '<div style="padding: 0 35px;">';
@@ -1207,18 +1207,33 @@
                     content += '<thead>';
                     content += '<tr>';
                     cols.forEach(col => {
-                        content += `<th style="padding: 8px 8px;font-weight: 600;text-transform: uppercase;font-size: 14px;text-align: center;border-bottom: 1px solid #8b8b8b;">${vm.$refs.pocaExistencia.options.headings[col]}</th>`;
+                        if (col.visible) {
+                            content += `<th style="padding: 8px 8px;font-weight: 600;text-transform: uppercase;font-size: 14px;text-align: center;border-bottom: 1px solid #8b8b8b;">${col.heading}</th>`;
+                        }
                     });
                     content += '</tr>';
                     content += '</thead>';
                     content += '<tbody>';
 
-                    vm.$refs.pocaExistencia.allFilteredData.forEach(item => {
+                    tableref.allFilteredData.forEach(item => {
                         content += '<tr>';
-                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.id}</td>`;
-                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.producto?.nombre ?? ''}</td>`;
-                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.producto?.sku ?? ''}</td>`;
-                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.cantidad_existente ?? '0'}</td>`;
+                        cols.forEach(col => {
+                            if (col.visible) {
+                                switch (col.id) {
+                                    case 'sku':
+                                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.producto?.sku ?? ''}</td>`;
+                                        break;
+                                    case 'nombre':
+                                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.producto?.nombre ?? ''}</td>`;
+                                        break;
+                                    case 'cantidad_existente':
+                                        content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item.cantidad_existente ?? '0'}</td>`;
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }
+                        });
                         content += '</tr>';
                     });
 
@@ -1248,12 +1263,6 @@
                     if(vm.filterColeccionExistencias){
                         list = list.filter( item => item.producto?.colecciones.some(col => col.id == vm.filterColeccionExistencias));
                     }
-                    // if(this.filterCategoriaExistencias){
-                    //     list = list.filter(item => item.producto?.categoria?.id == this.filterCategoriaExistencias);
-                    // }
-                    // if(this.filterSubcategoriaExistencias){
-                    //     list = list.filter(item => item.producto?.subcategoria?.id == this.filterSubcategoriaExistencias);
-                    // }
                     if(vm.showProductosTiendaExistencias){
                         list = list.filter(function (item) { 
                             let tags = item.producto?.extras?.find(el => el.slug == "tags");
@@ -1268,12 +1277,6 @@
                     if(vm.filterColeccionGeneral){
                         list = list.filter(item => item.colecciones.some(col => col.id == vm.filterColeccionGeneral));
                     }
-                    // if(this.filterCategoriaGeneral){
-                    //     list = list.filter(item => item.categoria?.id == this.filterCategoriaGeneral);
-                    // }
-                    // if(this.filterSubcategoriaGeneral){
-                    //     list = list.filter(item => item.subcategoria?.id == this.filterSubcategoriaGeneral);
-                    // }
                     if(vm.showProductosTiendaGeneral){
                         list = list.filter(function (item) { 
                             let tags = item.extras?.find(el => el.slug == "tags");
@@ -1291,12 +1294,6 @@
                     if(vm.filterColeccionPocaExistencias){
                         list = list.filter(item => item.producto?.colecciones.some(col => col.id == vm.filterColeccionPocaExistencias));
                     }
-                    // if(this.filterCategoriaPocaExistencias){
-                    //     list = list.filter(item => item.producto?.categoria?.id == this.filterCategoriaPocaExistencias);
-                    // }
-                    // if(this.filterSubcategoriaPocaExistencias){
-                    //     list = list.filter(item => item.producto?.subcategoria?.id == this.filterSubcategoriaPocaExistencias);
-                    // }
                     if(vm.showProductosTiendaPocaExistencias){
                         list = list.filter(function (item) { 
                             let tags = item.producto?.extras?.find(el => el.slug == "tags");
@@ -1311,18 +1308,6 @@
                 listaEmpleados(){
                     return this.empleados.map(item => ({id: item.no_empleado, text: item.nombre_completo}));
                 },
-                // listaCategorias() {
-                //     return this.categorias.map(item => ({ id: item.id, text: item.nombre }));
-                // },
-                // listaSubcategorias1() {
-                //     return this.subcategorias_existencias.map(item => ({ id: item.id, text: item.nombre }));
-                // },
-                // listaSubcategorias2() {
-                //     return this.subcategorias_general.map(item => ({ id: item.id, text: item.nombre }));
-                // },
-                // listaSubcategorias3() {
-                //     return this.subcategorias_pocaexistencias.map(item => ({ id: item.id, text: item.nombre }));
-                // },
                 columnsGlobal(){
                     let columns = ['sku','nombre','total_existencia'];
                     this.sucursales.forEach(item => {
@@ -1382,27 +1367,6 @@
                 },
             },
             watch: {
-                // filterCategoriaExistencias(n,o){
-                //     if(n){
-                //         this.getSubcategorias1(n);
-                //     } else {
-                //         this.subcategorias_existencias = [];
-                //     }
-                // },
-                // filterCategoriaGeneral(n,o){
-                //     if(n){
-                //         this.getSubcategorias2(n);
-                //     } else {
-                //         this.subcategorias_general = [];
-                //     }
-                // },
-                // filterCategoriaPocaExistencias(n,o){
-                //     if(n){
-                //         this.getSubcategorias3(n);
-                //     } else {
-                //         this.subcategorias_pocaexistencias = [];
-                //     }
-                // }
                 confirmar_traspaso(n,o){
                     let vm = this;
                     if(n){
