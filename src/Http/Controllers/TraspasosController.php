@@ -345,6 +345,7 @@ class TraspasosController extends Controller
             if (!empty($productosRechazados)) {
                 $newTraspaso = $traspaso->replicate();
                 $newTraspaso->tipo = 3;
+                $newTraspaso->estatus = 1;
                 $newTraspaso->sucursal_origen_id = $traspaso->sucursal_destino_id;
                 $matriz = Sucursales::where('matriz', 1)->where('estatus', 1)->first();
                 if (!empty($matriz)) {
@@ -630,12 +631,12 @@ class TraspasosController extends Controller
     public function cancelarTraspaso($traspaso_id)
     {
         try {
-            $traspaso = $this->traspasos->where('estatus', '!=', 0)->find($traspaso_id);
+            $traspaso = $this->traspasos->find($traspaso_id);
 
-            if (!$traspaso) {
+            if (!$traspaso->estatus != 1) {
                 return response()->json([
                     'status' => false,
-                    'message' => "El traspaso no existe o ya ha sido cancelado.",
+                    'message' => "Traspaso no disponible. No se puede cancelar.",
                 ], 200);
             }
 

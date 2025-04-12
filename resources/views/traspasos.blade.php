@@ -59,10 +59,10 @@
                                         <button type="button" class="btn btn-icon btn-sm btn-primary" title="Ver Traspaso" data-bs-toggle="modal" data-bs-target="#kt_modal_ver_traspaso" @click="initModalTraspaso(props.row)">
                                             <i class="fas fa-eye"></i>
                                         </button>
-                                        <button type="button" class="btn btn-icon btn-sm btn-info" title="Recibir Traspaso" data-bs-toggle="modal" data-bs-target="#kt_modal_recibir_traspaso" @click="initModalTraspaso(props.row)" v-if="sucursal.matriz == 1">
+                                        <button type="button" class="btn btn-icon btn-sm btn-info" title="Recibir Traspaso" data-bs-toggle="modal" data-bs-target="#kt_modal_recibir_traspaso" @click="initModalTraspaso(props.row)" v-if="sucursal.matriz == 1 && props.row.estatus == 1">
                                             <i class="fa-solid fa-truck-arrow-right"></i></span>
                                         </button>
-                                        <button type="button" class="btn btn-icon btn-sm btn-danger" title="Cancelar Traspaso" :disabled="loading" @click="cancelTraspaso(props.row.id)" :data-kt-indicator="props.row.cancelando ? 'on' : 'off'">
+                                        <button type="button" class="btn btn-icon btn-sm btn-danger" title="Cancelar Traspaso" :disabled="loading" @click="cancelTraspaso(props.row.id)" :data-kt-indicator="props.row.cancelando ? 'on' : 'off'" v-if="props.row.estatus == 1">
                                             <span class="indicator-label"><i class="fa-solid fa-trash-alt"></i></span>
                                             <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
                                         </button>
@@ -72,6 +72,9 @@
                             <!--end::Table-->
                         </div>
                         <!--end::Tab-->
+                    </div>
+                    <div v-if="traspasos.length == 0 && !loading">
+                        <p class="alert alert-info mt-5">No se encontraron traspasos en el periodo solicitado.</p>
                     </div>
                 </div>
                 <!--end::Card body-->
@@ -128,7 +131,7 @@
                                 <div class="text-muted">[[show_traspaso.empleado?.no_empleado ?? '--']]</div>
                             </div>
                             <div class="col-6">
-                                <label class="fs-6 fw-bold">Empleado asignado</label>
+                                <label class="fs-6 fw-bold">Chofer asignado</label>
                                 <div>[[show_traspaso.empleado_asignado?.nombre_completo ?? '--']]</div>
                                 <div class="text-muted">[[show_traspaso.empleado_asignado?.no_empleado ?? '--']]</div>
                             </div>
@@ -161,7 +164,7 @@
                             </div>
                             <div class="col-12">
                                 <label class="fs-6 fw-bold">Comentarios</label>
-                                <div>[[show_traspaso.comentarios]]</div>
+                                <div style="white-space: pre;">[[show_traspaso.comentarios]]</div>
                             </div>
                         </div>
                     </div>
@@ -241,6 +244,10 @@
                                             </tr>
                                         </tbody>
                                     </table>
+                                </div>
+                                <div class="col-12 fv-row" v-if="recibir_traspaso.otros_comentarios.length > 0">
+                                    <label class="fs-6 fw-bold">Notas:</label>
+                                    <div class="form-control" style="white-space: pre;">[[recibir_traspaso.otros_comentarios]]</div>
                                 </div>
                                 <div class="col-12 fv-row">
                                     <label class="fs-6 fw-bold">Comentarios</label>
@@ -528,6 +535,7 @@
                                     cantidad: i.cantidad,
                                 }))
                             ),
+                            otros_comentarios: res.results.comentarios,
                             comentarios: null,
                         }
 
@@ -610,11 +618,16 @@
                                 method: "POST",
                                 url: `/api/traspasos/cancelar/${idTraspaso}`,
                             }).done(function (res) {
-                                Swal.fire(
-                                    'Traspaso cancelado',
-                                    'El traspaso ha sido cancelado con éxito',
-                                    'success'
-                                );
+                                if (res.status == false) {
+                                    Swal.fire("¡Error!", res.message, "error");
+                                }else{
+                                    Swal.fire(
+                                        'Traspaso cancelado',
+                                        'El traspaso ha sido cancelado con éxito',
+                                        'success'
+                                    );
+                                }
+
                                 index = vm.traspasos.findIndex(item => item.id == idTraspaso);
                                 if (index >= 0) {
                                     vm.$set(vm.traspasos[index], 'cancelando', false);
