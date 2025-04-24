@@ -54,7 +54,7 @@ class Traspasos extends Model implements Transformable
 
     public function getTipoDescAttribute()
     {
-        switch ($this->estatus) {
+        switch ($this->tipo) {
             case 1: return 'A otra Sucursal';
             case 2: return 'Para cliente';
             case 3: return 'Merma';
