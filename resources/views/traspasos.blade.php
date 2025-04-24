@@ -52,7 +52,7 @@
                                 <div slot="tipo" slot-scope="props">
                                     <div>[[ tipos.find(item => item.id == props.row.tipo)?.text ?? '--']]</div>
                                 </div>
-                                <div slot="estatus" slot-scope="props">[[props.row.estatus_desc]]</div>
+                                <div slot="estatus" slot-scope="props"><span class="badge" :class="props.row.estatus == 1 ? 'badge-warning' : 'badge-success'">[[props.row.estatus_desc]]</span></div>
                                 <div slot="created_at" slot-scope="props">[[props.row.created_at | fecha]]</div>
                                 <div slot="acciones" slot-scope="props">
                                     <div class="d-flex gap-2">
@@ -332,6 +332,10 @@
                         noResults: "No se encontraron resultados",
                         loading: "Cargando...",
                         columns: "Columnas",
+                    },
+                    orderBy: {
+                        column: 'id',
+                        ascending: false
                     },
                 },
 
