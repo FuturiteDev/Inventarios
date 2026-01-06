@@ -129,7 +129,7 @@ class TraspasosController extends Controller
 
             $traspasos = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino'])->findWhere(['estatus' => 1, 'sucursal_destino_id' => $sucursal_id]);
 
-            $lista = $traspasos->map(function($item){
+            $lista = $traspasos->map(function ($item) {
                 $tmp = $item->toArray();
                 $tmp['empleado_id'] = $item->empleado_id ?? 0;
                 $tmp['asignado_a'] = $item->asignado_a ?? 0;
@@ -207,16 +207,18 @@ class TraspasosController extends Controller
                         return $query->limit($row['cantidad']);
                     })->findWhere(['sucursal_id' => $sucursal_origen_id, 'producto_id' => $prodPendiente->producto_id, 'fecha_caducidad' => $prodPendiente->fecha_caducidad, ['cantidad_disponible', '>', 0], 'estatus' => 1]);
 
-                    if($inv->count() == $row['cantidad']){
+                    if ($inv->count() == $row['cantidad']) {
                         $inputProdTraspasos['inventario_ids'] = $inv->modelKeys();
                         $this->traspasosProductos->create($inputProdTraspasos);
-    
+
                         $inv->each(function ($item) {
                             $item->estatus = 2;
                             $item->save();
                         });
-                    }else{
-                        $prodPendiente->load(['producto' => function($q){ $q->select('id', 'sku', 'nombre', 'estatus'); }]);
+                    } else {
+                        $prodPendiente->load(['producto' => function ($q) {
+                            $q->select('id', 'sku', 'nombre', 'estatus');
+                        }]);
                         $sin_stock[] = [
                             'producto_pendiente_id' => $prodPendiente->id,
                             'cantidad_solicitada' => $row['cantidad'],
@@ -229,14 +231,14 @@ class TraspasosController extends Controller
                 $prodPendiente->delete();
             }
 
-            if(!empty($sin_stock)){
+            if (!empty($sin_stock)) {
                 DB::rollBack();
                 return response()->json([
                     'status' => false,
                     'message' => "Productos sin stock suficiente para el traspaso.",
                     'results' => $sin_stock
                 ], 200);
-            }else{
+            } else {
                 DB::commit();
                 $traspaso->refresh();
 
@@ -568,7 +570,7 @@ class TraspasosController extends Controller
             $fechaInicio = $request->fecha_inicio;
             $fechaFin = $request->fecha_fin;
             $estatus = $request->estatus ?? 1;
-            
+
             $query = $this->traspasos->with(['sucursalOrigen', 'sucursalDestino']);
 
             if ($fechaInicio && $fechaFin) {
@@ -630,8 +632,10 @@ class TraspasosController extends Controller
 
     public function cancelarTraspaso($traspaso_id)
     {
+        DB::beginTransaction();
+
         try {
-            $traspaso = $this->traspasos->find($traspaso_id);
+            $traspaso = $this->traspasos->with('traspasoProductos')->findOrFail($traspaso_id);
 
             if ($traspaso->estatus != 1) {
                 return response()->json([
@@ -643,19 +647,37 @@ class TraspasosController extends Controller
             $traspaso->estatus = 0;
             $traspaso->save();
 
+            foreach ($traspaso->traspasoProductos as $producto) {
+
+                if (!empty($producto->inventario_ids)) {
+                    $this->inventario->whereIn('id', $producto->inventario_ids)->update(['estatus' => 1]);
+                }
+
+                $this->productosPendientes->create([
+                    'producto_id' => $producto->producto_id,
+                    'fecha_caducidad' => $producto->fecha_caducidad,
+                    'cantidad' => $producto->cantidad,
+                    'sucursal_id' => $traspaso->sucursal_origen_id
+                ]);
+            }
+
+            DB::commit();
+
             return response()->json([
                 'status' => true,
-                'message' => "Traspaso eliminado correctamente.",
+                'message' => "Traspaso cancelado y productos regresados correctamente.",
             ], 200);
         } catch (\Exception $e) {
-            Log::info("TraspasosController->cancelarTraspaso() | " . $e->getMessage() . " | " . $e->getLine());
+            DB::rollBack();
+            Log::info("TraspasosController->cancelarTraspaso() | {$e->getMessage()} | {$e->getLine()}");
 
             return response()->json([
                 'status' => false,
-                'message' => "[ERROR] TraspasosController->cancelarTraspaso() | " . $e->getMessage() . " | " . $e->getLine(),
+                'message' => "[ERROR] TraspasosController->cancelarTraspaso() | {$e->getMessage()} | {$e->getLine()}",
             ], 500);
         }
     }
+
 
     public function cancelarTraspasoProducto($productoTraspasoId)
     {
