@@ -633,7 +633,7 @@ class TraspasosController extends Controller
         try {
             $traspaso = $this->traspasos->find($traspaso_id);
 
-            if (!$traspaso->estatus != 1) {
+            if ($traspaso->estatus != 1) {
                 return response()->json([
                     'status' => false,
                     'message' => "Traspaso no disponible. No se puede cancelar.",
