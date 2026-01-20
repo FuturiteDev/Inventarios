@@ -1,148 +1,171 @@
 @extends('erp.base')
 
 @section('content')
-    <div id="app">
+    <div class="d-flex flex-column flex-column-fluid" id="app">
+        <div class="app-toolbar py-3 py-lg-6" id="kt_app_toolbar">
+            <!--begin::Toolbar container-->
+            <div class="app-container d-flex flex-stack" id="kt_app_toolbar_container">
+                <div class="page-title d-flex flex-column justify-content-center flex-wrap me-3">
+                    <!--begin::Title-->
+                    <h1 class="page-heading d-flex text-dark fw-bold fs-3 flex-column justify-content-center my-0">Colecciones</h1>
+                    <!--end::Title-->
+                    <!--begin::Breadcrumb-->
+                    <ul class="breadcrumb breadcrumb-line text-muted fw-semibold fs-7 my-0 pt-1">
+                        <li class="breadcrumb-item">
+                            <a class="text-muted text-hover-primary" href="{{ route('home') }}">Inicio</a>
+                        </li>
+                        <li class="breadcrumb-item text-muted">Control Interno</li>
+                        <li class="breadcrumb-item text-muted">Configuración de inventario</li>
+                        <li class="breadcrumb-item text-muted">Colecciones</li>
+                    </ul>
+                    <!--end::Breadcrumb-->
+                </div>
+            </div>
+            <!--end::Toolbar container-->
+        </div>
+
         <!--begin::Content-->
-        <div id="kt_app_content" class="app-content">
-            <!--begin::Card-->
-            <div class="card card-flush" id="content-card">
-                <!--begin::Card header-->
-                <div class="card-header align-items-center py-5 gap-2 gap-md-5">
-                    <div class="card-title flex-column">
-                        <h3 class="ps-2">Listado de Colecciones</h3>
-                    </div>
-                    <div class="card-toolbar">
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_add_coleccion" @click="isEdit = false">
-                            <i class="ki-outline ki-plus fs-2"></i> Crear colección
-                        </button>
-                    </div>
-                </div>
-                <!--end::Card toolbar-->
-
-                <!--begin::Card body-->
-                <div class="card-body py-4">
-                    <div class="px-4 py-2">
-                        <button class="btn btn-success" @click="syncShopify" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Sincronizar con Shopify">
-                            Sincronizar <i class="ki-solid ki-arrows-circle"></i>
-                        </button>
-                    </div>
-                    <!--begin::Table-->
-                    <v-client-table v-model="colecciones" :columns="columns" :options="options">
-                        <div slot="imagen" slot-scope="props">
-                             <img :src="props.row.imagen" class=" rounded mw-100px mh-100px"/>
+        <div class="app-content flex-column-fluid" id="kt_app_content">
+            <div class="app-container" id="kt_app_content_container">
+                <!--begin::Card-->
+                <div class="card card-flush" id="content-card">
+                    <!--begin::Card header-->
+                    <div class="card-header align-items-center py-5 gap-2 gap-md-5">
+                        <div class="card-title flex-column">
+                            <h3 class="ps-2">Listado de Colecciones</h3>
                         </div>
-                        <div slot="acciones" slot-scope="props">
-                            <button type="button" class="btn btn-icon btn-sm btn-primary btn-sm me-2" title="Ver productos" data-bs-toggle="modal" data-bs-target="#kt_modal_producto_coleccion" @click="getProductos(props.row, true)">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button type="button" class="btn btn-icon btn-sm btn-success btn-sm me-2" title="Ver/Editar Coleccion" data-bs-toggle="modal" data-bs-target="#kt_modal_add_coleccion" @click="selectColeccion(props.row)">
-                                <i class="fas fa-pencil"></i>
-                            </button>
-                            <button type="button" class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Coleccion" :disabled="loading" @click="deleteColeccion(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
-                                <span class="indicator-label"><i class="fas fa-trash-alt"></i></span>
-                                <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
+                        <div class="card-toolbar">
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_add_coleccion" type="button" @click="isEdit = false">
+                                <i class="ki-outline ki-plus fs-2"></i> Crear colección
                             </button>
                         </div>
-                    </v-client-table>
-                    <!--end::Table-->
-                </div>
-                <!--end::Card body-->
-            </div>
-            <!--end::Card-->
-        </div>
-        <!--end::Content-->
-
-        <!--begin::Modal - Add task-->
-        <div class="modal fade" id="kt_modal_add_coleccion" tabindex="-1" aria-hidden="true">
-            <!--begin::Modal dialog-->
-            <div class="modal-dialog modal-dialog-centered">
-                <!--begin::Modal content-->
-                <div class="modal-content">
-                    <!--begin::Modal header-->
-                    <div class="modal-header" id="kt_modal_add_user_header">
-                        <h2 class="fw-bold" v-text="isEdit ? 'Actualizar colección' : 'Crear colección'"></h2>
-
-                        <!--begin::Close-->
-                        <div class="btn btn-close" data-bs-dismiss="modal"></div>
-                        <!--end::Close-->
                     </div>
-                    <!--end::Modal header-->
-                    <!--begin::Modal body-->
-                    <div class="modal-body">
-                        <!--begin::Form-->
-                        <form id="kt_modal_add_coleccion_form" class="form" action="#" @submit.prevent="">
-                            <div class="fv-row mb-7">
-                                <label class="required fw-semibold fs-6 ms-2">Nombre</label>
-                                <input type="text" required class="form-control" placeholder="Colección" v-model="coleccion" name="coleccion">
+                    <!--end::Card toolbar-->
+
+                    <!--begin::Card body-->
+                    <div class="card-body py-4">
+                        <div class="px-4 py-2">
+                            <button class="btn btn-success" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Sincronizar con Shopify" @click="syncShopify">
+                                Sincronizar <i class="ki-solid ki-arrows-circle"></i>
+                            </button>
+                        </div>
+                        <!--begin::Table-->
+                        <v-client-table v-model="colecciones" :columns="columns" :options="options">
+                            <div slot="imagen" slot-scope="props">
+                                <img class=" rounded mw-100px mh-100px" :src="props.row.imagen" />
                             </div>
-
-                            <div class="fv-row mb-7">
-                                <label class="required fw-semibold fs-6 ms-2">Descripcion</label>
-                                <input type="text" required class="form-control" placeholder="Descripcion" v-model="descripcion" name="descripcion">
+                            <div slot="acciones" slot-scope="props">
+                                <button class="btn btn-icon btn-sm btn-primary btn-sm me-2" data-bs-toggle="modal" data-bs-target="#kt_modal_producto_coleccion" type="button" title="Ver productos" @click="getProductos(props.row, true)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-icon btn-sm btn-success btn-sm me-2" data-bs-toggle="modal" data-bs-target="#kt_modal_add_coleccion" type="button" title="Ver/Editar Coleccion" @click="selectColeccion(props.row)">
+                                    <i class="fas fa-pencil"></i>
+                                </button>
+                                <button class="btn btn-icon btn-sm btn-danger btn-sm me-2" type="button" title="Eliminar Coleccion" :disabled="loading" @click="deleteColeccion(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
+                                    <span class="indicator-label"><i class="fas fa-trash-alt"></i></span>
+                                    <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
+                                </button>
                             </div>
-                        </form>
-                        <!--end::Form-->
+                        </v-client-table>
+                        <!--end::Table-->
                     </div>
-                    <!--end::Modal body-->
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" @click="updateColeccion" :disabled="loading" :data-kt-indicator="loading ? 'on' : 'off'" v-if="isEdit">
-                            <span class="indicator-label">Actualizar</span>
-                            <span class="indicator-progress">Actualizando <span class="spinner-border spinner-border-sm align-middle"></span></span>
-                        </button>
-                        <button type="button" class="btn btn-primary" @click="createColeccion" :disabled="loading" :data-kt-indicator="loading ? 'on' : 'off'" v-else>
-                            <span class="indicator-label">Crear</span>
-                            <span class="indicator-progress">Creando <span class="spinner-border spinner-border-sm align-middle"></span></span>
-                        </button>
-                    </div>
+                    <!--end::Card body-->
                 </div>
-                <!--end::Modal content-->
+                <!--end::Card-->
             </div>
-            <!--end::Modal dialog-->
-        </div>
-        <!--end::Modal - Add task-->
+            <!--end::Content-->
 
-        <!--begin::Modal - Add task-->
-        <div class="modal fade modal-lg" id="kt_modal_producto_coleccion" tabindex="-1" aria-hidden="true">
-            <!--begin::Modal dialog-->
-            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-                <!--begin::Modal content-->
-                <div class="modal-content">
-                    <!--begin::Modal header-->
-                    <div class="modal-header" id="kt_modal_add_user_header">
-                        <h2 class="fw-bold" >Productos de coleccion - [[coleccion]]</h2>
-                        <!--begin::Close-->
-                        <div class="btn btn-close" data-bs-dismiss="modal"></div>
-                        <!--end::Close-->
-                    </div>
-                    <!--end::Modal header-->
-                    <!--begin::Modal body-->
-                    <div class="modal-body" id="kt_modal_producto_coleccion_body">
-                        <!--begin::Card body-->
-                        <div class="card-body px-5 py-4">
-                            <!--begin::Table-->
-                            <v-client-table v-model="productos" :columns="columns2" :options="options2"> 
-                                <div slot="categoria" slot-scope="props">
-                                    [[ props.row.categoria?.nombre ]]
-                                </div>
-                                <div slot="subcategoria" slot-scope="props">
-                                    [[ props.row.subcategoria?.nombre ]]
-                                </div>
-                            </v-client-table>
-                            <!--end::Table-->
+            <!--begin::Modal - Add task-->
+            <div class="modal fade" id="kt_modal_add_coleccion" aria-hidden="true" tabindex="-1">
+                <!--begin::Modal dialog-->
+                <div class="modal-dialog modal-dialog-centered">
+                    <!--begin::Modal content-->
+                    <div class="modal-content">
+                        <!--begin::Modal header-->
+                        <div class="modal-header" id="kt_modal_add_user_header">
+                            <h2 class="fw-bold" v-text="isEdit ? 'Actualizar colección' : 'Crear colección'"></h2>
+
+                            <!--begin::Close-->
+                            <div class="btn btn-close" data-bs-dismiss="modal"></div>
+                            <!--end::Close-->
                         </div>
-                        <!--end::Card body-->
-                    </div>
-                    <!--end::Modal body-->
-                    <div class="modal-footer">
-                        <button type="reset" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                    </div>
-                </div>
-                <!--end::Modal content-->
-            </div>
-            <!--end::Modal dialog-->
-        </div>
-        <!--end::Modal - Add task-->
+                        <!--end::Modal header-->
+                        <!--begin::Modal body-->
+                        <div class="modal-body">
+                            <!--begin::Form-->
+                            <form class="form" id="kt_modal_add_coleccion_form" action="#" @submit.prevent="">
+                                <div class="fv-row mb-7">
+                                    <label class="required fw-semibold fs-6 ms-2">Nombre</label>
+                                    <input class="form-control" name="coleccion" type="text" required placeholder="Colección" v-model="coleccion">
+                                </div>
 
+                                <div class="fv-row mb-7">
+                                    <label class="required fw-semibold fs-6 ms-2">Descripcion</label>
+                                    <input class="form-control" name="descripcion" type="text" required placeholder="Descripcion" v-model="descripcion">
+                                </div>
+                            </form>
+                            <!--end::Form-->
+                        </div>
+                        <!--end::Modal body-->
+                        <div class="modal-footer">
+                            <button class="btn btn-primary" type="button" @click="updateColeccion" :disabled="loading" :data-kt-indicator="loading ? 'on' : 'off'" v-if="isEdit">
+                                <span class="indicator-label">Actualizar</span>
+                                <span class="indicator-progress">Actualizando <span class="spinner-border spinner-border-sm align-middle"></span></span>
+                            </button>
+                            <button class="btn btn-primary" type="button" @click="createColeccion" :disabled="loading" :data-kt-indicator="loading ? 'on' : 'off'" v-else>
+                                <span class="indicator-label">Crear</span>
+                                <span class="indicator-progress">Creando <span class="spinner-border spinner-border-sm align-middle"></span></span>
+                            </button>
+                        </div>
+                    </div>
+                    <!--end::Modal content-->
+                </div>
+                <!--end::Modal dialog-->
+            </div>
+            <!--end::Modal - Add task-->
+
+            <!--begin::Modal - Add task-->
+            <div class="modal fade modal-lg" id="kt_modal_producto_coleccion" aria-hidden="true" tabindex="-1">
+                <!--begin::Modal dialog-->
+                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                    <!--begin::Modal content-->
+                    <div class="modal-content">
+                        <!--begin::Modal header-->
+                        <div class="modal-header" id="kt_modal_add_user_header">
+                            <h2 class="fw-bold">Productos de coleccion - [[coleccion]]</h2>
+                            <!--begin::Close-->
+                            <div class="btn btn-close" data-bs-dismiss="modal"></div>
+                            <!--end::Close-->
+                        </div>
+                        <!--end::Modal header-->
+                        <!--begin::Modal body-->
+                        <div class="modal-body" id="kt_modal_producto_coleccion_body">
+                            <!--begin::Card body-->
+                            <div class="card-body px-5 py-4">
+                                <!--begin::Table-->
+                                <v-client-table v-model="productos" :columns="columns2" :options="options2">
+                                    <div slot="categoria" slot-scope="props">
+                                        [[ props.row.categoria?.nombre ]]
+                                    </div>
+                                    <div slot="subcategoria" slot-scope="props">
+                                        [[ props.row.subcategoria?.nombre ]]
+                                    </div>
+                                </v-client-table>
+                                <!--end::Table-->
+                            </div>
+                            <!--end::Card body-->
+                        </div>
+                        <!--end::Modal body-->
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" data-bs-dismiss="modal" type="reset">Cerrar</button>
+                        </div>
+                    </div>
+                    <!--end::Modal content-->
+                </div>
+                <!--end::Modal dialog-->
+            </div>
+            <!--end::Modal - Add task-->
+        </div>
     </div>
 @endsection
 
@@ -154,7 +177,7 @@
             el: '#app',
             delimiters: ['[[', ']]'],
             data: () => ({
-                colecciones:[],
+                colecciones: [],
                 columns: ['id', 'imagen', 'nombre', 'descripcion', 'acciones'],
                 options: {
                     headings: {
@@ -165,11 +188,11 @@
                         acciones: 'Acciones',
                     },
                     columnsClasses: {
-                        id: 'align-middle px-2 ',
+                        id: 'align-middle px-3 ',
                         imagen: 'align-middle text-center ',
                         nombre: 'align-middle ',
                         descripcion: 'align-middle ',
-                        acciones: 'align-middle text-center px-2 ',
+                        acciones: 'align-middle text-center px-3 ',
                     },
                     sortable: ['nombre', 'descripcion'],
                     filterable: ['nombre', 'descripcion'],
@@ -199,7 +222,7 @@
                     }
                 },
 
-                productos:[],
+                productos: [],
                 columns2: ['id', 'sku', 'nombre', 'categoria', 'subcategoria'],
                 options2: {
                     headings: {
@@ -274,7 +297,7 @@
                 });
             },
             methods: {
-                getColecciones(showLoader){
+                getColecciones(showLoader) {
                     let vm = this;
                     if (showLoader) {
                         if (!vm.blockUI) {
@@ -300,13 +323,13 @@
                     vm.requestGet = $.ajax({
                         url: '/api/colecciones/all',
                         type: 'GET',
-                    }).done(function (res) {
+                    }).done(function(res) {
                         vm.colecciones = res.results;
-                    }).fail(function (jqXHR, textStatus) {
+                    }).fail(function(jqXHR, textStatus) {
                         if (textStatus != 'abort') {
                             console.log("Request failed getCategorias: " + textStatus, jqXHR);
                         }
-                    }).always(function () {
+                    }).always(function() {
                         vm.loading = false;
 
                         if (vm.blockUI && vm.blockUI.isBlocked()) {
@@ -343,13 +366,13 @@
                     vm.requestGetModal = $.ajax({
                         url: '/api/colecciones/productos/' + coleccion.id,
                         type: 'GET',
-                    }).done(function (res) {
+                    }).done(function(res) {
                         vm.productos = res.results;
-                    }).fail(function (jqXHR, textStatus) {
+                    }).fail(function(jqXHR, textStatus) {
                         if (textStatus != 'abort') {
                             console.log("Request failed getProductos: " + textStatus, jqXHR);
                         }
-                    }).always(function () {
+                    }).always(function() {
                         vm.loading = false;
 
                         if (vm.blockUIModal && vm.blockUIModal.isBlocked()) {
@@ -357,7 +380,7 @@
                         }
                     });
                 },
-                syncShopify(){
+                syncShopify() {
                     let vm = this;
                     const loadingEl = document.createElement("div");
                     document.body.prepend(loadingEl);
@@ -370,7 +393,7 @@
                     <span class="fs-6 fw-semibold mt-5 text-gray-800">Sincronizando...</span>
                     </span>`;
                     KTApp.showPageLoading();
-                    
+
                     $.get('/api/shopify/colecciones', res => {
 
                     }, 'json').always(function() {
@@ -474,7 +497,7 @@
                         if (result.isConfirmed) {
                             vm.loading = true;
                             let index = vm.colecciones.findIndex(item => item.id == idColeccion);
-                            if(index >= 0){
+                            if (index >= 0) {
                                 vm.$set(vm.colecciones[index], 'eliminando', true);
                             }
                             $.ajax({
@@ -495,7 +518,7 @@
                                 Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
 
                                 index = vm.colecciones.findIndex(item => item.id == idColeccion);
-                                if(index >= 0){
+                                if (index >= 0) {
                                     vm.$set(vm.colecciones[index], 'eliminando', false);
                                 }
                             }).always(function(event, xhr, settings) {
@@ -517,7 +540,7 @@
                     let vm = this;
                     // Define form element
                     const form = document.getElementById('kt_modal_add_coleccion_form');
-                    
+
                     vm.validator = FormValidation.formValidation(
                         form, {
                             fields: {

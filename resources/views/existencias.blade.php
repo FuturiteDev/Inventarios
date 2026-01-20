@@ -1,239 +1,232 @@
 @extends('erp.base')
 
 @section('content')
-    <div id="app">
+    <div class="d-flex flex-column flex-column-fluid" id="app">
+        <div class="app-toolbar py-3 py-lg-6" id="kt_app_toolbar">
+            <!--begin::Toolbar container-->
+            <div class="app-container d-flex flex-stack" id="kt_app_toolbar_container">
+                <div class="page-title d-flex flex-column justify-content-center flex-wrap me-3">
+                    <!--begin::Title-->
+                    <h1 class="page-heading d-flex text-dark fw-bold fs-3 flex-column justify-content-center my-0">Distribución del inventario</h1>
+                    <!--end::Title-->
+                    <!--begin::Breadcrumb-->
+                    <ul class="breadcrumb breadcrumb-line text-muted fw-semibold fs-7 my-0 pt-1">
+                        <li class="breadcrumb-item">
+                            <a class="text-muted text-hover-primary" href="{{ route('home') }}">Inicio</a>
+                        </li>
+                        <li class="breadcrumb-item text-muted">Control Interno</li>
+                        <li class="breadcrumb-item text-muted">Gestión de inventario</li>
+                        <li class="breadcrumb-item text-muted">Distribución del inventario</li>
+                    </ul>
+                    <!--end::Breadcrumb-->
+                </div>
+            </div>
+            <!--end::Toolbar container-->
+        </div>
+
         <!--begin::Content-->
-        <div id="kt_app_content" class="app-content">
-            <ul class="mt-5 nav nav-fill nav-tabs" id="myTab" role="tablist">
-                <li class="nav-item">
-                    <a class="nav-link active" data-bs-toggle="tab" href="#inventarioSucursal" role="tab">Existencias por Sucursal</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" data-bs-toggle="tab" href="#inventarioGeneral" role="tab">Existencias Generales</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" data-bs-toggle="tab" href="#pocaExistenciaSucursal" role="tab">Pocas Existencias por Sucursal</a>
-                </li>
-            </ul>
-            <div class="tab-content" id="myTabContent">
-                <!--begin::Tab-->
-                <div class="tab-pane fade show active" id="inventarioSucursal" role="tabpanel">
-                    <!--begin::Card-->
-                    <div class="card card-flush" id="content-card-sucursal">
-                        <div class="card-header align-items-center py-5 gap-2 gap-md-5">
-                            <div class="card-title flex-column">
-                                <h3 class="ps-2">Distribución de inventario</h3>
-                            </div>
-                            <div class="card-toolbar gap-2">
-                                <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#kt_modal_ver_traspaso">Ver traspasos</button>
-                                <div class="px-2 min-w-200px">
-                                    <v-select 
-                                        v-model="filterSucursalExistencias"
-                                        :options="listaSucursales"
-                                        data-allow-clear="false"
-                                        data-placeholder="Filtrar por sucursal">
-                                    </v-select>
+        <div class="app-content flex-column-fluid" id="kt_app_content">
+            <div class="app-container" id="kt_app_content_container">
+                <ul class="mt-5 nav nav-fill nav-tabs" id="myTab" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#inventarioSucursal" role="tab">Existencias por Sucursal</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#inventarioGeneral" role="tab">Existencias Generales</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#pocaExistenciaSucursal" role="tab">Pocas Existencias por Sucursal</a>
+                    </li>
+                </ul>
+                <div class="tab-content" id="myTabContent">
+                    <!--begin::Tab-->
+                    <div class="tab-pane fade show active" id="inventarioSucursal" role="tabpanel">
+                        <!--begin::Card-->
+                        <div class="card card-flush" id="content-card-sucursal">
+                            <div class="card-header align-items-center py-5 gap-2 gap-md-5">
+                                <div class="card-title flex-column">
+                                    <h3 class="ps-2">Existencias por Sucursal</h3>
                                 </div>
-                                <button type="button" class="btn btn-icon btn-primary" @click="getInventarioSucursal(true)">
-                                    <i class="fa-solid fa-magnifying-glass"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="card-body py-4">
-                            <!--begin::Toolbar-->
-                            <div class="d-flex gap-2 mb-5">
-                                <div>
-                                    <div class="input-group" id="datepicker_wrapper">
-                                        <span class="input-group-text">
-                                            <i class="ki-duotone ki-calendar fs-2"><span class="path1"></span><span class="path2"></span></i>
-                                        </span>
-                                        <input id="datepicker_input1" type="text" class="form-control border-right-0" placeholder="Fecha de caducidad" v-model="filterFechaExistencias"/>
-                                        <span class="bg-white border-left-0 input-group-text">
-                                            <button type="button" class="btn-close" id="datepicker_clear1"></button>
-                                        </span>
+                                <div class="card-toolbar gap-2">
+                                    <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#kt_modal_ver_traspaso" type="button">Ver traspasos</button>
+                                    <div class="px-2 min-w-200px">
+                                        <v-select data-allow-clear="false" data-placeholder="Filtrar por sucursal" v-model="filterSucursalExistencias" :options="listaSucursales">
+                                        </v-select>
                                     </div>
-                                </div>
-                                <div>
-                                    <v-select
-                                        class="pe-20"
-                                        v-model="filterColeccionExistencias"
-                                        :options="listaColecciones"
-                                        data-allow-clear="true"
-                                        data-placeholder="Filtrar por coleccion">
-                                    </v-select>
-                                </div>
-                                <div class="align-content-center">
-                                    <div class="form-check form-switch form-check-custom form-check-solid">
-                                        <input class="form-check-input" type="checkbox" v-model="showProductosTiendaExistencias"/>
-                                        <label class="form-check-label text-gray-700 fw-bold">Productos de Tienda</label>
-                                    </div>
-                                </div>
-                                <div class="flex-fill text-end gap-5">
-                                    <button type="button" class="btn btn-success btn-sm" @click="printTableExistencias"><i class="fa-solid fa-print"></i> Imprimir</button>
-                                </div>
-                            </div>
-                            <!--begin::Toolbar-->
-                            <v-client-table v-model="listaInventario" :columns="columns" :options="options" ref="existencias">
-                                <div slot="nombre" slot-scope="props">[[props.row.producto.nombre]]</div>
-                                <div slot="sku" slot-scope="props">[[props.row.producto.sku]]</div>
-                                <div slot="cantidad" slot-scope="props">[[props.row.cantidad_existente]]</div>
-                                <div slot="fecha_caducidad" slot-scope="props">[[props.row.fecha_caducidad | fecha]]</div>
-                                <div slot="cantidad_existente" slot-scope="props">[[props.row.cantidad_existente ?? '0']]</div>
-                                <div slot="acciones" slot-scope="props">
-                                    <button type="button" class="btn btn-icon btn-sm btn-primary btn-sm me-2" title="Agregar a Traspaso" data-bs-toggle="modal" data-bs-target="#kt_modal_add_traspaso" @click="modalTraspaso(props.row)"><i class="fa-solid fa-truck-fast"></i></button>
-                                    <button type="button" class="btn btn-icon btn-sm btn-danger btn-sm me-2" title="Eliminar Inventario" :disabled="loading" @click="deleteInventario(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
-                                        <span class="indicator-label"><i class="fas fa-trash-alt"></i></i></span>
-                                        <span class="indicator-progress"><i class="fas fa-trash-alt"></i><span class="spinner-border spinner-border-sm align-middle"></span></span>
+                                    <button class="btn btn-icon btn-primary" type="button" @click="getInventarioSucursal(true)">
+                                        <i class="fa-solid fa-magnifying-glass"></i>
                                     </button>
                                 </div>
-                            </v-client-table>
-                        </div>
-                    </div>
-                    <!--end::Card-->
-                </div>
-                <!--end::Tab-->
-                <!--begin::Tab-->
-                <div class="tab-pane fade" id="inventarioGeneral" role="tabpanel">
-                    <!--begin::Card-->
-                    <div class="card card-flush" id="content-card-general">
-                        <div class="card-header align-items-center py-5 gap-2 gap-md-5">
-                            <div class="card-title flex-column">
-                                <h3 class="ps-2">Existencias Generales</h3>
                             </div>
-                        </div>
-                        <div class="card-body py-4" v-if="sucursales && sucursales.length>0">
-                            <!--begin::Toolbar-->
-                            <div class="d-flex gap-2 mb-5">
-                                <div>
-                                    <v-select
-                                        class="pe-20"
-                                        v-model="filterColeccionGeneral"
-                                        :options="listaColecciones"
-                                        data-allow-clear="true"
-                                        data-placeholder="Filtrar por coleccion">
-                                    </v-select>
-                                </div>
-                                <div class="align-content-center">
-                                    <div class="form-check form-switch form-check-custom form-check-solid">
-                                        <input class="form-check-input" type="checkbox" v-model="showProductosTiendaGeneral"/>
-                                        <label class="form-check-label text-gray-700 fw-bold">Productos de Tienda</label>
+
+                            <div class="card-body py-4">
+                                <!--begin::Toolbar-->
+                                <div class="d-flex gap-2 mb-5">
+                                    <div>
+                                        <div class="input-group" id="datepicker_wrapper">
+                                            <span class="input-group-text">
+                                                <i class="ki-duotone ki-calendar fs-2"><span class="path1"></span><span class="path2"></span></i>
+                                            </span>
+                                            <input class="form-control border-right-0" id="datepicker_input1" type="text" placeholder="Fecha de caducidad" v-model="filterFechaExistencias" />
+                                            <span class="bg-white border-left-0 input-group-text">
+                                                <button class="btn-close" id="datepicker_clear1" type="button"></button>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <v-select
+                                            class="pe-20" data-allow-clear="true" data-placeholder="Filtrar por coleccion" v-model="filterColeccionExistencias" :options="listaColecciones">
+                                        </v-select>
+                                    </div>
+                                    <div class="align-content-center">
+                                        <div class="form-check form-switch form-check-custom form-check-solid">
+                                            <input class="form-check-input" type="checkbox" v-model="showProductosTiendaExistencias" />
+                                            <label class="form-check-label text-gray-700 fw-bold">Productos de Tienda</label>
+                                        </div>
+                                    </div>
+                                    <div class="flex-fill text-end gap-5">
+                                        <button class="btn btn-success btn-sm" type="button" @click="printTableExistencias"><i class="fa-solid fa-print"></i> Imprimir</button>
                                     </div>
                                 </div>
-                                <div class="px-4">
-                                    <button class="btn btn-icon btn-secondary" @click="getInventarioGeneral(true)" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Actualizar">
-                                        <i class="ki-solid ki-arrows-circle"></i>
+                                <!--begin::Toolbar-->
+                                <v-client-table v-model="listaInventario" :columns="columns" :options="options" ref="existencias">
+                                    <div slot="nombre" slot-scope="props">[[props.row.producto.nombre]]</div>
+                                    <div slot="sku" slot-scope="props">[[props.row.producto.sku]]</div>
+                                    <div slot="cantidad" slot-scope="props">[[props.row.cantidad_existente]]</div>
+                                    <div slot="fecha_caducidad" slot-scope="props">[[props.row.fecha_caducidad | fecha]]</div>
+                                    <div slot="cantidad_existente" slot-scope="props">[[props.row.cantidad_existente ?? '0']]</div>
+                                    <div slot="acciones" slot-scope="props">
+                                        <button class="btn btn-icon btn-sm btn-primary btn-sm me-2" data-bs-toggle="modal" data-bs-target="#kt_modal_add_traspaso" type="button" title="Agregar a Traspaso" @click="modalTraspaso(props.row)"><i
+                                                class="fa-solid fa-truck-fast"></i></button>
+                                        <button class="btn btn-icon btn-sm btn-danger btn-sm me-2" type="button" title="Eliminar Inventario" :disabled="loading" @click="deleteInventario(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
+                                            <span class="indicator-label"><i class="fas fa-trash-alt"></i></i></span>
+                                            <span class="indicator-progress"><i class="fas fa-trash-alt"></i><span class="spinner-border spinner-border-sm align-middle"></span></span>
+                                        </button>
+                                    </div>
+                                </v-client-table>
+                            </div>
+                        </div>
+                        <!--end::Card-->
+                    </div>
+                    <!--end::Tab-->
+                    <!--begin::Tab-->
+                    <div class="tab-pane fade" id="inventarioGeneral" role="tabpanel">
+                        <!--begin::Card-->
+                        <div class="card card-flush" id="content-card-general">
+                            <div class="card-header align-items-center py-5 gap-2 gap-md-5">
+                                <div class="card-title flex-column">
+                                    <h3 class="ps-2">Existencias Generales</h3>
+                                </div>
+                            </div>
+                            <div class="card-body py-4" v-if="sucursales && sucursales.length>0">
+                                <!--begin::Toolbar-->
+                                <div class="d-flex gap-2 mb-5">
+                                    <div>
+                                        <v-select
+                                            class="pe-20" data-allow-clear="true" data-placeholder="Filtrar por coleccion" v-model="filterColeccionGeneral" :options="listaColecciones">
+                                        </v-select>
+                                    </div>
+                                    <div class="align-content-center">
+                                        <div class="form-check form-switch form-check-custom form-check-solid">
+                                            <input class="form-check-input" type="checkbox" v-model="showProductosTiendaGeneral" />
+                                            <label class="form-check-label text-gray-700 fw-bold">Productos de Tienda</label>
+                                        </div>
+                                    </div>
+                                    <div class="px-4">
+                                        <button class="btn btn-icon btn-secondary" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Actualizar" @click="getInventarioGeneral(true)">
+                                            <i class="ki-solid ki-arrows-circle"></i>
+                                        </button>
+                                    </div>
+                                    <div class="flex-fill text-end">
+                                        <button class="btn btn-success btn-sm" type="button" @click="printTableGeneral"><i class="fa-solid fa-print"></i> Imprimir</button>
+                                    </div>
+                                </div>
+                                <!--begin::Toolbar-->
+                                <v-client-table v-model="listaGeneral" :columns="columnsGlobal" :options="optionsGlobal" ref="general">
+                                    <div v-for="item in sucursales" :slot="item.id" slot-scope="props">
+                                        [[props.row.sucursales.find((i) => i.sucursal_id == item.id)?.cantidad_existente ?? '']]
+                                    </div>
+                                </v-client-table>
+                            </div>
+                        </div>
+                        <!--end::Card-->
+                    </div>
+                    <!--end::Tab-->
+                    <!--begin::Tab-->
+                    <div class="tab-pane fade" id="pocaExistenciaSucursal" role="tabpanel">
+                        <!--begin::Card-->
+                        <div class="card card-flush" id="content-card-pocaexistencia">
+                            <div class="card-header align-items-center py-5 gap-2 gap-md-5">
+                                <div class="card-title flex-column">
+                                    <h3 class="ps-2">Pocas Existencias por Sucursal</h3>
+                                </div>
+                                <div class="card-toolbar gap-2">
+                                    <div>
+                                        <input class="form-control" type="number" placeholder="Cantidad minima" v-model="filterCantidadMinima" />
+                                    </div>
+                                    <div class="min-w-200px">
+                                        <v-select data-allow-clear="false" data-placeholder="Filtrar por sucursal" v-model="filterSucursalPocaExistencias" :options="listaSucursales">
+                                        </v-select>
+                                    </div>
+                                    <button class="btn btn-icon btn-primary" type="button" @click="getPocaExistenciaSucursal(true)">
+                                        <i class="fa-solid fa-magnifying-glass"></i>
                                     </button>
                                 </div>
-                                <div class="flex-fill text-end">
-                                    <button type="button" class="btn btn-success btn-sm" @click="printTableGeneral"><i class="fa-solid fa-print"></i> Imprimir</button>
-                                </div>
                             </div>
-                            <!--begin::Toolbar-->
-                            <v-client-table v-model="listaGeneral" :columns="columnsGlobal" :options="optionsGlobal" ref="general">
-                                <div v-for="item in sucursales" :slot="item.id" slot-scope="props">
-                                    [[props.row.sucursales.find((i) => i.sucursal_id == item.id)?.cantidad_existente ?? '']]
-                                </div>
-                            </v-client-table>
-                        </div>
-                    </div>
-                    <!--end::Card-->
-                </div>
-                <!--end::Tab-->
-                <!--begin::Tab-->
-                <div class="tab-pane fade" id="pocaExistenciaSucursal" role="tabpanel">
-                    <!--begin::Card-->
-                    <div class="card card-flush" id="content-card-pocaexistencia">
-                        <div class="card-header align-items-center py-5 gap-2 gap-md-5">
-                            <div class="card-title flex-column">
-                                <h3 class="ps-2">Pocas Existencias por Sucursal</h3>
-                            </div>
-                            <div class="card-toolbar gap-2">
-                                <div>
-                                    <input type="number" class="form-control" placeholder="Cantidad minima" v-model="filterCantidadMinima"/>
-                                </div>
-                                <div class="min-w-200px">
-                                    <v-select 
-                                        v-model="filterSucursalPocaExistencias"
-                                        :options="listaSucursales"
-                                        data-allow-clear="false"
-                                        data-placeholder="Filtrar por sucursal">
-                                    </v-select>
-                                </div>
-                                <button type="button" class="btn btn-icon btn-primary" @click="getPocaExistenciaSucursal(true)">
-                                    <i class="fa-solid fa-magnifying-glass"></i>
-                                </button>
-                            </div>
-                        </div>
 
-                        <div class="card-body py-4">
-                            <!--begin::Card-->
-                            <div class="d-flex gap-2 mb-5">
-                                <div>
-                                    <div class="input-group" id="datepicker_wrapper">
-                                        <span class="input-group-text">
-                                            <i class="ki-duotone ki-calendar fs-2"><span class="path1"></span><span class="path2"></span></i>
-                                        </span>
-                                        <input id="datepicker_input2" type="text" class="form-control border-right-0" placeholder="Fecha de caducidad" v-model="filterFechaPocaExistencias"/>
-                                        <span class="bg-white border-left-0 input-group-text">
-                                            <button type="button" class="btn-close" id="datepicker_clear2"></button>
-                                        </span>
+                            <div class="card-body py-4">
+                                <!--begin::Card-->
+                                <div class="d-flex gap-2 mb-5">
+                                    <div>
+                                        <div class="input-group" id="datepicker_wrapper">
+                                            <span class="input-group-text">
+                                                <i class="ki-duotone ki-calendar fs-2"><span class="path1"></span><span class="path2"></span></i>
+                                            </span>
+                                            <input class="form-control border-right-0" id="datepicker_input2" type="text" placeholder="Fecha de caducidad" v-model="filterFechaPocaExistencias" />
+                                            <span class="bg-white border-left-0 input-group-text">
+                                                <button class="btn-close" id="datepicker_clear2" type="button"></button>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <v-select
+                                            class="pe-20" data-allow-clear="true" data-placeholder="Filtrar por coleccion" v-model="filterColeccionPocaExistencias" :options="listaColecciones">
+                                        </v-select>
+                                    </div>
+                                    {{-- <div>
+                                            <v-select class="pe-20" data-allow-clear="true" data-placeholder="Filtrar por categoría" v-model="filterCategoriaPocaExistencias" :options="listaCategorias">
+                                            </v-select>
+                                        </div>
+                                        <div>
+                                            <v-select class="pe-20" data-allow-clear="true" data-placeholder="Filtrar por subcategoria" v-model="filterSubcategoriaPocaExistencias" :options="listaSubcategorias3">
+                                            </v-select>
+                                        </div> --}}
+                                    <div class="align-content-center">
+                                        <div class="form-check form-switch form-check-custom form-check-solid">
+                                            <input class="form-check-input" type="checkbox" v-model="showProductosTiendaPocaExistencias" />
+                                            <label class="form-check-label text-gray-700 fw-bold">Productos de Tienda</label>
+                                        </div>
+                                    </div>
+                                    <div class="flex-fill text-end">
+                                        <button class="btn btn-success btn-sm" type="button" @click="printTablePocasExistencias"><i class="fa-solid fa-print"></i> Imprimir</button>
                                     </div>
                                 </div>
-                                <div>
-                                    <v-select
-                                        class="pe-20"
-                                        v-model="filterColeccionPocaExistencias"
-                                        :options="listaColecciones"
-                                        data-allow-clear="true"
-                                        data-placeholder="Filtrar por coleccion">
-                                    </v-select>
-                                </div>
-                                <!-- <div>
-                                    <v-select
-                                        class="pe-20"
-                                        v-model="filterCategoriaPocaExistencias"
-                                        :options="listaCategorias"
-                                        data-allow-clear="true"
-                                        data-placeholder="Filtrar por categoría">
-                                    </v-select>
-                                </div>
-                                <div>
-                                    <v-select
-                                        class="pe-20"
-                                        v-model="filterSubcategoriaPocaExistencias"
-                                        :options="listaSubcategorias3"
-                                        data-allow-clear="true"
-                                        data-placeholder="Filtrar por subcategoria">
-                                    </v-select>
-                                </div> -->
-                                <div class="align-content-center">
-                                    <div class="form-check form-switch form-check-custom form-check-solid">
-                                        <input class="form-check-input" type="checkbox" v-model="showProductosTiendaPocaExistencias"/>
-                                        <label class="form-check-label text-gray-700 fw-bold">Productos de Tienda</label>
-                                    </div>
-                                </div>
-                                <div class="flex-fill text-end">
-                                    <button type="button" class="btn btn-success btn-sm" @click="printTablePocasExistencias"><i class="fa-solid fa-print"></i> Imprimir</button>
-                                </div>
+                                <!--end::Toolbar-->
+                                <v-client-table v-model="listaPocaExistencia" :columns="columnsPocaExistencia" :options="options" ref="pocaExistencia">
+                                    <div slot="nombre" slot-scope="props">[[props.row.producto.nombre]]</div>
+                                    <div slot="sku" slot-scope="props">[[props.row.producto.sku]]</div>
+                                    <div slot="cantidad_existente" slot-scope="props">[[props.row.cantidad_existente ?? '0']]</div>
+                                </v-client-table>
                             </div>
-                            <!--end::Toolbar-->
-                            <v-client-table v-model="listaPocaExistencia" :columns="columnsPocaExistencia" :options="options" ref="pocaExistencia">
-                                <div slot="nombre" slot-scope="props">[[props.row.producto.nombre]]</div>
-                                <div slot="sku" slot-scope="props">[[props.row.producto.sku]]</div>
-                                <div slot="cantidad_existente" slot-scope="props">[[props.row.cantidad_existente ?? '0']]</div>
-                            </v-client-table>
                         </div>
+                        <!--end::Card-->
                     </div>
-                    <!--end::Card-->
+                    <!--end::Tab-->
                 </div>
-                <!--end::Tab-->
             </div>
         </div>
-        <!--end::Content-->
-
         <!--begin::Modal - Add task-->
-        <div class="modal fade" id="kt_modal_add_traspaso" tabindex="-1" aria-hidden="true">
+        <div class="modal fade" id="kt_modal_add_traspaso" aria-hidden="true" tabindex="-1">
             <!--begin::Modal dialog-->
             <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
                 <!--begin::Modal content-->
@@ -250,7 +243,7 @@
                     <!--begin::Modal body-->
                     <div class="modal-body">
                         <!--begin::Form-->
-                        <form id="kt_modal_add_traspaso_form" class="form" action="#" @submit.prevent="">
+                        <form class="form" id="kt_modal_add_traspaso_form" action="#" @submit.prevent="">
                             <div class="row mb-7">
                                 <label class="form-label">Producto</label>
                                 <div>[[traspaso_model.producto_nombre]]</div>
@@ -261,24 +254,19 @@
                             </div>
                             <div class="row fv-row mb-7">
                                 <label class="required form-label">Sucursal Destino</label>
-                                <v-select 
-                                    v-model="traspaso_model.sucursal_id"
-                                    :options="listaSucursales"
-                                    name="sucursal"
-                                    data-allow-clear="false"
-                                    data-placeholder="Seleccionar sucursal">
+                                <v-select name="sucursal" data-allow-clear="false" data-placeholder="Seleccionar sucursal" v-model="traspaso_model.sucursal_id" :options="listaSucursales">
                                 </v-select>
                             </div>
                             <div class="row fv-row mb-7">
                                 <label class="required form-label">Cantidad</label>
-                                <input type="number" v-model="traspaso_model.cantidad" class="form-control" placeholder="Cantidad" name="cantidad">
-                            </div>                            
+                                <input class="form-control" name="cantidad" type="number" v-model="traspaso_model.cantidad" placeholder="Cantidad">
+                            </div>
                         </form>
                         <!--end::Form-->
                     </div>
                     <!--end::Modal body-->
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" @click="registrarTraspaso" :disabled="loading" :data-kt-indicator="loading ? 'on' : 'off'">
+                        <button class="btn btn-primary" type="button" @click="registrarTraspaso" :disabled="loading" :data-kt-indicator="loading ? 'on' : 'off'">
                             <span class="indicator-label">Guardar</span>
                             <span class="indicator-progress">Guardando <span class="spinner-border spinner-border-sm align-middle"></span></span>
                         </button>
@@ -291,7 +279,7 @@
         <!--end::Modal - Add task-->
 
         <!--begin::Modal - Add traspaso-->
-        <div class="modal fade" id="kt_modal_ver_traspaso" tabindex="-1" aria-hidden="true">
+        <div class="modal fade" id="kt_modal_ver_traspaso" aria-hidden="true" tabindex="-1">
             <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -309,7 +297,7 @@
                                             <div class="fw-semibold text-muted">[[traspaso.productos.reduce((sum, item) => sum + (item.cantidad ?? 0), 0)]] productos</div>
                                         </div>
                                         <div class="text-end">
-                                            <button type="button" class="btn btn-primary btn-sm btn-icon" @click="showTraspaso(traspaso)">
+                                            <button class="btn btn-primary btn-sm btn-icon" type="button" @click="showTraspaso(traspaso)">
                                                 <i class="fa-solid fa-arrow-up-right-from-square"></i>
                                             </button>
                                         </div>
@@ -320,14 +308,14 @@
                                 <div class="fs-6 fw-semibold text-center">Sin traspasos pendientes</div>
                             </div>
                         </div>
-                        <form id="kt_modal_ver_traspaso_form" class="form" action="#" @submit.prevent="" v-else-if="confirmar_traspaso">
+                        <form class="form" id="kt_modal_ver_traspaso_form" action="#" @submit.prevent="" v-else-if="confirmar_traspaso">
                             <table class="table table-row-dashed table-row-gray-300 table-bordered mb-7">
                                 <thead>
                                     <tr>
-                                        <th tabindex="0" class="VueTables__heading text-center align-middle">Producto</th>
-                                        <th tabindex="0" class="VueTables__heading text-center align-middle">Fecha</th>
-                                        <th tabindex="0" class="VueTables__heading text-center align-middle">Cantidad</th>
-                                        <th tabindex="0" class="VueTables__heading text-center align-middle"></th>
+                                        <th class="VueTables__heading text-center align-middle" tabindex="0">Producto</th>
+                                        <th class="VueTables__heading text-center align-middle" tabindex="0">Fecha</th>
+                                        <th class="VueTables__heading text-center align-middle" tabindex="0">Cantidad</th>
+                                        <th class="VueTables__heading text-center align-middle" tabindex="0"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -339,11 +327,11 @@
                                         <td>[[producto.fecha_caducidad | fecha]]</td>
                                         <td>
                                             <span class="fv-row">
-                                                <input type="number" v-model="producto.cantidad" class="form-control" placeholder="Cantidad" :name="`p_cantidad_${producto.producto_pendiente_id}`">
+                                                <input class="form-control" type="number" v-model="producto.cantidad" placeholder="Cantidad" :name="`p_cantidad_${producto.producto_pendiente_id}`">
                                             </span>
                                         </td>
                                         <td>
-                                            <button type="button" class="btn btn-icon btn-light-danger btn-sm" :disabled="loading" @click="deleteProductoTraspasoPendiente(producto.producto_pendiente_id)" :data-kt-indicator="producto.eliminando ? 'on' : 'off'">
+                                            <button class="btn btn-icon btn-light-danger btn-sm" type="button" :disabled="loading" @click="deleteProductoTraspasoPendiente(producto.producto_pendiente_id)" :data-kt-indicator="producto.eliminando ? 'on' : 'off'">
                                                 <span class="indicator-label"><i class="fas fa-trash-alt"></i></i></span>
                                                 <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
                                             </button>
@@ -355,36 +343,25 @@
                             <div class="fv-row mb-7" id="select_tipo_traspaso">
                                 <label class="form-label required">Tipo de traspaso</label>
                                 <v-select
-                                    v-model="confirmar_traspaso.tipo"
-                                    name="tipo_traspaso"
-                                    :options="tipo_traspasos"
-                                    data-allow-clear="false"
-                                    data-placeholder="Tipo de traspaso"
-                                    data-dropdown-parent="#select_tipo_traspaso"
-                                    data-minimum-results-for-search ="Infinity">
+                                    name="tipo_traspaso" data-allow-clear="false" data-placeholder="Tipo de traspaso" data-dropdown-parent="#select_tipo_traspaso" data-minimum-results-for-search ="Infinity" v-model="confirmar_traspaso.tipo" :options="tipo_traspasos">
                                 </v-select>
                             </div>
 
                             <div class="fv-row mb-7" id="select_asignar">
                                 <label class="form-label required">Asignar a</label>
                                 <v-select
-                                    v-model="confirmar_traspaso.asignado_a"
-                                    name="asignado_a"
-                                    :options="listaEmpleados"
-                                    data-allow-clear="false"
-                                    data-dropdown-parent="#select_asignar"
-                                    data-placeholder="Chofer asignado">
+                                    name="asignado_a" data-allow-clear="false" data-dropdown-parent="#select_asignar" data-placeholder="Chofer asignado" v-model="confirmar_traspaso.asignado_a" :options="listaEmpleados">
                                 </v-select>
                             </div>
 
                             <div class="fv-row mb-7">
                                 <label class="form-label">Comentarios</label>
-                                <textarea name="comentarios" rows="5" class="form-control" v-model="confirmar_traspaso.comentarios" style="resize: none"></textarea>
+                                <textarea class="form-control" name="comentarios" style="resize: none" rows="5" v-model="confirmar_traspaso.comentarios"></textarea>
                             </div>
                         </form>
                     </div>
                     <div class="modal-footer" v-if="confirmar_traspaso">
-                        <button type="button" class="btn btn-primary" @click="confirmarTraspaso" :disabled="loading" :data-kt-indicator="loading ? 'on' : 'off'">
+                        <button class="btn btn-primary" type="button" @click="confirmarTraspaso" :disabled="loading" :data-kt-indicator="loading ? 'on' : 'off'">
                             <span class="indicator-label">Guardar</span>
                             <span class="indicator-progress">Guardando <span class="spinner-border spinner-border-sm align-middle"></span></span>
                         </button>
@@ -393,7 +370,6 @@
             </div>
         </div>
         <!--end::Modal - Add traspaso-->
-
     </div>
 @endsection
 
@@ -413,17 +389,25 @@
                 colecciones: [],
                 traspasos_pendientes: [],
                 empleados: [],
-                tipo_traspasos: [
-                    {id: 1, text: 'A otra Sucursal'},
-                    {id: 2, text: 'Para cliente'},
-                    {id: 3, text: 'Merma'},
+                tipo_traspasos: [{
+                        id: 1,
+                        text: 'A otra Sucursal'
+                    },
+                    {
+                        id: 2,
+                        text: 'Para cliente'
+                    },
+                    {
+                        id: 3,
+                        text: 'Merma'
+                    },
                 ],
                 // categorias: [],
                 // subcategorias_existencias: [],
                 // subcategorias_general: [],
                 // subcategorias_pocaexistencias: [],
-                columns: ['sku','nombre','cantidad_existente','fecha_caducidad','acciones'],
-                columnsPocaExistencia: ['sku','nombre','cantidad_existente'],
+                columns: ['sku', 'nombre', 'cantidad_existente', 'fecha_caducidad', 'acciones'],
+                columnsPocaExistencia: ['sku', 'nombre', 'cantidad_existente'],
                 options: {
                     headings: {
                         sku: 'SKU',
@@ -433,13 +417,13 @@
                         acciones: 'Acciones',
                     },
                     columnsClasses: {
-                        sku: 'align-middle text-center ',
+                        sku: 'align-middle text-center px-3 ',
                         nombre: 'align-middle ',
                         cantidad_existente: 'align-middle text-center ',
                         fecha_caducidad: 'align-middle text-center ',
-                        acciones: 'align-middle text-center px-2 ',
+                        acciones: 'align-middle text-center px-3 ',
                     },
-                    sortable: ['sku', 'fecha_caducidad','cantidad_existente','nombre'],
+                    sortable: ['sku', 'fecha_caducidad', 'cantidad_existente', 'nombre'],
                     filterable: ['nombre', 'sku'],
                     skin: 'table table-sm table-rounded table-striped border align-middle table-row-bordered fs-6',
                     columnsDropdown: true,
@@ -472,24 +456,24 @@
                         },
                     },
                     customSorting: {
-                        nombre: function (ascending) {
-                            return function (a, b) {
+                        nombre: function(ascending) {
+                            return function(a, b) {
                                 let nameA = a.producto?.nombre?.toLowerCase();
                                 let nameB = b.producto?.nombre?.toLowerCase();
 
-                                return ascending
-                                    ? nameA > nameB ? 1 : nameA == nameB ? 0 : -1
-                                    : nameA < nameB ? 1 : nameA == nameB ? 0 : -1;
+                                return ascending ?
+                                    nameA > nameB ? 1 : nameA == nameB ? 0 : -1 :
+                                    nameA < nameB ? 1 : nameA == nameB ? 0 : -1;
                             }
                         },
-                        sku: function (ascending) {
-                            return function (a, b) {
+                        sku: function(ascending) {
+                            return function(a, b) {
                                 let nameA = a.producto?.sku?.toLowerCase();
                                 let nameB = b.producto?.sku?.toLowerCase();
 
-                                return ascending
-                                    ? nameA > nameB ? 1 : nameA == nameB ? 0 : -1
-                                    : nameA < nameB ? 1 : nameA == nameB ? 0 : -1;
+                                return ascending ?
+                                    nameA > nameB ? 1 : nameA == nameB ? 0 : -1 :
+                                    nameA < nameB ? 1 : nameA == nameB ? 0 : -1;
                             }
                         },
                     },
@@ -549,16 +533,16 @@
                 let picker1 = $("#datepicker_input1").flatpickr({
                     dateFormat: "d/m/Y"
                 });
-                $( "#datepicker_clear1" ).on( "click", function() {
+                $("#datepicker_clear1").on("click", function() {
                     picker1.clear();
-                } );
+                });
 
                 let picker2 = $("#datepicker_input2").flatpickr({
                     dateFormat: "d/m/Y"
                 });
-                $( "#datepicker_clear2" ).on( "click", function() {
+                $("#datepicker_clear2").on("click", function() {
                     picker2.clear();
-                } );
+                });
 
                 $("#kt_modal_ver_traspaso").on('hidden.bs.modal', event => {
                     vm.confirmar_traspaso = null;
@@ -574,11 +558,11 @@
             methods: {
                 initFormValidate() {
                     let vm = this;
-                    if(vm.validator) {
+                    if (vm.validator) {
                         vm.validator.destroy();
                         vm.validator = null;
                     }
-                    
+
                     vm.validator = FormValidation.formValidation(
                         document.getElementById('kt_modal_add_traspaso_form'), {
                             fields: {
@@ -593,24 +577,27 @@
                                 'cantidad': {
                                     validators: {
                                         callback: {
-                                            callback: function (input) {
-                                                if(!input.value || input.value == '' || input.value == 0){
+                                            callback: function(input) {
+                                                if (!input.value || input.value == '' || input.value == 0) {
                                                     return {
                                                         valid: false,
                                                         message: 'Cantidad invalida'
                                                     };
                                                 }
 
-                                                if(input.value > vm.traspaso_model.cantidad_existente){
+                                                if (input.value > vm.traspaso_model.cantidad_existente) {
                                                     return {
                                                         valid: false,
                                                         message: 'No hay inventario suficiente'
                                                     };
                                                 }
-                                                return { valid: true, message: '' };
+                                                return {
+                                                    valid: true,
+                                                    message: ''
+                                                };
                                             },
                                         },
-                                        
+
                                     }
                                 }
                             },
@@ -677,19 +664,19 @@
                     $.ajax({
                         url: '/api/inventarios/existencia-general',
                         type: 'GET',
-                    }).done(function (res) {
+                    }).done(function(res) {
                         vm.inventario_general = res.results;
-                    }).fail(function (jqXHR, textStatus) {
+                    }).fail(function(jqXHR, textStatus) {
                         if (textStatus != 'abort') {
                             console.log("Request failed getInventarioGeneral: " + textStatus, jqXHR);
                         }
-                    }).always(function () {
+                    }).always(function() {
                         if (vm.blockUIGeneral && vm.blockUIGeneral.isBlocked()) {
                             vm.blockUIGeneral.release();
                         }
                     });
                 },
-                getInventarioSucursal(showLoader, idSucursal){
+                getInventarioSucursal(showLoader, idSucursal) {
                     let vm = this;
                     if (showLoader) {
                         if (!vm.blockUISucursal) {
@@ -705,7 +692,7 @@
                         }
                     }
 
-                    if(idSucursal){
+                    if (idSucursal) {
                         vm.filterSucursalExistencias = idSucursal;
                     }
 
@@ -717,35 +704,35 @@
                         data: {
                             sucursal_id: idSucursal ?? vm.filterSucursalExistencias
                         }
-                    }).done(function (res) {
+                    }).done(function(res) {
                         vm.inventario = res.results
-                        .flatMap(item => item.inventario
-                            .map(i => Object.assign(i, {
-                                producto: {
-                                    id: item.id,
-                                    nombre: item.nombre,
-                                    sku: item.sku,
-                                    estatus: item.estatus,
-                                    caracteristicas: item.caracteristicas,
-                                    extras: item.extras,
-                                    categoria: item.categoria,
-                                    subcategoria: item.subcategoria,
-                                    subcategoria: item.subcategoria,
-                                    colecciones: item.colecciones,
-                                },
-                            }))
-                        );
-                    }).fail(function (jqXHR, textStatus) {
+                            .flatMap(item => item.inventario
+                                .map(i => Object.assign(i, {
+                                    producto: {
+                                        id: item.id,
+                                        nombre: item.nombre,
+                                        sku: item.sku,
+                                        estatus: item.estatus,
+                                        caracteristicas: item.caracteristicas,
+                                        extras: item.extras,
+                                        categoria: item.categoria,
+                                        subcategoria: item.subcategoria,
+                                        subcategoria: item.subcategoria,
+                                        colecciones: item.colecciones,
+                                    },
+                                }))
+                            );
+                    }).fail(function(jqXHR, textStatus) {
                         if (textStatus != 'abort') {
                             console.log("Request failed getInventarioSucursal: " + textStatus, jqXHR);
                         }
-                    }).always(function () {
+                    }).always(function() {
                         if (vm.blockUISucursal && vm.blockUISucursal.isBlocked()) {
                             vm.blockUISucursal.release();
                         }
                     });
                 },
-                getPocaExistenciaSucursal(showLoader, idSucursal){
+                getPocaExistenciaSucursal(showLoader, idSucursal) {
                     let vm = this;
                     if (showLoader) {
                         if (!vm.blockUIPocaExistencia) {
@@ -761,7 +748,7 @@
                         }
                     }
 
-                    if(idSucursal){
+                    if (idSucursal) {
                         vm.filterSucursalPocaExistencias = idSucursal;
                     }
                     $.ajax({
@@ -771,30 +758,30 @@
                             sucursal_id: idSucursal ?? vm.filterSucursalPocaExistencias,
                             existencia_minima: vm.filterCantidadMinima,
                         }
-                    }).done(function (res) {
+                    }).done(function(res) {
                         vm.inventario_pocaexistencia = res.results;
-                    }).fail(function (jqXHR, textStatus) {
+                    }).fail(function(jqXHR, textStatus) {
                         if (textStatus != 'abort') {
                             console.log("Request failed getPocaExistenciaSucursal: " + textStatus, jqXHR);
                         }
-                    }).always(function () {
+                    }).always(function() {
                         if (vm.blockUIPocaExistencia && vm.blockUIPocaExistencia.isBlocked()) {
                             vm.blockUIPocaExistencia.release();
                         }
                     });
                 },
-                getTraspasosPendientesSucursal(idSucursal){
+                getTraspasosPendientesSucursal(idSucursal) {
                     let vm = this;
                     $.ajax({
                         url: `/api/traspasos/sucursal/pendientes/${idSucursal}`,
                         type: 'GET',
-                    }).done(function (res) {
+                    }).done(function(res) {
                         vm.traspasos_pendientes = res.results;
-                    }).fail(function (jqXHR, textStatus) {
+                    }).fail(function(jqXHR, textStatus) {
                         if (textStatus != 'abort') {
                             console.log("Request failed getTraspasosPendientesSucursal: " + textStatus, jqXHR);
                         }
-                    }).always(function () {
+                    }).always(function() {
 
                     });
                 },
@@ -927,7 +914,7 @@
                         if (result.isConfirmed) {
                             vm.loading = true;
                             let index = vm.inventario.findIndex(item => item.id == idInventario);
-                            if(index >= 0){
+                            if (index >= 0) {
                                 vm.$set(vm.inventario[index], 'eliminando', true);
                             }
                             $.ajax({
@@ -950,7 +937,7 @@
                                 Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
 
                                 index = vm.inventario.findIndex(item => item.id == idInventario);
-                                if(index >= 0){
+                                if (index >= 0) {
                                     vm.$set(vm.inventario[index], 'eliminando', false);
                                 }
                             }).always(function(event, xhr, settings) {
@@ -973,7 +960,7 @@
                         if (result.isConfirmed) {
                             vm.loading = true;
                             let index = vm.confirmar_traspaso.productos.findIndex(item => item.producto_pendiente_id == idProducto);
-                            if(index >= 0){
+                            if (index >= 0) {
                                 vm.$set(vm.confirmar_traspaso.productos[index], 'eliminando', true);
                             }
                             $.ajax({
@@ -987,7 +974,7 @@
                                 );
 
                                 index = vm.confirmar_traspaso.productos.findIndex(item => item.producto_pendiente_id == idProducto);
-                                if(index >= 0){
+                                if (index >= 0) {
                                     vm.$delete(vm.confirmar_traspaso.productos, index);
                                 }
                             }).fail(function(jqXHR, textStatus) {
@@ -995,7 +982,7 @@
                                 Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
 
                                 index = vm.confirmar_traspaso.productos.findIndex(item => item.producto_pendiente_id == idInventario);
-                                if(index >= 0){
+                                if (index >= 0) {
                                     vm.$set(vm.confirmar_traspaso.productos[index], 'eliminando', false);
                                 }
                             }).always(function(event, xhr, settings) {
@@ -1004,7 +991,7 @@
                         }
                     })
                 },
-                modalTraspaso(item){
+                modalTraspaso(item) {
                     this.traspaso_model = {
                         producto_id: item.producto_id,
                         fecha_caducidad: item.fecha_caducidad,
@@ -1012,7 +999,7 @@
                         cantidad_existente: item.cantidad_existente,
                     };
                 },
-                showTraspaso(traspaso){
+                showTraspaso(traspaso) {
                     this.confirmar_traspaso = {
                         asignado_a: "8080",
                         sucursal_origen_id: this.traspasos_pendientes.sucursal_origen_id,
@@ -1037,7 +1024,7 @@
                         }),
                     };
                 },
-                printTableExistencias(){
+                printTableExistencias() {
                     let vm = this;
                     let sucursal = vm.sucursales.find(item => item.id == vm.filterSucursalExistencias);
                     let tableref = vm.$refs.existencias;
@@ -1111,9 +1098,9 @@
                     WinPrint.document.close();
                     WinPrint.focus();
                     WinPrint.print();
-                    WinPrint.close();                    
+                    WinPrint.close();
                 },
-                printTableGeneral(){
+                printTableGeneral() {
                     let vm = this;
                     let sucursal = vm.sucursales.find(item => item.id == vm.filterSucursalExistencias);
                     let tableref = vm.$refs.general;
@@ -1131,7 +1118,7 @@
                             visible: visible
                         };
                     });
-                    
+
                     var content = '<div style="font-family: Inter, Helvetica, sans-serif;">';
                     content += '<div style="padding: 0 35px;"><h3 text-align: center;">Existencias Generales</h3></div>';
                     content += '<div style="padding-bottom: 16px;padding-top: 16px;padding-right: 8px;padding-left: 8px;">';
@@ -1151,7 +1138,7 @@
                         content += '<tr>';
                         cols.forEach(col => {
                             if (col.visible) {
-                                if(isNaN(parseInt(col.id))) {
+                                if (isNaN(parseInt(col.id))) {
                                     content += `<td style="padding: 8px 8px;text-align: center;vertical-align: middle;border-bottom: 1px solid #8b8b8b;">${item[col.id] ?? ''}</td>`;
                                 } else {
                                     let sid = parseInt(col.id);
@@ -1174,7 +1161,7 @@
                     WinPrint.print();
                     WinPrint.close();
                 },
-                printTablePocasExistencias(){
+                printTablePocasExistencias() {
                     let vm = this;
                     let sucursal = vm.sucursales.find(item => item.id == vm.filterSucursalPocaExistencias);
                     let tableref = vm.$refs.pocaExistencia;
@@ -1192,7 +1179,7 @@
                             visible: visible
                         };
                     });
-                    
+
                     var content = '<div style="font-family: Inter, Helvetica, sans-serif;">';
                     content += '<div style="padding: 0 35px;">';
                     content += '<h3 style="margin-bottom: 0;text-align: center;">Pocas Existencias por Sucursal</h3>';
@@ -1251,51 +1238,54 @@
                 },
             },
             computed: {
-                listaSucursales(){
-                    return this.sucursales.map(item => ({id: item.id, text: item.nombre}));
+                listaSucursales() {
+                    return this.sucursales.map(item => ({
+                        id: item.id,
+                        text: item.nombre
+                    }));
                 },
-                listaInventario(){
+                listaInventario() {
                     let vm = this;
                     let list = vm.inventario;
-                    if(vm.filterFechaExistencias){
+                    if (vm.filterFechaExistencias) {
                         list = list.filter(item => moment(item.fecha_caducidad).format('DD/MM/Y') == vm.filterFechaExistencias);
                     }
-                    if(vm.filterColeccionExistencias){
-                        list = list.filter( item => item.producto?.colecciones.some(col => col.id == vm.filterColeccionExistencias));
+                    if (vm.filterColeccionExistencias) {
+                        list = list.filter(item => item.producto?.colecciones.some(col => col.id == vm.filterColeccionExistencias));
                     }
-                    if(vm.showProductosTiendaExistencias){
-                        list = list.filter(function (item) { 
+                    if (vm.showProductosTiendaExistencias) {
+                        list = list.filter(function(item) {
                             let tags = item.producto?.extras?.find(el => el.slug == "tags");
                             return tags && tags?.valor.includes("TIENDA");
                         });
                     }
                     return list;
                 },
-                listaGeneral(){
+                listaGeneral() {
                     let vm = this;
                     let list = vm.inventario_general;
-                    if(vm.filterColeccionGeneral){
+                    if (vm.filterColeccionGeneral) {
                         list = list.filter(item => item.colecciones.some(col => col.id == vm.filterColeccionGeneral));
                     }
-                    if(vm.showProductosTiendaGeneral){
-                        list = list.filter(function (item) { 
+                    if (vm.showProductosTiendaGeneral) {
+                        list = list.filter(function(item) {
                             let tags = item.extras?.find(el => el.slug == "tags");
                             return tags && tags?.valor.includes("TIENDA");
                         });
                     }
                     return list;
                 },
-                listaPocaExistencia(){
+                listaPocaExistencia() {
                     let vm = this;
                     let list = vm.inventario_pocaexistencia;
-                    if(vm.filterFechaPocaExistencias){
+                    if (vm.filterFechaPocaExistencias) {
                         list = list.filter(item => moment(item.fecha_caducidad).format('DD/MM/Y') == vm.filterFechaPocaExistencias);
                     }
-                    if(vm.filterColeccionPocaExistencias){
+                    if (vm.filterColeccionPocaExistencias) {
                         list = list.filter(item => item.producto?.colecciones.some(col => col.id == vm.filterColeccionPocaExistencias));
                     }
-                    if(vm.showProductosTiendaPocaExistencias){
-                        list = list.filter(function (item) { 
+                    if (vm.showProductosTiendaPocaExistencias) {
+                        list = list.filter(function(item) {
                             let tags = item.producto?.extras?.find(el => el.slug == "tags");
                             return tags && tags?.valor.includes("TIENDA");
                         });
@@ -1303,26 +1293,32 @@
                     return list;
                 },
                 listaColecciones() {
-                    return this.colecciones.map(item => ({ id: item.id, text: item.nombre })).sort( (a, b) => a.text < b.text ? -1 : (a.text > b.text) ? 1 : 0);
+                    return this.colecciones.map(item => ({
+                        id: item.id,
+                        text: item.nombre
+                    })).sort((a, b) => a.text < b.text ? -1 : (a.text > b.text) ? 1 : 0);
                 },
-                listaEmpleados(){
-                    return this.empleados.map(item => ({id: item.no_empleado, text: item.nombre_completo}));
+                listaEmpleados() {
+                    return this.empleados.map(item => ({
+                        id: item.no_empleado,
+                        text: item.nombre_completo
+                    }));
                 },
-                columnsGlobal(){
-                    let columns = ['sku','nombre','total_existencia'];
+                columnsGlobal() {
+                    let columns = ['sku', 'nombre', 'total_existencia'];
                     this.sucursales.forEach(item => {
                         columns.push(`${item.id}`)
                     });
                     return columns;
                 },
-                optionsGlobal(){
+                optionsGlobal() {
                     let headings = {
                         sku: 'SKU',
                         nombre: 'Producto',
                         total_existencia: 'Total de existencias',
                     };
                     let columnsClasses = {
-                        sku: 'align-middle text-center ',
+                        sku: 'align-middle text-center px-3 ',
                         nombre: 'align-middle text-center ',
                         total_existencia: 'align-middle text-center ',
                     };
@@ -1330,10 +1326,10 @@
 
                     this.sucursales.forEach(item => {
                         headings[`${item.id}`] = item.nombre;
-                        columnsClasses[`${item.id}`] = 'align-middle text-center ';
+                        columnsClasses[`${item.id}`] = 'align-middle text-center px-2 ';
                         columns.push(`${item.id}`);
                     });
-                    
+
                     return {
                         sortIcon: {
                             base: 'ms-3 fas',
@@ -1367,55 +1363,55 @@
                 },
             },
             watch: {
-                confirmar_traspaso(n,o){
+                confirmar_traspaso(n, o) {
                     let vm = this;
-                    if(n){
+                    if (n) {
                         vm.$nextTick(() => {
-                            if(vm.validatorConfirm) {
+                            if (vm.validatorConfirm) {
                                 vm.validatorConfirm.destroy();
                                 vm.validatorConfirm = null;
                             }
-                            
+
                             vm.validatorConfirm = FormValidation.formValidation(
                                 document.getElementById('kt_modal_ver_traspaso_form'), {
-                                fields: {
-                                    'tipo_traspaso': {
-                                        validators: {
-                                            notEmpty: {
-                                                message: 'El tipo de traspaso es requerido',
-                                                trim: true
+                                    fields: {
+                                        'tipo_traspaso': {
+                                            validators: {
+                                                notEmpty: {
+                                                    message: 'El tipo de traspaso es requerido',
+                                                    trim: true
+                                                }
                                             }
-                                        }
-                                    },
-                                    'asignado_a': {
-                                        validators: {
-                                            notEmpty: {
-                                                message: 'El chofer es requerido',
-                                                trim: true
+                                        },
+                                        'asignado_a': {
+                                            validators: {
+                                                notEmpty: {
+                                                    message: 'El chofer es requerido',
+                                                    trim: true
+                                                }
                                             }
-                                        }
+                                        },
                                     },
-                                },
 
-                                plugins: {
-                                    trigger: new FormValidation.plugins.Trigger(),
-                                    bootstrap: new FormValidation.plugins.Bootstrap5({
-                                        rowSelector: '.fv-row',
-                                        eleInvalidClass: '',
-                                        eleValidClass: ''
-                                    })
-                                }
-                            });
+                                    plugins: {
+                                        trigger: new FormValidation.plugins.Trigger(),
+                                        bootstrap: new FormValidation.plugins.Bootstrap5({
+                                            rowSelector: '.fv-row',
+                                            eleInvalidClass: '',
+                                            eleValidClass: ''
+                                        })
+                                    }
+                                });
                         });
                     } else {
-                        if(vm.validatorConfirm){
+                        if (vm.validatorConfirm) {
                             vm.validatorConfirm.resetForm();
                         }
                     }
                 }
             },
             filters: {
-                fecha: function (value, usrFormat) {
+                fecha: function(value, usrFormat) {
                     if (!value) return '---';
                     format = !usrFormat ? 'DD/MM/Y' : usrFormat;
                     value = value.toString();

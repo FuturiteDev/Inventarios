@@ -1,45 +1,70 @@
 @extends('erp.base')
 
 @section('content')
-    <div id="app">
-        <!--begin::Content-->
-        <div id="kt_app_content" class="app-content">
-            <div class="card card-flush" id="content-card">
-                <div class="card-header align-items-center py-5 gap-2 gap-md-5">
-                    <div class="card-title flex-column">
-                        <h3 class="ps-2">Inventario Reportado</h3>
-                    </div>
-                    <div class="card-toolbar gap-2">
-                        <div class="min-w-200px">
-                            <div class="input-group">
-                                <input class="form-control form-control-sm" id="frmPeriodo" placeholder="Periodo" />
-                                <span class="input-group-text"><i class="fas fa-calendar fs-4"></i></span>
-                            </div>
-                        </div>
-                        <button type="button" class="btn btn-icon btn-primary" @click="getAuditorias(true)">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                        </button>
-                    </div>
+    <div class="d-flex flex-column flex-column-fluid" id="app">
+        <div class="app-toolbar py-3 py-lg-6" id="kt_app_toolbar">
+            <!--begin::Toolbar container-->
+            <div class="app-container d-flex flex-stack" id="kt_app_toolbar_container">
+                <div class="page-title d-flex flex-column justify-content-center flex-wrap me-3">
+                    <!--begin::Title-->
+                    <h1 class="page-heading d-flex text-dark fw-bold fs-3 flex-column justify-content-center my-0">Inventario reportado</h1>
+                    <!--end::Title-->
+                    <!--begin::Breadcrumb-->
+                    <ul class="breadcrumb breadcrumb-line text-muted fw-semibold fs-7 my-0 pt-1">
+                        <li class="breadcrumb-item">
+                            <a class="text-muted text-hover-primary" href="{{ route('home') }}">Inicio</a>
+                        </li>
+                        <li class="breadcrumb-item text-muted">Control Interno</li>
+                        <li class="breadcrumb-item text-muted">Gestión de inventario</li>
+                        <li class="breadcrumb-item text-muted">Inventario reportado</li>
+                    </ul>
+                    <!--end::Breadcrumb-->
                 </div>
+            </div>
+            <!--end::Toolbar container-->
+        </div>
 
-                <div class="card-body py-4">
-                    <v-client-table v-model="auditorias" :columns="columns" :options="options">
-                        <div slot="id" slot-scope="props">[[props.row.id]]</div>
-                        <div slot="sucursal" slot-scope="props">[[props.row.sucursal?.nombre]]</div>
-                        <div slot="empleado" slot-scope="props">[[props.row.empleado?.nombre_completo]]</div>
-                        <div slot="updated_at" slot-scope="props">[[props.row.updated_at | fecha]]</div>
-                        <div slot="acciones" slot-scope="props">
-                            <button type="button" class="btn btn-icon btn-sm btn-primary" title="Ver detalle" data-bs-toggle="modal" data-bs-target="#kt_modal_show" @click="getDetalleAuditoria(props.row.id)">
-                                <i class="fas fa-eye"></i>
+        <!--begin::Content-->
+        <div class="app-content flex-column-fluid" id="kt_app_content">
+            <div class="app-container" id="kt_app_content_container">
+                <div class="card card-flush" id="content-card">
+                    <div class="card-header align-items-center py-5 gap-2 gap-md-5">
+                        <div class="card-title flex-column">
+                            <h3 class="ps-2">Inventario Reportado</h3>
+                        </div>
+                        <div class="card-toolbar gap-2">
+                            <div class="min-w-200px">
+                                <div class="input-group">
+                                    <input class="form-control form-control-sm" id="frmPeriodo" placeholder="Periodo" />
+                                    <span class="input-group-text"><i class="fas fa-calendar fs-4"></i></span>
+                                </div>
+                            </div>
+                            <button class="btn btn-icon btn-primary" type="button" @click="getAuditorias(true)">
+                                <i class="fa-solid fa-magnifying-glass"></i>
                             </button>
                         </div>
-                    </v-client-table>
+                    </div>
+
+                    <div class="card-body py-4">
+                        <v-client-table v-model="auditorias" :columns="columns" :options="options">
+                            <div slot="id" slot-scope="props">[[props.row.id]]</div>
+                            <div slot="sucursal" slot-scope="props">[[props.row.sucursal?.nombre]]</div>
+                            <div slot="empleado" slot-scope="props">[[props.row.empleado?.nombre_completo]]</div>
+                            <div slot="updated_at" slot-scope="props">[[props.row.updated_at | fecha]]</div>
+                            <div slot="acciones" slot-scope="props">
+                                <button class="btn btn-icon btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_show" type="button" title="Ver detalle" @click="getDetalleAuditoria(props.row.id)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </v-client-table>
+                    </div>
                 </div>
             </div>
         </div>
+        <!--end::Content-->
 
         <!--begin::Modal - Add traspaso-->
-        <div class="modal fade" id="kt_modal_show" tabindex="-1" aria-hidden="true">
+        <div class="modal fade" id="kt_modal_show" aria-hidden="true" tabindex="-1">
             <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
                 <div class="modal-content" id="modal_show_content">
                     <div class="modal-header">
@@ -64,7 +89,7 @@
                                 <label class="fs-7 fw-bold">Fecha de confirmación</label>
                                 <div>[[auditoria_model.updated_at | fecha]]</div>
                             </div>
-                            
+
                         </div>
                         <div class="mb-8">
                             <v-client-table v-model="auditoria_model.revision_productos" :columns="columns_productos" :options="options_productos">
@@ -73,7 +98,7 @@
                                 <div slot="existencia_actual" slot-scope="props">[[props.row.existencia_actual]]</div>
                                 <div slot="existencia_real" slot-scope="props">[[props.row.existencia_real]]</div>
                                 <div slot="imagen" slot-scope="props">
-                                    <img :src="props.row.imagen" class="mw-100 mh-250px"/>
+                                    <img class="mw-100 mh-250px" :src="props.row.imagen" />
                                 </div>
                             </v-client-table>
                         </div>
@@ -82,7 +107,6 @@
             </div>
         </div>
         <!--end::Modal - Add traspaso-->
-
     </div>
 @endsection
 
@@ -100,12 +124,20 @@
                 sucursales: [],
                 colecciones: [],
                 empleados: [],
-                tipo_traspasos: [
-                    {id: 1, text: 'A otra Sucursal'},
-                    {id: 2, text: 'Para cliente'},
-                    {id: 3, text: 'Merma'},
+                tipo_traspasos: [{
+                        id: 1,
+                        text: 'A otra Sucursal'
+                    },
+                    {
+                        id: 2,
+                        text: 'Para cliente'
+                    },
+                    {
+                        id: 3,
+                        text: 'Merma'
+                    },
                 ],
-                columns: ['id','sucursal','empleado','updated_at','acciones'],
+                columns: ['id', 'sucursal', 'empleado', 'updated_at', 'acciones'],
                 options: {
                     headings: {
                         id: 'ID',
@@ -121,7 +153,7 @@
                         updated_at: 'align-middle text-center ',
                         acciones: 'align-middle text-center px-2 ',
                     },
-                    sortable: ['id', 'sucursal','empleado','updated_at'],
+                    sortable: ['id', 'sucursal', 'empleado', 'updated_at'],
                     orderBy: {
                         column: 'updated_at',
                         ascending: false
@@ -243,7 +275,7 @@
                 initDaterangepicker() {
                     var vm = this;
                     var input = $("#frmPeriodo");
-                    
+
                     input.daterangepicker({
                         autoUpdateInput: false,
                         locale: {
@@ -259,17 +291,17 @@
                             "Mes anterior": [moment().subtract(1, "month").startOf("month"), moment().subtract(1, "month").endOf("month")]
                         }
                     });
-                    
-                    input.on('apply.daterangepicker', function (ev, picker) {
+
+                    input.on('apply.daterangepicker', function(ev, picker) {
                         input.val(picker.startDate.format('DD/MM/YYYY') + ' - ' + picker.endDate.format('DD/MM/YYYY'));
-                        
+
                         let startDate = picker.startDate.clone();
                         let endDate = picker.endDate.clone();
-                        
+
                         vm.filterFechaInicio = startDate.startOf('day').format('YYYY-MM-DD HH:mm:ss');
                         vm.filterFechaFin = endDate.endOf('day').format('YYYY-MM-DD HH:mm:ss');
                     });
-                    input.on('cancel.daterangepicker', function (ev, picker) {
+                    input.on('cancel.daterangepicker', function(ev, picker) {
                         input.val('');
                         vm.filterFechaInicio = '';
                         vm.filterFechaFin = '';
@@ -279,7 +311,7 @@
                     let initialFin = moment().endOf('day');
                     input.val(initialInicio.format('DD/MM/YYYY') + ' - ' + initialFin.format('DD/MM/YYYY'));
                     vm.filterFechaInicio = initialInicio.format('YYYY-MM-DD HH:mm:ss');
-                    vm.filterFechaFin =initialFin.format('YYYY-MM-DD HH:mm:ss');
+                    vm.filterFechaFin = initialFin.format('YYYY-MM-DD HH:mm:ss');
 
                     vm.getAuditorias(true);
                 },
@@ -310,7 +342,7 @@
                         console.log("Request failed getEmpleados: " + textStatus, jqXHR);
                     });
                 },
-                getAuditorias(showLoader){
+                getAuditorias(showLoader) {
                     let vm = this;
                     if (showLoader) {
                         if (!vm.blockUI) {
@@ -333,19 +365,19 @@
                             fecha_inicio: vm.filterFechaInicio,
                             fecha_fin: vm.filterFechaFin,
                         }
-                    }).done(function (res) {
+                    }).done(function(res) {
                         vm.auditorias = res.message;
-                    }).fail(function (jqXHR, textStatus) {
+                    }).fail(function(jqXHR, textStatus) {
                         if (textStatus != 'abort') {
                             console.log("Request failed getAuditorias: " + textStatus, jqXHR);
                         }
-                    }).always(function () {
+                    }).always(function() {
                         if (vm.blockUI && vm.blockUI.isBlocked()) {
                             vm.blockUI.release();
                         }
                     });
                 },
-                getDetalleAuditoria(idAuditoria){
+                getDetalleAuditoria(idAuditoria) {
                     let vm = this;
                     if (!vm.blockUIModal) {
                         let container = document.querySelector('#modal_show_content');
@@ -362,13 +394,13 @@
                     $.ajax({
                         url: `/api/inventarios/revisiones-detalles/${idAuditoria}`,
                         type: 'GET',
-                    }).done(function (res) {
+                    }).done(function(res) {
                         vm.auditoria_model = res.message;
-                    }).fail(function (jqXHR, textStatus) {
+                    }).fail(function(jqXHR, textStatus) {
                         if (textStatus != 'abort') {
                             console.log("Request failed getDetalleAuditoria: " + textStatus, jqXHR);
                         }
-                    }).always(function () {
+                    }).always(function() {
                         if (vm.blockUIModal && vm.blockUIModal.isBlocked()) {
                             vm.blockUIModal.release();
                         }
@@ -376,20 +408,28 @@
                 },
             },
             computed: {
-                listaSucursales(){
-                    return this.sucursales.map(item => ({id: item.id, text: item.nombre}));
+                listaSucursales() {
+                    return this.sucursales.map(item => ({
+                        id: item.id,
+                        text: item.nombre
+                    }));
                 },
                 listaColecciones() {
-                    return this.colecciones.map(item => ({ id: item.id, text: item.nombre })).sort( (a, b) => a.text < b.text ? -1 : (a.text > b.text) ? 1 : 0);
+                    return this.colecciones.map(item => ({
+                        id: item.id,
+                        text: item.nombre
+                    })).sort((a, b) => a.text < b.text ? -1 : (a.text > b.text) ? 1 : 0);
                 },
-                listaEmpleados(){
-                    return this.empleados.map(item => ({id: item.no_empleado, text: item.nombre_completo}));
+                listaEmpleados() {
+                    return this.empleados.map(item => ({
+                        id: item.no_empleado,
+                        text: item.nombre_completo
+                    }));
                 },
             },
-            watch: {
-            },
+            watch: {},
             filters: {
-                fecha: function (value, usrFormat, ogFormat) {
+                fecha: function(value, usrFormat, ogFormat) {
                     if (!value) return "---";
                     format = !usrFormat ? "DD/MM/Y HH:mm:ss" : usrFormat;
                     value = value.toString();

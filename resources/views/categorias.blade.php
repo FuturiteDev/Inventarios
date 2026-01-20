@@ -1,102 +1,125 @@
 @extends('erp.base')
 
 @section('content')
-    <div id="app">
-        <!--begin::Content-->
-        <div id="kt_app_content" class="app-content">
-            <!--begin::Card-->
-            <div class="card card-flush" id="content-card">
-                <!--begin::Card header-->
-                <div class="card-header align-items-center py-5 gap-2 gap-md-5">
-                    <div class="card-title flex-column">
-                        <h3 class="ps-2">Listado de Categorias</h3>
-                    </div>
-                    <div class="card-toolbar">
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_add_categoria" @click="isEdit = false">
-                            <i class="ki-outline ki-plus fs-2"></i> Crear categoria
-                        </button>
-                    </div>
+    <div class="d-flex flex-column flex-column-fluid" id="app">
+        <div class="app-toolbar py-3 py-lg-6" id="kt_app_toolbar">
+            <!--begin::Toolbar container-->
+            <div class="app-container d-flex flex-stack" id="kt_app_toolbar_container">
+                <div class="page-title d-flex flex-column justify-content-center flex-wrap me-3">
+                    <!--begin::Title-->
+                    <h1 class="page-heading d-flex text-dark fw-bold fs-3 flex-column justify-content-center my-0">Categorías</h1>
+                    <!--end::Title-->
+                    <!--begin::Breadcrumb-->
+                    <ul class="breadcrumb breadcrumb-line text-muted fw-semibold fs-7 my-0 pt-1">
+                        <li class="breadcrumb-item">
+                            <a class="text-muted text-hover-primary" href="{{ route('home') }}">Inicio</a>
+                        </li>
+                        <li class="breadcrumb-item text-muted">Control Interno</li>
+                        <li class="breadcrumb-item text-muted">Configuración de inventario</li>
+                        <li class="breadcrumb-item text-muted">Categorías</li>
+                    </ul>
+                    <!--end::Breadcrumb-->
                 </div>
-                <!--end::Card toolbar-->
+            </div>
+            <!--end::Toolbar container-->
+        </div>
 
-                <!--begin::Card body-->
-                <div class="card-body py-4">
-                    <!--begin::Table-->
-                    <v-client-table v-model="categorias" :columns="columns" :options="options">
-                        <div slot="acciones" slot-scope="props">
-                            <button type="button" class="btn btn-icon btn-sm btn-success me-2" title="Ver/Editar Categoria" data-bs-toggle="modal" data-bs-target="#kt_modal_add_categoria" @click="selectCategoria(props.row)">
-                                <i class="fas fa-pencil"></i>
-                            </button>
-                            <button type="button" class="btn btn-icon btn-sm btn-danger me-2" title="Eliminar Categoria" :disabled="loading" @click="deleteCategoria(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
-                                <span class="indicator-label"><i class="fas fa-trash-alt"></i></span>
-                                <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
+        <!--begin::Content-->
+        <div class="app-content flex-column-fluid" id="kt_app_content">
+            <div class="app-container" id="kt_app_content_container">
+                <!--begin::Card-->
+                <div class="card card-flush" id="content-card">
+                    <!--begin::Card header-->
+                    <div class="card-header align-items-center py-5 gap-2 gap-md-5">
+                        <div class="card-title flex-column">
+                            <h3 class="ps-2">Listado de Categorias</h3>
+                        </div>
+                        <div class="card-toolbar">
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_add_categoria" type="button" @click="isEdit = false">
+                                <i class="ki-outline ki-plus fs-2"></i> Crear categoria
                             </button>
                         </div>
-                    </v-client-table>
-                    <!--end::Table-->
-                </div>
-                <!--end::Card body-->
-            </div>
-            <!--end::Card-->
-        </div>
-        <!--end::Content-->
-
-        <!--begin::Modal - Add task-->
-        <div class="modal fade" id="kt_modal_add_categoria" tabindex="-1" aria-hidden="true">
-            <!--begin::Modal dialog-->
-            <div class="modal-dialog modal-dialog-centered">
-                <!--begin::Modal content-->
-                <div class="modal-content">
-                    <!--begin::Modal header-->
-                    <div class="modal-header" id="kt_modal_add_user_header">
-                        <h2 class="fw-bold" v-text="isEdit ? 'Actualizar categoría' : 'Crear categoría'"></h2>
-
-                        <!--begin::Close-->
-                        <div class="btn btn-close" data-bs-dismiss="modal"></div>
-                        <!--end::Close-->
                     </div>
-                    <!--end::Modal header-->
-                    <!--begin::Modal body-->
-                    <div class="modal-body">
-                        <!--begin::Form-->
-                        <form id="kt_modal_add_categoria_form" class="form" action="#" @submit.prevent="">
-                            <div class="fv-row mb-7">
-                                <label class="required fw-semibold fs-6 ms-2">Imagen:</label>
-                                <input type="file" class="form-control" name="imagen" id="imagen" accept="image/png, image/jpeg" @input="onInput"/>
-                                <div class="text-center w-100">
-                                    <img id="preview_original" style="margin: 0 auto;" class="mw-100 mh-250px" :src="categoria_model.imagen_path"/>
-                                    <img id="preview" style="margin: 0 auto;" class="mw-100 mh-250px d-none"/>
+                    <!--end::Card toolbar-->
+
+                    <!--begin::Card body-->
+                    <div class="card-body py-4">
+                        <!--begin::Table-->
+                        <v-client-table v-model="categorias" :columns="columns" :options="options">
+                            <div slot="acciones" slot-scope="props">
+                                <button class="btn btn-icon btn-sm btn-success me-2" data-bs-toggle="modal" data-bs-target="#kt_modal_add_categoria" type="button" title="Ver/Editar Categoria" @click="selectCategoria(props.row)">
+                                    <i class="fas fa-pencil"></i>
+                                </button>
+                                <button class="btn btn-icon btn-sm btn-danger me-2" type="button" title="Eliminar Categoria" :disabled="loading" @click="deleteCategoria(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
+                                    <span class="indicator-label"><i class="fas fa-trash-alt"></i></span>
+                                    <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
+                                </button>
+                            </div>
+                        </v-client-table>
+                        <!--end::Table-->
+                    </div>
+                    <!--end::Card body-->
+                </div>
+                <!--end::Card-->
+            </div>
+            <!--end::Content-->
+
+            <!--begin::Modal - Add task-->
+            <div class="modal fade" id="kt_modal_add_categoria" aria-hidden="true" tabindex="-1">
+                <!--begin::Modal dialog-->
+                <div class="modal-dialog modal-dialog-centered">
+                    <!--begin::Modal content-->
+                    <div class="modal-content">
+                        <!--begin::Modal header-->
+                        <div class="modal-header" id="kt_modal_add_user_header">
+                            <h2 class="fw-bold" v-text="isEdit ? 'Actualizar categoría' : 'Crear categoría'"></h2>
+
+                            <!--begin::Close-->
+                            <div class="btn btn-close" data-bs-dismiss="modal"></div>
+                            <!--end::Close-->
+                        </div>
+                        <!--end::Modal header-->
+                        <!--begin::Modal body-->
+                        <div class="modal-body">
+                            <!--begin::Form-->
+                            <form class="form" id="kt_modal_add_categoria_form" action="#" @submit.prevent="">
+                                <div class="fv-row mb-7">
+                                    <label class="required fw-semibold fs-6 ms-2">Imagen:</label>
+                                    <input class="form-control" id="imagen" name="imagen" type="file" accept="image/png, image/jpeg" @input="onInput" />
+                                    <div class="text-center w-100">
+                                        <img class="mw-100 mh-250px" id="preview_original" style="margin: 0 auto;" :src="categoria_model.imagen_path" />
+                                        <img class="mw-100 mh-250px d-none" id="preview" style="margin: 0 auto;" />
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="fv-row mb-7">
-                                <label class="required fw-semibold fs-6 ms-2">Categoría</label>
-                                <input type="text" required class="form-control" placeholder="Categoría" v-model="categoria_model.nombre" name="nombre">
-                            </div>
-                            <div class="fv-row mb-7">
-                                <label class="required fw-semibold fs-6 ms-2">Descripcion</label>
-                                <input type="text" required class="form-control" placeholder="Descripcion" v-model="categoria_model.descripcion" name="descripcion">
-                            </div>
-                        </form>
-                        <!--end::Form-->
+                                <div class="fv-row mb-7">
+                                    <label class="required fw-semibold fs-6 ms-2">Categoría</label>
+                                    <input class="form-control" name="nombre" type="text" required placeholder="Categoría" v-model="categoria_model.nombre">
+                                </div>
+                                <div class="fv-row mb-7">
+                                    <label class="required fw-semibold fs-6 ms-2">Descripcion</label>
+                                    <input class="form-control" name="descripcion" type="text" required placeholder="Descripcion" v-model="categoria_model.descripcion">
+                                </div>
+                            </form>
+                            <!--end::Form-->
+                        </div>
+                        <!--end::Modal body-->
+                        <div class="modal-footer">
+                            <button class="btn btn-primary" type="button" @click="updateCategoria" :disabled="loading" v-if="isEdit" :data-kt-indicator="loading ? 'on' : 'off'">
+                                <span class="indicator-label">Actualizar</span>
+                                <span class="indicator-progress">Actualizando <span class="spinner-border spinner-border-sm align-middle"></span></span>
+                            </button>
+                            <button class="btn btn-primary" type="button" @click="createCategoria" :disabled="loading" v-else :data-kt-indicator="loading ? 'on' : 'off'">
+                                <span class="indicator-label">Crear</span>
+                                <span class="indicator-progress">Creando <span class="spinner-border spinner-border-sm align-middle"></span></span>
+                            </button>
+                        </div>
                     </div>
-                    <!--end::Modal body-->
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" @click="updateCategoria" :disabled="loading" v-if="isEdit" :data-kt-indicator="loading ? 'on' : 'off'">
-                            <span class="indicator-label">Actualizar</span>
-                            <span class="indicator-progress">Actualizando <span class="spinner-border spinner-border-sm align-middle"></span></span>
-                        </button>
-                        <button type="button" class="btn btn-primary" @click="createCategoria" :disabled="loading" v-else :data-kt-indicator="loading ? 'on' : 'off'">
-                            <span class="indicator-label">Crear</span>
-                            <span class="indicator-progress">Creando <span class="spinner-border spinner-border-sm align-middle"></span></span>
-                        </button>
-                    </div>
+                    <!--end::Modal content-->
                 </div>
-                <!--end::Modal content-->
+                <!--end::Modal dialog-->
             </div>
-            <!--end::Modal dialog-->
+            <!--end::Modal - Add task-->
         </div>
-        <!--end::Modal - Add task-->
-
     </div>
 @endsection
 
@@ -108,7 +131,7 @@
             el: '#app',
             delimiters: ['[[', ']]'],
             data: () => ({
-                categorias:[],
+                categorias: [],
                 columns: ['id', 'nombre', 'descripcion', 'acciones'],
                 options: {
                     headings: {
@@ -118,10 +141,10 @@
                         acciones: 'Acciones',
                     },
                     columnsClasses: {
-                        id: 'align-middle px-2 ',
+                        id: 'align-middle px-3 ',
                         nombre: 'align-middle ',
                         descripcion: 'align-middle ',
-                        acciones: 'align-middle text-center px-2 ',
+                        acciones: 'align-middle text-center px-3 ',
                     },
                     sortable: ['nombre', 'descripcion'],
                     filterable: ['nombre', 'descripcion'],
@@ -204,13 +227,13 @@
                     vm.requestGet = $.ajax({
                         url: '/api/categorias/all',
                         type: 'GET',
-                    }).done(function (res) {
+                    }).done(function(res) {
                         vm.categorias = res.results;
-                    }).fail(function (jqXHR, textStatus) {
+                    }).fail(function(jqXHR, textStatus) {
                         if (textStatus != 'abort') {
                             console.log("Request failed getCategorias: " + textStatus, jqXHR);
                         }
-                    }).always(function () {
+                    }).always(function() {
                         vm.loading = false;
 
                         if (vm.blockUI && vm.blockUI.isBlocked()) {
@@ -226,7 +249,7 @@
                                 vm.loading = true;
                                 let form = document.querySelector("#kt_modal_add_categoria_form");
                                 let data = new FormData(form);
-                                if($('#imagen').val().trim() == ""){
+                                if ($('#imagen').val().trim() == "") {
                                     data.delete("imagen");
                                 }
 
@@ -274,7 +297,7 @@
                                 vm.loading = true;
                                 let form = document.querySelector("#kt_modal_add_categoria_form");
                                 let data = new FormData(form);
-                                if($('#imagen').val().trim() == ""){
+                                if ($('#imagen').val().trim() == "") {
                                     data.delete("imagen");
                                 }
 
@@ -320,7 +343,7 @@
                         if (result.isConfirmed) {
                             vm.loading = true;
                             let index = vm.categorias.findIndex(item => item.id == idCategoria);
-                            if(index >= 0){
+                            if (index >= 0) {
                                 vm.$set(vm.categorias[index], 'eliminando', true);
                             }
                             $.ajax({
@@ -343,7 +366,7 @@
                                 Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
 
                                 index = vm.sucursales.findIndex(item => item.id == idCategoria);
-                                if(index >= 0){
+                                if (index >= 0) {
                                     vm.$set(vm.sucursales[index], 'eliminando', false);
                                 }
                             }).always(function(event, xhr, settings) {
@@ -393,10 +416,10 @@
                                             trim: true
                                         },
                                         file: {
-                                        extension: 'jpg,jpeg,png',
-                                        type: 'image/jpeg,image/png',
-                                        message: 'El archivo no es válido'
-                                    },
+                                            extension: 'jpg,jpeg,png',
+                                            type: 'image/jpeg,image/png',
+                                            message: 'El archivo no es válido'
+                                        },
                                     }
                                 },
                             },
@@ -427,7 +450,7 @@
                     $('#preview_original').removeClass("d-none");
                     $('#preview').addClass("d-none");
                 },
-                onInput(event){
+                onInput(event) {
                     $('#preview').attr('src', window.URL.createObjectURL(event.target.files[0]));
                     $('#preview').removeClass("d-none");
                     $('#preview_original').addClass("d-none");

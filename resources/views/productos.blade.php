@@ -1,339 +1,316 @@
 @extends('erp.base')
 
 @section('content')
-    <div id="app">
-        <!--begin::Content-->
-        <div id="kt_app_content" class="app-content">
-            <!--begin::Card-->
-            <div class="card card-flush" id="content-card">
-                <!--begin::Card header-->
-                <div class="card-header align-items-center py-5 gap-2 gap-md-5">
-                    <div class="card-title flex-column">
-                        <h3 class="ps-2">Listado de Productos</h3>
-                    </div>
-                    <div class="card-toolbar">
-                        <div class="px-2">
-                            <v-select 
-                                class="form-control me-3 min-w-150px"
-                                v-model="estatusFilter"
-                                :options="[{id:0,text:'DRAFT'},{id:1,text:'ACTIVE'},{id:2,text:'ARCHIVED'}]"
-                                data-allow-clear="true"
-                                data-placeholder="Filtrar por estatus"
-                                data-minimum-results-for-search ="Infinity"
-                                >
-                            </v-select>
-                        </div>
-                        <div class="px-2">
-                            <v-select 
-                                class="form-control me-3"
-                                v-model="categoriaFilter"
-                                :options="listaCategorias"
-                                data-allow-clear="true"
-                                data-placeholder="Filtrar por categoría"
-                                @change="getSubcategoriasFilter">
-                            </v-select>
-                        </div>
-                        <div class="px-2" v-if="categoriaFilter">
-                            <v-select
-                                class="form-control me-3"
-                                v-model="subcategoriaFilter"
-                                :options="listaSubcategoriasFilter"
-                                data-allow-clear="true"
-                                data-placeholder="Filtrar por subcategoría">
-                            </v-select>
-                        </div>
-                        <div class="px-2">
-                            <v-select
-                                class="form-control me-3"
-                                v-model="coleccionFilter"
-                                :options="listaColecciones"
-                                data-allow-clear="true"
-                                data-placeholder="Filtrar por coleccion">
-                            </v-select>
-                        </div>
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_add_producto" @click="isEdit = false">
-                            <i class="ki-outline ki-plus fs-2"></i> Agregar producto
-                        </button>
-                    </div>
+    <div class="d-flex flex-column flex-column-fluid" id="app">
+        <div class="app-toolbar py-3 py-lg-6" id="kt_app_toolbar">
+            <!--begin::Toolbar container-->
+            <div class="app-container d-flex flex-stack" id="kt_app_toolbar_container">
+                <div class="page-title d-flex flex-column justify-content-center flex-wrap me-3">
+                    <!--begin::Title-->
+                    <h1 class="page-heading d-flex text-dark fw-bold fs-3 flex-column justify-content-center my-0">Productos</h1>
+                    <!--end::Title-->
+                    <!--begin::Breadcrumb-->
+                    <ul class="breadcrumb breadcrumb-line text-muted fw-semibold fs-7 my-0 pt-1">
+                        <li class="breadcrumb-item">
+                            <a class="text-muted text-hover-primary" href="{{ route('home') }}">Inicio</a>
+                        </li>
+                        <li class="breadcrumb-item text-muted">Control Interno</li>
+                        <li class="breadcrumb-item text-muted">Configuración de inventario</li>
+                        <li class="breadcrumb-item text-muted">Productos</li>
+                    </ul>
+                    <!--end::Breadcrumb-->
                 </div>
-                <!--end::Card header-->
+            </div>
+            <!--end::Toolbar container-->
+        </div>
 
-                <!--begin::Card body-->
-                <div class="card-body py-4">
-                    <div class="px-4 py-2">
-                        <button class="btn btn-success" @click="syncShopify" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Sincronizar con Shopify">
-                            Sincronizar <i class="ki-solid ki-arrows-circle"></i>
-                        </button>
+        <!--begin::Content-->
+        <div class="app-content flex-column-fluid" id="kt_app_content">
+            <div class="app-container" id="kt_app_content_container">
+                <!--begin::Card-->
+                <div class="card card-flush" id="content-card">
+                    <!--begin::Card header-->
+                    <div class="card-header align-items-center py-5 gap-2 gap-md-5">
+                        <div class="card-title flex-column">
+                            <h3 class="ps-2">Listado de Productos</h3>
+                        </div>
+                        <div class="card-toolbar">
+                            <div class="px-2">
+                                <v-select class="form-control me-3 min-w-150px" data-allow-clear="true" data-placeholder="Filtrar por estatus" data-minimum-results-for-search ="Infinity" v-model="estatusFilter"
+                                    :options="[{ id: 0, text: 'DRAFT' }, { id: 1, text: 'ACTIVE' }, { id: 2, text: 'ARCHIVED' }]">
+                                </v-select>
+                            </div>
+                            <div class="px-2">
+                                <v-select class="form-control me-3" data-allow-clear="true" data-placeholder="Filtrar por categoría" v-model="categoriaFilter" :options="listaCategorias" @change="getSubcategoriasFilter">
+                                </v-select>
+                            </div>
+                            <div class="px-2" v-if="categoriaFilter">
+                                <v-select
+                                    class="form-control me-3" data-allow-clear="true" data-placeholder="Filtrar por subcategoría" v-model="subcategoriaFilter" :options="listaSubcategoriasFilter">
+                                </v-select>
+                            </div>
+                            <div class="px-2">
+                                <v-select
+                                    class="form-control me-3" data-allow-clear="true" data-placeholder="Filtrar por coleccion" v-model="coleccionFilter" :options="listaColecciones">
+                                </v-select>
+                            </div>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_add_producto" type="button" @click="isEdit = false">
+                                <i class="ki-outline ki-plus fs-2"></i> Agregar producto
+                            </button>
+                        </div>
                     </div>
-                    <!--begin::Table-->
-                    <v-client-table v-model="listaProductos" :columns="columns" :options="options">
-                        <div slot="categoria" slot-scope="props">
-                            [[props.row.categoria?.nombre ?? 'N/A']]
-                        </div>
-                        <div slot="subcategoria" slot-scope="props">
-                            [[props.row.subcategoria?.nombre ?? 'N/A']]
-                        </div>
-                        <div slot="estatus_desc" slot-scope="props">
-                            <span v-show="props.row.estatus == 1" class="badge badge-success">[[props.row.estatus_desc]]</span>
-                            <span v-show="props.row.estatus == 2" class="badge badge-dark">[[props.row.estatus_desc]]</span>
-                            <span v-show="props.row.estatus == 0" class="badge badge-warning">[[props.row.estatus_desc]]</span>
-                        </div>
-                        <div slot="acciones" slot-scope="props">
-                            <button type="button" class="btn btn-icon btn-sm btn-success me-2" title="Ver/Editar Producto" data-bs-toggle="modal" data-bs-target="#kt_modal_add_producto" @click="selectProducto(props.row)">
-                                <i class="fas fa-pencil"></i>
+                    <!--end::Card header-->
+
+                    <!--begin::Card body-->
+                    <div class="card-body py-4">
+                        <div class="px-4 py-2">
+                            <button class="btn btn-success" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Sincronizar con Shopify" @click="syncShopify">
+                                Sincronizar <i class="ki-solid ki-arrows-circle"></i>
                             </button>
-                            <button type="button" class="btn btn-icon btn-sm btn-primary me-2" title="Multimedia" data-bs-toggle="modal" data-bs-target="#kt_modal_producto_multimedia" @click="getMultimedia(props.row.id, true)" id="openMultimediaBtn">
-                                <i class="fas fa-photo-film"></i>
-                            </button>
-                            {{-- <button type="button" class="btn btn-icon btn-sm btn-danger me-2" title="Eliminar Producto" @click="deleteProducto(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
+                        </div>
+                        <!--begin::Table-->
+                        <v-client-table v-model="listaProductos" :columns="columns" :options="options">
+                            <div slot="categoria" slot-scope="props">
+                                [[props.row.categoria?.nombre ?? 'N/A']]
+                            </div>
+                            <div slot="subcategoria" slot-scope="props">
+                                [[props.row.subcategoria?.nombre ?? 'N/A']]
+                            </div>
+                            <div slot="estatus_desc" slot-scope="props">
+                                <span class="badge badge-success" v-show="props.row.estatus == 1">[[props.row.estatus_desc]]</span>
+                                <span class="badge badge-dark" v-show="props.row.estatus == 2">[[props.row.estatus_desc]]</span>
+                                <span class="badge badge-warning" v-show="props.row.estatus == 0">[[props.row.estatus_desc]]</span>
+                            </div>
+                            <div slot="acciones" slot-scope="props">
+                                <button class="btn btn-icon btn-sm btn-success me-2" data-bs-toggle="modal" data-bs-target="#kt_modal_add_producto" type="button" title="Ver/Editar Producto" @click="selectProducto(props.row)">
+                                    <i class="fas fa-pencil"></i>
+                                </button>
+                                <button class="btn btn-icon btn-sm btn-primary me-2" id="openMultimediaBtn" data-bs-toggle="modal" data-bs-target="#kt_modal_producto_multimedia" type="button" title="Multimedia" @click="getMultimedia(props.row.id, true)">
+                                    <i class="fas fa-photo-film"></i>
+                                </button>
+                                {{-- <button type="button" class="btn btn-icon btn-sm btn-danger me-2" title="Eliminar Producto" @click="deleteProducto(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
                                 <span class="indicator-label"><i class="fas fa-trash-alt"></i></span>
                                 <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
                             </button> --}}
-                        </div>
-                    </v-client-table>
-                    <!--end::Table-->
-                </div>
-                <!--end::Card body-->
-            </div>
-            <!--end::Card-->
-        </div>
-        <!--end::Content-->
-
-        <!--begin::Modal - Add task-->
-        <div class="modal fade" id="kt_modal_add_producto" tabindex="-1" aria-hidden="true">
-            <!--begin::Modal dialog-->
-            <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-lg">
-                <!--begin::Modal content-->
-                <div class="modal-content">
-                    <!--begin::Modal header-->
-                    <div class="modal-header" id="kt_modal_add_user_header">
-                        <h2 class="fw-bold" v-text="isEdit ? 'Actualizar producto' : 'Crear producto'"></h2>
-
-                        <!--begin::Close-->
-                        <div class="btn btn-close" data-bs-dismiss="modal"></div>
-                        <!--end::Close-->
+                            </div>
+                        </v-client-table>
+                        <!--end::Table-->
                     </div>
-                    <!--end::Modal header-->
-                    <!--begin::Modal body-->
-                    <div class="modal-body scroll-y mx-5">
-                        <!--begin::Form-->
-                        <form id="kt_modal_add_producto_form" class="form" action="#" @submit.prevent="">
-                            <!--begin::Scroll-->
-                            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_user_scroll" data-kt-scroll="true"
-                                data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header"
-                                data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
+                    <!--end::Card body-->
+                </div>
+                <!--end::Card-->
 
-                                <div class="fv-row mb-7">
-                                    <label class="required fw-semibold fs-6 ms-2" for="sku">Sku</label>
-                                    <input type="text" class="form-control" placeholder="Sku" id="sku" name="sku" v-model="sku">
-                                </div>
+                <!--begin::Modal - Add task-->
+                <div class="modal fade" id="kt_modal_add_producto" aria-hidden="true" tabindex="-1">
+                    <!--begin::Modal dialog-->
+                    <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-lg">
+                        <!--begin::Modal content-->
+                        <div class="modal-content">
+                            <!--begin::Modal header-->
+                            <div class="modal-header" id="kt_modal_add_user_header">
+                                <h2 class="fw-bold" v-text="isEdit ? 'Actualizar producto' : 'Crear producto'"></h2>
 
-                                <div class="fv-row mb-7">
-                                    <label class="required fw-semibold fs-6 ms-2" for="subCat_name">Nombre</label>
-                                    <input type="text" class="form-control" placeholder="Nombre del producto" id="nombre" name="nombre" v-model="nombre">
-                                </div>
+                                <!--begin::Close-->
+                                <div class="btn btn-close" data-bs-dismiss="modal"></div>
+                                <!--end::Close-->
+                            </div>
+                            <!--end::Modal header-->
+                            <!--begin::Modal body-->
+                            <div class="modal-body scroll-y mx-5">
+                                <!--begin::Form-->
+                                <form class="form" id="kt_modal_add_producto_form" action="#" @submit.prevent="">
+                                    <!--begin::Scroll-->
+                                    <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_user_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto"
+                                        data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
-                                <div class="fv-row mb-7">
-                                    <label class="required fw-semibold fs-6 ms-2" for="subCat_desc">Descripción</label>
-                                    <textarea class="form-control" rows="3" placeholder="Descripción del producto" id="descripcion" name="descripcion" v-model="descripcion"></textarea>
-                                </div>
+                                        <div class="fv-row mb-7">
+                                            <label class="required fw-semibold fs-6 ms-2" for="sku">Sku</label>
+                                            <input class="form-control" id="sku" name="sku" type="text" placeholder="Sku" v-model="sku">
+                                        </div>
 
-                                <div class="fv-row mb-7">
-                                    <label class="fs-6 fw-bold mb-2" for="col_id">Colecciones</label>
-                                    <v-select v-if="colecciones != []"
-                                        class="form-control"
-                                        v-model="idColecciones"
-                                        :options="listaColecciones"
-                                        multiple
-                                        data-allow-clear="true"
-                                        data-placeholder="Selecciona las colecciones"
-                                        id="col_id"
-                                        name="col_id"
-                                        data-dropdown-parent="#kt_modal_add_producto">
-                                    </v-select>
-                                </div>
-                                <div class="fv-row mb-7">
-                                    <label class="required fw-semibold fs-6 ms-2" for="cat_id">Categoría</label>
-                                    <v-select v-if="categorias != []"
-                                        class="form-control"
-                                        v-model="idCategoria"
-                                        :options="listaCategorias"
-                                        data-allow-clear="true"
-                                        data-placeholder="Selecciona una categoría"
-                                        id="cat_id"
-                                        name="cat_id"
-                                        data-dropdown-parent="#kt_modal_add_producto"
-                                        @change="getSubcategorias">
-                                    </v-select>
-                                </div>
-                                <div class="fv-row mb-7">
-                                    <label class="required fw-semibold fs-6 ms-2" for="subcat_id">Subcategoría</label>
-                                    <v-select v-if="!setEdit"
-                                        class="form-control"
-                                        v-model="idSubcategoria"
-                                        :options="listaSubcategorias"
-                                        data-allow-clear="true"
-                                        data-placeholder="Selecciona una subcategoría"
-                                        id="subcat_id"
-                                        name="subcat_id"
-                                        data-dropdown-parent="#kt_modal_add_producto"
-                                        @change="getCaracteristicasSubcategoria">
-                                    </v-select>
-                                </div>
-                                <div class="fv-row mb-7">
-                                    <label class="required fw-semibold fs-6 ms-2" for="precio">Precio</label>
-                                    <input type="text" class="form-control" placeholder="Precio" id="precio" name="precio" v-model="precio" onblur="formatoNumero(this)">
-                                </div>
-                                <div class="mb-7">
-                                    <label class="required fw-semibold fs-6 ms-2 mb-2">Características</label>
-                                    <div class="border border-1 border-gray-300 p-4 rounded rounded-1" v-if="subcategoria_caracteristicas.length>0">
-                                        <table class="no-footer table">
-                                            <thead class="d-none">
-                                                <tr>
-                                                    <th tabindex="0" class="VueTables__heading text-center align-middle">Etiqueta</th>
-                                                    <th tabindex="0" class="VueTables__heading text-center align-middle">Valor</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr class="align-middle text-center fv-row" v-for="(caracteristica, index) in subcategoria_caracteristicas" :key="'c_' + caracteristica.id">
-                                                    <td>[[caracteristica.etiqueta]]</td>
-                                                    <td>
-                                                        <input type="text" v-model="caracteristica.valor" class="form-control" placeholder="Valor" :name="`caracteristica${caracteristica.etiqueta}`" v-if="caracteristica.tipo=='texto'">
-                                                        <input type="number" v-model="caracteristica.valor" class="form-control" placeholder="Valor" :name="`caracteristica${caracteristica.etiqueta}`" v-else>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                <div class="fv-row mb-7">
-                                    <label class="fs-6 fw-bold mb-2">Características Extras</label>
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" v-model="extra_input" placeholder="Escribe la característica">
-                                        <button type="button" class="btn btn-light-success border border-success" @click="addExtra">
-                                            <i class="fa-solid fa-plus"></i> Agregar característica extra
-                                        </button>
-                                    </div>
-                                    <div class="row mt-5">
-                                        <div class="col-lg-12">
-                                            <ul class="list-group">
-                                                <li class="list-group-item d-flex justify-content-between align-items-center" v-for="(extra, index) in extras">
-                                                    <label class="col-sm-2 control-label">[[extra.etiqueta]]</label>
-                                                    <div class="col-lg-6">
-                                                        <input type="text" v-model="extra.valor" class="form-control" :name="`extra${extra.etiqueta}`">
-                                                    </div>
-                                                    <div class="caracteristicas-acciones">
-                                                        <button type="button" class="btn btn-danger btn-sm btn-icon" @click="deleteExtra(index)">
-                                                            <i class="fa-solid fa-trash-can"></i>
-                                                        </button>
-                                                    </div>
-                                                </li>
-                                            </ul>
-                                            <span class="text-danger" v-if="msgError">Característica inválida</span>
+                                        <div class="fv-row mb-7">
+                                            <label class="required fw-semibold fs-6 ms-2" for="subCat_name">Nombre</label>
+                                            <input class="form-control" id="nombre" name="nombre" type="text" placeholder="Nombre del producto" v-model="nombre">
+                                        </div>
+
+                                        <div class="fv-row mb-7">
+                                            <label class="required fw-semibold fs-6 ms-2" for="subCat_desc">Descripción</label>
+                                            <textarea class="form-control" id="descripcion" name="descripcion" rows="3" placeholder="Descripción del producto" v-model="descripcion"></textarea>
+                                        </div>
+
+                                        <div class="fv-row mb-7">
+                                            <label class="fs-6 fw-bold mb-2" for="col_id">Colecciones</label>
+                                            <v-select class="form-control" id="col_id" name="col_id" data-allow-clear="true" data-placeholder="Selecciona las colecciones" data-dropdown-parent="#kt_modal_add_producto" v-if="colecciones != []" v-model="idColecciones"
+                                                :options="listaColecciones" multiple>
+                                            </v-select>
+                                        </div>
+                                        <div class="fv-row mb-7">
+                                            <label class="required fw-semibold fs-6 ms-2" for="cat_id">Categoría</label>
+                                            <v-select class="form-control" id="cat_id" name="cat_id" data-allow-clear="true" data-placeholder="Selecciona una categoría" data-dropdown-parent="#kt_modal_add_producto" v-if="categorias != []" v-model="idCategoria"
+                                                :options="listaCategorias" @change="getSubcategorias">
+                                            </v-select>
+                                        </div>
+                                        <div class="fv-row mb-7">
+                                            <label class="required fw-semibold fs-6 ms-2" for="subcat_id">Subcategoría</label>
+                                            <v-select class="form-control" id="subcat_id" name="subcat_id" data-allow-clear="true" data-placeholder="Selecciona una subcategoría" data-dropdown-parent="#kt_modal_add_producto" v-if="!setEdit" v-model="idSubcategoria"
+                                                :options="listaSubcategorias" @change="getCaracteristicasSubcategoria">
+                                            </v-select>
+                                        </div>
+                                        <div class="fv-row mb-7">
+                                            <label class="required fw-semibold fs-6 ms-2" for="precio">Precio</label>
+                                            <input class="form-control" id="precio" name="precio" type="text" placeholder="Precio" v-model="precio" onblur="formatoNumero(this)">
+                                        </div>
+                                        <div class="mb-7">
+                                            <label class="required fw-semibold fs-6 ms-2 mb-2">Características</label>
+                                            <div class="border border-1 border-gray-300 p-4 rounded rounded-1" v-if="subcategoria_caracteristicas.length>0">
+                                                <table class="no-footer table">
+                                                    <thead class="d-none">
+                                                        <tr>
+                                                            <th class="VueTables__heading text-center align-middle" tabindex="0">Etiqueta</th>
+                                                            <th class="VueTables__heading text-center align-middle" tabindex="0">Valor</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr class="align-middle text-center fv-row" v-for="(caracteristica, index) in subcategoria_caracteristicas" :key="'c_' + caracteristica.id">
+                                                            <td>[[caracteristica.etiqueta]]</td>
+                                                            <td>
+                                                                <input class="form-control" type="text" v-model="caracteristica.valor" placeholder="Valor" :name="`caracteristica${caracteristica.etiqueta}`" v-if="caracteristica.tipo=='texto'">
+                                                                <input class="form-control" type="number" v-model="caracteristica.valor" placeholder="Valor" :name="`caracteristica${caracteristica.etiqueta}`" v-else>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="fv-row mb-7">
+                                            <label class="fs-6 fw-bold mb-2">Características Extras</label>
+                                            <div class="input-group">
+                                                <input class="form-control" type="text" v-model="extra_input" placeholder="Escribe la característica">
+                                                <button class="btn btn-light-success border border-success" type="button" @click="addExtra">
+                                                    <i class="fa-solid fa-plus"></i> Agregar característica extra
+                                                </button>
+                                            </div>
+                                            <div class="row mt-5">
+                                                <div class="col-lg-12">
+                                                    <ul class="list-group">
+                                                        <li class="list-group-item d-flex justify-content-between align-items-center" v-for="(extra, index) in extras">
+                                                            <label class="col-sm-2 control-label">[[extra.etiqueta]]</label>
+                                                            <div class="col-lg-6">
+                                                                <input class="form-control" type="text" v-model="extra.valor" :name="`extra${extra.etiqueta}`">
+                                                            </div>
+                                                            <div class="caracteristicas-acciones">
+                                                                <button class="btn btn-danger btn-sm btn-icon" type="button" @click="deleteExtra(index)">
+                                                                    <i class="fa-solid fa-trash-can"></i>
+                                                                </button>
+                                                            </div>
+                                                        </li>
+                                                    </ul>
+                                                    <span class="text-danger" v-if="msgError">Característica inválida</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                    <!--end::Scroll-->
+                                </form>
+                                <!--end::Form-->
                             </div>
-                            <!--end::Scroll-->
-                        </form>
-                        <!--end::Form-->
-                    </div>
-                    <!--end::Modal body-->
-                    <div class="modal-footer" v-if="!setEdit">
-                        <button type="button" class="btn btn-primary" @click="saveProducto" :disabled="loading" :data-kt-indicator="loading ? 'on' : 'off'">
-                            <span class="indicator-label" v-text="isEdit ? 'Actualizar' : 'Crear'"></span>
-                            <span class="indicator-progress">[[isEdit ? 'Actualizando' : 'Creando']] <span class="spinner-border spinner-border-sm align-middle"></span></span>
-                        </button>
-                    </div>
-                </div>
-                <!--end::Modal content-->
-            </div>
-            <!--end::Modal dialog-->
-        </div>
-        <!--end::Modal - Add task-->
-
-        <!--begin::Modal - Multimedia-->
-        <div class="modal fade" id="kt_modal_producto_multimedia" tabindex="-1" aria-hidden="true">
-            <!--begin::Modal dialog-->
-            <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-lg">
-                <!--begin::Modal content-->
-                <div class="modal-content">
-                    <!--begin::Modal header-->
-                    <div class="modal-header" id="kt_modal_add_user_header">
-                        <h2 class="fw-bold">Multimedia producto</h2>
-
-                        <!--begin::Close-->
-                        <div class="btn btn-close" data-bs-dismiss="modal"></div>
-                        <!--end::Close-->
-                    </div>
-                    <!--end::Modal header-->
-                    <!--begin::Modal body-->
-                    <div class="modal-body scroll-y mx-5 mx-xl-10" id="kt_modal_producto_multimedia_body">
-                        <div class="text-center p-10" v-if="loading">
-                            <span class="text-center"></span><br>
-                            <p class="fs-5 fw-medium">Obteniendo información</p>
-                        </div>
-                        <div class="row" v-else>
-                            <div class="d-flex justify-content-end mb-10">
-                                <button type="button" class="btn btn-sm" :class="formMultimedia ? 'btn-light' : 'btn-primary'" @click="formMultimedia=!formMultimedia;initForm()">
-                                    <i class="fa-solid" :class="formMultimedia ? 'fa-chevron-left' : 'fa-plus'"></i>
-                                    <span class="align-middle" v-text="formMultimedia ? 'Cancelar' : 'Agregar multimedia'"></span>
+                            <!--end::Modal body-->
+                            <div class="modal-footer" v-if="!setEdit">
+                                <button class="btn btn-primary" type="button" @click="saveProducto" :disabled="loading" :data-kt-indicator="loading ? 'on' : 'off'">
+                                    <span class="indicator-label" v-text="isEdit ? 'Actualizar' : 'Crear'"></span>
+                                    <span class="indicator-progress">[[isEdit ? 'Actualizando' : 'Creando']] <span class="spinner-border spinner-border-sm align-middle"></span></span>
                                 </button>
                             </div>
+                        </div>
+                        <!--end::Modal content-->
+                    </div>
+                    <!--end::Modal dialog-->
+                </div>
+                <!--end::Modal - Add task-->
 
-                            <div v-if="formMultimedia">
-                                <form id="kt_modal_multimedia_form" class="form" method="POST" action="javascript:void(0)" enctype="multipart/form-data">
-                                    <input type="hidden" id="producto_id" name="producto_id" v-model="idProducto">
-                                    <!--begin::Input group-->
-                                    <div class="d-flex flex-column fv-row mb-7">
-                                        <label class="required form-label fw-bold">Archivo multimedia</label>
-                                        <input class="form-control" type="file" id="formFile" name="archivo" @change="imgPreview" required>
-                                        <div class="image-preview w-25 mx-auto">
-                                            <img src="{{ asset('assets-1/media/svg/files/blank-image.svg') }}" id="image-preview" class="img-fluid">
-                                        </div>
-                                    </div>
-                                    <!--end::Input group-->
+                <!--begin::Modal - Multimedia-->
+                <div class="modal fade" id="kt_modal_producto_multimedia" aria-hidden="true" tabindex="-1">
+                    <!--begin::Modal dialog-->
+                    <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-lg">
+                        <!--begin::Modal content-->
+                        <div class="modal-content">
+                            <!--begin::Modal header-->
+                            <div class="modal-header" id="kt_modal_add_user_header">
+                                <h2 class="fw-bold">Multimedia producto</h2>
 
-                                    <!--begin::Actions-->
-                                    <div class="text-end pt-15">
-                                        <button type="submit" class="btn btn-sm btn-primary" :disabled="loading">Agregar multimedia</button>
-                                    </div>
-                                </form>
+                                <!--begin::Close-->
+                                <div class="btn btn-close" data-bs-dismiss="modal"></div>
+                                <!--end::Close-->
                             </div>
-                            <div v-else>
-                                <div>
-                                    <v-client-table :data="multimedia" :columns="columnsMultimedia" :options="optionsMultimedia">
-                                        <div slot="portada" slot-scope="props">
-                                            <span v-if="props.row.portada == 1"><i class="fa-solid fa-star"></i></span>
-                                            <span v-else></span>
+                            <!--end::Modal header-->
+                            <!--begin::Modal body-->
+                            <div class="modal-body scroll-y mx-5 mx-xl-10" id="kt_modal_producto_multimedia_body">
+                                <div class="text-center p-10" v-if="loading">
+                                    <span class="text-center"></span><br>
+                                    <p class="fs-5 fw-medium">Obteniendo información</p>
+                                </div>
+                                <div class="row" v-else>
+                                    <div class="d-flex justify-content-end mb-10">
+                                        <button class="btn btn-sm" type="button" :class="formMultimedia ? 'btn-light' : 'btn-primary'" @click="formMultimedia=!formMultimedia;initForm()">
+                                            <i class="fa-solid" :class="formMultimedia ? 'fa-chevron-left' : 'fa-plus'"></i>
+                                            <span class="align-middle" v-text="formMultimedia ? 'Cancelar' : 'Agregar multimedia'"></span>
+                                        </button>
+                                    </div>
+
+                                    <div v-if="formMultimedia">
+                                        <form class="form" id="kt_modal_multimedia_form" method="POST" action="javascript:void(0)" enctype="multipart/form-data">
+                                            <input id="producto_id" name="producto_id" type="hidden" v-model="idProducto">
+                                            <!--begin::Input group-->
+                                            <div class="d-flex flex-column fv-row mb-7">
+                                                <label class="required form-label fw-bold">Archivo multimedia</label>
+                                                <input class="form-control" id="formFile" name="archivo" type="file" @change="imgPreview" required>
+                                                <div class="image-preview w-25 mx-auto">
+                                                    <img class="img-fluid" id="image-preview" src="{{ asset('assets-1/media/svg/files/blank-image.svg') }}">
+                                                </div>
+                                            </div>
+                                            <!--end::Input group-->
+
+                                            <!--begin::Actions-->
+                                            <div class="text-end pt-15">
+                                                <button class="btn btn-sm btn-primary" type="submit" :disabled="loading">Agregar multimedia</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <div v-else>
+                                        <div>
+                                            <v-client-table :data="multimedia" :columns="columnsMultimedia" :options="optionsMultimedia">
+                                                <div slot="portada" slot-scope="props">
+                                                    <span v-if="props.row.portada == 1"><i class="fa-solid fa-star"></i></span>
+                                                    <span v-else></span>
+                                                </div>
+                                                <div slot="preview" slot-scope="props">
+                                                    <img class="img-fluid" style="max-width: 100px;" :src="props.row.url">
+                                                </div>
+                                                <div slot="acciones" slot-scope="props">
+                                                    <button class="btn btn-icon btn-sm btn-danger" type="button" title="Eliminar Marca" @click.prevent="deleteMultimedia(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
+                                                        <span class="indicator-label"><i class="fas fa-trash-alt"></i></span>
+                                                        <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
+                                                    </button>
+                                                    <button class="btn btn-icon btn-sm btn-success" type="button" title="Seleccionar portada" @click.prevent="setPortada(props.row.id)" :data-kt-indicator="props.row.seleccionando ? 'on' : 'off'">
+                                                        <span class="indicator-label"><i class="fa-solid fa-square-pen"></i></span>
+                                                        <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
+                                                    </button>
+                                                </div>
+                                            </v-client-table>
                                         </div>
-                                        <div slot="preview" slot-scope="props">
-                                            <img :src="props.row.url" class="img-fluid" style="max-width: 100px;">
-                                        </div>
-                                        <div slot="acciones" slot-scope="props">
-                                            <button type="button" class="btn btn-icon btn-sm btn-danger" title="Eliminar Marca" @click.prevent="deleteMultimedia(props.row.id)" :data-kt-indicator="props.row.eliminando ? 'on' : 'off'">
-                                                <span class="indicator-label"><i class="fas fa-trash-alt"></i></span>
-                                                <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
-                                            </button>
-                                            <button type="button" class="btn btn-icon btn-sm btn-success" title="Seleccionar portada" @click.prevent="setPortada(props.row.id)" :data-kt-indicator="props.row.seleccionando ? 'on' : 'off'">
-                                                <span class="indicator-label"><i class="fa-solid fa-square-pen"></i></span>
-                                                <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
-                                            </button>
-                                        </div>
-                                    </v-client-table>
+                                    </div>
                                 </div>
                             </div>
+                            <!--end::Modal body-->
                         </div>
+                        <!--end::Modal content-->
                     </div>
-                    <!--end::Modal body-->
+                    <!--end::Modal dialog-->
                 </div>
-                <!--end::Modal content-->
+                <!--end::Modal - Multimedia-->
             </div>
-            <!--end::Modal dialog-->
         </div>
-        <!--end::Modal - Multimedia-->
-
-
+        <!--end::Content-->
     </div>
 @endsection
 
@@ -364,14 +341,14 @@
                         acciones: 'Acciones',
                     },
                     columnsClasses: {
-                        id: 'align-middle px-2 ',
+                        id: 'align-middle px-3 ',
                         sku: 'align-middle ',
                         nombre: 'align-middle ',
                         categoria: 'align-middle text-center ',
                         subcategoria: 'align-middle text-center ',
                         precio: 'align-middle text-center',
                         estatus_desc: 'align-middle text-center ',
-                        acciones: 'align-middle text-center px-2 ',
+                        acciones: 'align-middle text-center px-3 ',
                     },
                     sortable: ['sku', 'nombre', 'estatus_desc', 'categoria', 'subcategoria', 'precio'],
                     filterable: ['sku', 'nombre', 'estatus_desc', 'categoria', 'subcategoria', 'precio'],
@@ -396,7 +373,7 @@
                         columns: "Columnas",
                     },
                 },
-                columnsMultimedia: ['portada','preview', 'file_name', 'acciones'],
+                columnsMultimedia: ['portada', 'preview', 'file_name', 'acciones'],
                 optionsMultimedia: {
                     headings: {
                         portada: '',
@@ -579,13 +556,13 @@
                     vm.requestGet = $.ajax({
                         url: '/api/productos/all',
                         type: 'GET',
-                    }).done(function (res) {
+                    }).done(function(res) {
                         vm.productos = res.results;
-                    }).fail(function (jqXHR, textStatus) {
+                    }).fail(function(jqXHR, textStatus) {
                         if (textStatus != 'abort') {
                             console.log("Request failed getProductos: " + textStatus, jqXHR);
                         }
-                    }).always(function () {
+                    }).always(function() {
                         vm.loading = false;
 
                         if (vm.blockUI && vm.blockUI.isBlocked()) {
@@ -648,13 +625,13 @@
                     vm.requestGetModal = $.ajax({
                         url: `/api/productos/${idProducto}/multimedia/all`,
                         type: 'GET',
-                    }).done(function (res) {
+                    }).done(function(res) {
                         vm.multimedia = res.results;
-                    }).fail(function (jqXHR, textStatus) {
+                    }).fail(function(jqXHR, textStatus) {
                         if (textStatus != 'abort') {
                             console.log("Request failed getProductos: " + textStatus, jqXHR);
                         }
-                    }).always(function () {
+                    }).always(function() {
                         vm.loading = false;
 
                         if (vm.blockUIModal && vm.blockUIModal.isBlocked()) {
@@ -662,7 +639,7 @@
                         }
                     });
                 },
-                syncShopify(){
+                syncShopify() {
                     let vm = this;
                     const loadingEl = document.createElement("div");
                     document.body.prepend(loadingEl);
@@ -675,7 +652,7 @@
                     <span class="fs-6 fw-semibold mt-5 text-gray-800">Sincronizando...</span>
                     </span>`;
                     KTApp.showPageLoading();
-                    
+
                     $.get('/api/shopify/productos', res => {
 
                     }, 'json').always(function() {
@@ -773,7 +750,7 @@
                         if (result.isConfirmed) {
                             vm.loading = true;
                             let index = vm.productos.findIndex(item => item.id == idProducto);
-                            if(index >= 0){
+                            if (index >= 0) {
                                 vm.$set(vm.productos[index], 'eliminando', true);
                             }
                             $.ajax({
@@ -794,7 +771,7 @@
                                 Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
 
                                 index = vm.productos.findIndex(item => item.id == idProducto);
-                                if(index >= 0){
+                                if (index >= 0) {
                                     vm.$set(vm.productos[index], 'eliminando', false);
                                 }
                             }).always(function(event, xhr, settings) {
@@ -816,7 +793,7 @@
                     }).then((result) => {
                         if (result.isConfirmed) {
                             let index = vm.multimedia.findIndex(item => item.id == idMultimedia);
-                            if(index >= 0){
+                            if (index >= 0) {
                                 vm.$set(vm.multimedia[index], 'eliminando', true);
                             }
                             $.ajax({
@@ -837,7 +814,7 @@
                                 Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
 
                                 index = vm.multimedia.findIndex(item => item.id == idMultimedia);
-                                if(index >= 0){
+                                if (index >= 0) {
                                     vm.$set(vm.multimedia[index], 'eliminando', false);
                                 }
                             }).always(function(event, xhr, settings) {
@@ -846,7 +823,7 @@
                         }
                     })
                 },
-                setPortada(idMultimedia){
+                setPortada(idMultimedia) {
                     let vm = this;
                     Swal.fire({
                         title: '¿Estas seguro de que deseas seleccionar esta imagen como la portada?',
@@ -859,7 +836,7 @@
                     }).then((result) => {
                         if (result.isConfirmed) {
                             let index = vm.multimedia.findIndex(item => item.id == idMultimedia);
-                            if(index >= 0){
+                            if (index >= 0) {
                                 vm.$set(vm.multimedia[index], 'seleccionando', true);
                             }
                             $.ajax({
@@ -881,7 +858,7 @@
                                 Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
                             }).always(function(event, xhr, settings) {
                                 index = vm.multimedia.findIndex(item => item.id == idMultimedia);
-                                if(index >= 0){
+                                if (index >= 0) {
                                     vm.$set(vm.multimedia[index], 'seleccionando', false);
                                 }
                             });
@@ -892,7 +869,7 @@
                     let vm = this;
                     if (vm.setEdit == false) {
                         let subcategoria = vm.subcategorias.find(item => item.id == vm.idSubcategoria);
-                        if(subcategoria) {
+                        if (subcategoria) {
                             vm.subcategoria_caracteristicas = subcategoria.caracteristicas_json.map((item) => Object.assign({}, item));
                         } else {
                             vm.subcategoria_caracteristicas = [];
@@ -930,10 +907,12 @@
                         vm.subcategorias = res.results;
                         vm.$nextTick(() => {
                             let subcategoria = vm.subcategorias.find(item => item.id == producto.subcategoria_id);
-                            if(subcategoria) {
+                            if (subcategoria) {
                                 vm.subcategoria_caracteristicas = subcategoria.caracteristicas_json.map((item) => {
                                     const result = producto.caracteristicas_json.find((element) => element.etiqueta == item.etiqueta);
-                                    return Object.assign(item, {valor: result?.valor ?? null});
+                                    return Object.assign(item, {
+                                        valor: result?.valor ?? null
+                                    });
                                 });
                             }
 
@@ -980,7 +959,7 @@
                 },
                 formValidate() {
                     let vm = this;
-                    if(vm.validator){
+                    if (vm.validator) {
                         vm.validator.destroy();
                         vm.validator = null;
                     }
@@ -1064,26 +1043,40 @@
                         let categoriaFilter = vm.categoriaFilter ? e.categoria_id == vm.categoriaFilter : true;
                         let subcategoriaFilter = vm.subcategoriaFilter ? e.subcategoria_id == vm.subcategoriaFilter : true;
                         let coleccionFilter = vm.coleccionFilter ? col != null : true;
-                        let estatusFilter = vm.estatusFilter != null ? e.estatus == vm.estatusFilter  : true;
+                        let estatusFilter = vm.estatusFilter != null ? e.estatus == vm.estatusFilter : true;
 
                         return categoriaFilter && subcategoriaFilter && coleccionFilter && estatusFilter;
                     }) ?? [];
                     return productos;
                 },
                 listaCategorias() {
-                    return this.categorias.map(item => ({ id: item.id, text: item.nombre }));
+                    return this.categorias.map(item => ({
+                        id: item.id,
+                        text: item.nombre
+                    }));
                 },
                 listaSubcategoriasFilter() {
-                    return this.subcategorias_filter.map(item => ({ id: item.id, text: item.nombre }));
+                    return this.subcategorias_filter.map(item => ({
+                        id: item.id,
+                        text: item.nombre
+                    }));
                 },
                 listaSubcategorias() {
-                    return this.subcategorias.map(item => ({ id: item.id, text: item.nombre, caracteristicas: item.caracteristicas_json }));
+                    return this.subcategorias.map(item => ({
+                        id: item.id,
+                        text: item.nombre,
+                        caracteristicas: item.caracteristicas_json
+                    }));
                 },
                 listaColecciones() {
-                    return this.colecciones.map(item => ({ id: item.id, text: item.nombre })).sort( (a, b) => a.text < b.text ? -1 : (a.text > b.text) ? 1 : 0);
+                    return this.colecciones.map(item => ({
+                        id: item.id,
+                        text: item.nombre
+                    })).sort((a, b) => a.text < b.text ? -1 : (a.text > b.text) ? 1 : 0);
                 },
             }
         });
+
         function formatoNumero(input) {
             let valor = input.value;
 

@@ -1,90 +1,111 @@
 @extends('erp.base')
 
 @section('content')
-    <div id="app">
-        <!--begin::Content-->
-        <div id="kt_app_content" class="app-content">
-            <!--begin::Card-->
-
-            <div class="card card-flush" id="content-card">
-                <!--begin::Card header-->
-                <div class="card-header align-items-center py-5 gap-2 gap-md-5">
-                    <div class="card-title flex-column">
-                        <h3 class="ps-2">Traspasos</h3>
-                    </div>
-                    <div class="card-toolbar gap-2">
-                        <div class="min-w-200px me-5">
-                            <v-select
-                                v-model="filterEstatus"
-                                :options="estatus"
-                                data-allow-clear="false"
-                                data-placeholder="Filtrar por estatus">
-                            </v-select>
-                        </div>
-                        <div class="min-w-200px">
-                            <div class="input-group">
-                                <input class="form-control form-control-sm" id="frmPeriodo" placeholder="Periodo" />
-                                <span class="input-group-text"><i class="fas fa-calendar fs-4"></i></span>
-                            </div>
-                        </div>
-                        <button type="button" class="btn btn-icon btn-primary" @click="getTraspasos(true)">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                        </button>
-                    </div>
-                </div>
-                <!--end::Card header-->
-
-                <!--begin::Card body-->
-                <div class="card-body">
-                    <ul class="mt-5 nav nav-fill nav-tabs" id="myTab" role="tablist">
-                        <li class="nav-item" v-for="(sucursal,index) in sucursales">
-                            <a class="nav-link" :class="{'active':index==0}" data-bs-toggle="tab" :href="'#sucursal'+sucursal.id" role="tab">[[sucursal.nombre]]</a>
+    <div class="d-flex flex-column flex-column-fluid" id="app">
+        <div class="app-toolbar py-3 py-lg-6" id="kt_app_toolbar">
+            <!--begin::Toolbar container-->
+            <div class="app-container d-flex flex-stack" id="kt_app_toolbar_container">
+                <div class="page-title d-flex flex-column justify-content-center flex-wrap me-3">
+                    <!--begin::Title-->
+                    <h1 class="page-heading d-flex text-dark fw-bold fs-3 flex-column justify-content-center my-0">Traspasos</h1>
+                    <!--end::Title-->
+                    <!--begin::Breadcrumb-->
+                    <ul class="breadcrumb breadcrumb-line text-muted fw-semibold fs-7 my-0 pt-1">
+                        <li class="breadcrumb-item">
+                            <a class="text-muted text-hover-primary" href="{{ route('home') }}">Inicio</a>
                         </li>
+                        <li class="breadcrumb-item text-muted">Control Interno</li>
+                        <li class="breadcrumb-item text-muted">Gestión de inventario</li>
+                        <li class="breadcrumb-item text-muted">Traspasos</li>
                     </ul>
-                    <div class="tab-content" id="myTabContent">
-                        <!--begin::Tab-->
-                        <div class="tab-pane fade" :class="{'show active':index==0}" :id="'sucursal'+sucursal.id" role="tabpanel" v-for="(sucursal,index) in sucursales">
-                            <!--begin::Table-->
-                            <v-client-table v-model="listaTraspasosGroup[sucursal.id]" :columns="columns" :options="options" v-if="listaTraspasosGroup[sucursal.id]">
-                                <div slot="id" slot-scope="props">[[props.row.id]]</div>
-                                <div slot="sucursal_origen" slot-scope="props">[[props.row.sucursal_origen?.nombre]]</div>
-                                <div slot="sucursal_destino" slot-scope="props">[[props.row.sucursal_destino?.nombre]]</div>
-                                <div slot="tipo" slot-scope="props">
-                                    <div>[[ tipos.find(item => item.id == props.row.tipo)?.text ?? '--']]</div>
-                                </div>
-                                <div slot="estatus" slot-scope="props"><span class="badge" :class="props.row.estatus == 1 ? 'badge-warning' : 'badge-success'">[[props.row.estatus_desc]]</span></div>
-                                <div slot="created_at" slot-scope="props">[[props.row.created_at | fecha]]</div>
-                                <div slot="acciones" slot-scope="props">
-                                    <div class="d-flex gap-2">
-                                        <button type="button" class="btn btn-icon btn-sm btn-primary" title="Ver Traspaso" data-bs-toggle="modal" data-bs-target="#kt_modal_ver_traspaso" @click="initModalTraspaso(props.row)">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-icon btn-sm btn-info" title="Recibir Traspaso" data-bs-toggle="modal" data-bs-target="#kt_modal_recibir_traspaso" @click="initModalTraspaso(props.row)" v-if="sucursal.matriz == 1 && props.row.estatus == 1">
-                                            <i class="fa-solid fa-truck-arrow-right"></i></span>
-                                        </button>
-                                        <button type="button" class="btn btn-icon btn-sm btn-danger" title="Cancelar Traspaso" :disabled="loading" @click="cancelTraspaso(props.row.id)" :data-kt-indicator="props.row.cancelando ? 'on' : 'off'" v-if="props.row.estatus == 1">
-                                            <span class="indicator-label"><i class="fa-solid fa-trash-alt"></i></span>
-                                            <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </v-client-table>
-                            <!--end::Table-->
-                        </div>
-                        <!--end::Tab-->
-                    </div>
-                    <div v-if="traspasos.length == 0 && !loading">
-                        <p class="alert alert-info mt-5">No se encontraron traspasos en el periodo solicitado.</p>
-                    </div>
+                    <!--end::Breadcrumb-->
                 </div>
-                <!--end::Card body-->
             </div>
-            <!--end::Card-->
+            <!--end::Toolbar container-->
+        </div>
+
+        <!--begin::Content-->
+        <div class="app-content flex-column-fluid" id="kt_app_content">
+            <div class="app-container" id="kt_app_content_container">
+                <!--begin::Card-->
+                <div class="card card-flush" id="content-card">
+                    <!--begin::Card header-->
+                    <div class="card-header align-items-center py-5 gap-2 gap-md-5">
+                        <div class="card-title flex-column">
+                            <h3 class="ps-2">Traspasos</h3>
+                        </div>
+                        <div class="card-toolbar gap-2">
+                            <div class="min-w-200px me-5">
+                                <v-select
+                                    data-allow-clear="false" data-placeholder="Filtrar por estatus" v-model="filterEstatus" :options="estatus">
+                                </v-select>
+                            </div>
+                            <div class="min-w-200px">
+                                <div class="input-group">
+                                    <input class="form-control form-control-sm" id="frmPeriodo" placeholder="Periodo" />
+                                    <span class="input-group-text"><i class="fas fa-calendar fs-4"></i></span>
+                                </div>
+                            </div>
+                            <button class="btn btn-icon btn-primary" type="button" @click="getTraspasos(true)">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!--end::Card header-->
+
+                    <!--begin::Card body-->
+                    <div class="card-body">
+                        <ul class="mt-5 nav nav-fill nav-tabs" id="myTab" role="tablist">
+                            <li class="nav-item" v-for="(sucursal,index) in sucursales">
+                                <a class="nav-link" data-bs-toggle="tab" role="tab" :class="{ 'active': index == 0 }" :href="'#sucursal' + sucursal.id">[[sucursal.nombre]]</a>
+                            </li>
+                        </ul>
+                        <div class="tab-content" id="myTabContent">
+                            <!--begin::Tab-->
+                            <div class="tab-pane fade" role="tabpanel" :class="{ 'show active': index == 0 }" :id="'sucursal' + sucursal.id" v-for="(sucursal,index) in sucursales">
+                                <!--begin::Table-->
+                                <v-client-table v-model="listaTraspasosGroup[sucursal.id]" :columns="columns" :options="options" v-if="listaTraspasosGroup[sucursal.id]">
+                                    <div slot="id" slot-scope="props">[[props.row.id]]</div>
+                                    <div slot="sucursal_origen" slot-scope="props">[[props.row.sucursal_origen?.nombre]]</div>
+                                    <div slot="sucursal_destino" slot-scope="props">[[props.row.sucursal_destino?.nombre]]</div>
+                                    <div slot="tipo" slot-scope="props">
+                                        <div>[[ tipos.find(item => item.id == props.row.tipo)?.text ?? '--']]</div>
+                                    </div>
+                                    <div slot="estatus" slot-scope="props"><span class="badge" :class="props.row.estatus == 1 ? 'badge-warning' : 'badge-success'">[[props.row.estatus_desc]]</span></div>
+                                    <div slot="created_at" slot-scope="props">[[props.row.created_at | fecha]]</div>
+                                    <div slot="acciones" slot-scope="props">
+                                        <div class="d-flex justify-content-center gap-2">
+                                            <button class="btn btn-icon btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_ver_traspaso" type="button" title="Ver Traspaso" @click="initModalTraspaso(props.row)">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-icon btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#kt_modal_recibir_traspaso" type="button" title="Recibir Traspaso" @click="initModalTraspaso(props.row)"
+                                                v-if="sucursal.matriz == 1 && props.row.estatus == 1">
+                                                <i class="fa-solid fa-truck-arrow-right"></i></span>
+                                            </button>
+                                            <button class="btn btn-icon btn-sm btn-danger" type="button" title="Cancelar Traspaso" :disabled="loading" @click="cancelTraspaso(props.row.id)" :data-kt-indicator="props.row.cancelando ? 'on' : 'off'" v-if="props.row.estatus == 1">
+                                                <span class="indicator-label"><i class="fa-solid fa-trash-alt"></i></span>
+                                                <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </v-client-table>
+                                <!--end::Table-->
+                            </div>
+                            <!--end::Tab-->
+                        </div>
+                        <div v-if="traspasos.length == 0 && !loading">
+                            <p class="alert alert-info mt-5">No se encontraron traspasos en el periodo solicitado.</p>
+                        </div>
+                    </div>
+                    <!--end::Card body-->
+                </div>
+                <!--end::Card-->
+            </div>
         </div>
         <!--end::Content-->
 
         <!--begin::Modal - Show task-->
-        <div class="modal fade" id="kt_modal_ver_traspaso" tabindex="-1" aria-hidden="true">
+        <div class="modal fade" id="kt_modal_ver_traspaso" aria-hidden="true" tabindex="-1">
             <!--begin::Modal dialog-->
             <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
                 <!--begin::Modal content-->
@@ -140,12 +161,12 @@
                                 <table class="border border-1 no-footer table table-bordered table-sm">
                                     <thead>
                                         <tr>
-                                            <th tabindex="0" class="VueTables__heading text-center align-middle">Producto</th>
-                                            <th tabindex="0" class="VueTables__heading text-center align-middle">SKU</th>
-                                            <th tabindex="0" class="VueTables__heading text-center align-middle">Fecha de caducidad</th>
-                                            <th tabindex="0" class="VueTables__heading text-center align-middle">Cantidad</th>
-                                            <th tabindex="0" class="VueTables__heading text-center align-middle">Cantidad Recibida</th>
-                                            <th tabindex="0" class="VueTables__heading text-center align-middle"></th>
+                                            <th class="VueTables__heading text-center align-middle" tabindex="0">Producto</th>
+                                            <th class="VueTables__heading text-center align-middle" tabindex="0">SKU</th>
+                                            <th class="VueTables__heading text-center align-middle" tabindex="0">Fecha de caducidad</th>
+                                            <th class="VueTables__heading text-center align-middle" tabindex="0">Cantidad</th>
+                                            <th class="VueTables__heading text-center align-middle" tabindex="0">Cantidad Recibida</th>
+                                            <th class="VueTables__heading text-center align-middle" tabindex="0"></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -177,7 +198,7 @@
         <!--end::Modal - Show task-->
 
         <!--begin::Modal - Show task-->
-        <div class="modal fade" id="kt_modal_recibir_traspaso" tabindex="-1" aria-hidden="true">
+        <div class="modal fade" id="kt_modal_recibir_traspaso" aria-hidden="true" tabindex="-1">
             <!--begin::Modal dialog-->
             <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
                 <!--begin::Modal content-->
@@ -193,7 +214,7 @@
                     <!--end::Modal header-->
                     <!--begin::Modal body-->
                     <div class="modal-body" v-if="recibir_traspaso">
-                        <form id="kt_modal_recibir_traspaso_form" class="form" action="#" @submit.prevent="">
+                        <form class="form" id="kt_modal_recibir_traspaso_form" action="#" @submit.prevent="">
                             <div class="row g-7 mb-7">
                                 <div class="col-6">
                                     <label class="fs-6 fw-bold">Sucursal origen</label>
@@ -223,10 +244,10 @@
                                     <table class="border border-1 no-footer table table-bordered table-sm">
                                         <thead>
                                             <tr>
-                                                <th tabindex="0" class="VueTables__heading text-center align-middle">Producto</th>
-                                                <th tabindex="0" class="VueTables__heading text-center align-middle">Fecha de caducidad</th>
-                                                <th tabindex="0" class="VueTables__heading text-center align-middle">Cantidad</th>
-                                                <th tabindex="0" class="VueTables__heading text-center align-middle"></th>
+                                                <th class="VueTables__heading text-center align-middle" tabindex="0">Producto</th>
+                                                <th class="VueTables__heading text-center align-middle" tabindex="0">Fecha de caducidad</th>
+                                                <th class="VueTables__heading text-center align-middle" tabindex="0">Cantidad</th>
+                                                <th class="VueTables__heading text-center align-middle" tabindex="0"></th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -238,7 +259,7 @@
                                                 <td>[[producto.fecha_caducidad | fecha]]</td>
                                                 <td>
                                                     <span class="fv-row">
-                                                        <input type="number" v-model="producto.cantidad" class="form-control" placeholder="Cantidad" :name="`p_cantidad_${producto.id}`">
+                                                        <input class="form-control" type="number" v-model="producto.cantidad" placeholder="Cantidad" :name="`p_cantidad_${producto.id}`">
                                                     </span>
                                                 </td>
                                             </tr>
@@ -251,14 +272,14 @@
                                 </div>
                                 <div class="col-12 fv-row">
                                     <label class="fs-6 fw-bold">Comentarios</label>
-                                    <textarea class="form-control" rows="3" id="comentarios" name="comentarios" v-model="recibir_traspaso.comentarios"></textarea>
+                                    <textarea class="form-control" id="comentarios" name="comentarios" rows="3" v-model="recibir_traspaso.comentarios"></textarea>
                                 </div>
                             </div>
                         </form>
                     </div>
                     <!--end::Modal body-->
                     <div class="modal-footer" v-if="recibir_traspaso">
-                        <button type="button" class="btn btn-primary" :disabled="loading" @click="recibirTraspaso" :data-kt-indicator="loading ? 'on' : 'off'">
+                        <button class="btn btn-primary" type="button" :disabled="loading" @click="recibirTraspaso" :data-kt-indicator="loading ? 'on' : 'off'">
                             <span class="indicator-label">Recibir</span>
                             <span class="indicator-progress"><span class="spinner-border spinner-border-sm align-middle"></span></span>
                         </button>
@@ -269,7 +290,6 @@
             <!--end::Modal dialog-->
         </div>
         <!--end::Modal - Show task-->
-
     </div>
 @endsection
 
@@ -284,15 +304,28 @@
             delimiters: ['[[', ']]'],
             data: () => ({
                 sesion: {!! Auth::user() !!},
-                estatus: [
-                    { id: '1', text: 'En proceso' },
-                    { id: '2', text: 'Finalizado' },
+                estatus: [{
+                        id: '1',
+                        text: 'En proceso'
+                    },
+                    {
+                        id: '2',
+                        text: 'Finalizado'
+                    },
                 ],
                 traspasos: [],
-                tipos: [
-                    { id: 1, text: 'A otra Sucursal' },
-                    { id: 2, text: 'Para cliente' },
-                    { id: 3, text: 'Merma' },
+                tipos: [{
+                        id: 1,
+                        text: 'A otra Sucursal'
+                    },
+                    {
+                        id: 2,
+                        text: 'Para cliente'
+                    },
+                    {
+                        id: 3,
+                        text: 'Merma'
+                    },
                 ],
                 sucursales: [],
                 columns: ['id', 'sucursal_origen', 'sucursal_destino', 'tipo', 'estatus', 'created_at', 'acciones'],
@@ -303,13 +336,13 @@
                         created_at: 'Fecha',
                     },
                     columnsClasses: {
-                        id: 'align-middle text-center px-2 ',
+                        id: 'align-middle text-center px-3 ',
                         sucursal_origen: 'align-middle text-center ',
                         sucursal_destino: 'align-middle text-center ',
                         tipo: 'align-middle text-center ',
                         estatus: 'align-middle text-center ',
                         fecha: 'align-middle text-center ',
-                        acciones: 'align-middle text-center px-2',
+                        acciones: 'align-middle text-center px-3 ',
                     },
                     sortable: ['id', 'fecha'],
                     filterable: false,
@@ -385,7 +418,7 @@
                         }
                     });
 
-                    input.on('apply.daterangepicker', function (ev, picker) {
+                    input.on('apply.daterangepicker', function(ev, picker) {
                         input.val(picker.startDate.format('DD/MM/YYYY') + ' - ' + picker.endDate.format('DD/MM/YYYY'));
 
                         let startDate = picker.startDate.clone();
@@ -394,7 +427,7 @@
                         vm.filterFechaInicio = startDate.startOf('day').format('YYYY-MM-DD HH:mm:ss');
                         vm.filterFechaFin = endDate.endOf('day').format('YYYY-MM-DD HH:mm:ss');
                     });
-                    input.on('cancel.daterangepicker', function (ev, picker) {
+                    input.on('cancel.daterangepicker', function(ev, picker) {
                         input.val('');
                         vm.filterFechaInicio = '';
                         vm.filterFechaFin = '';
@@ -405,7 +438,7 @@
                     let initialFin = moment().endOf('day');
                     input.val(initialInicio.format('DD/MM/YYYY') + ' - ' + initialFin.format('DD/MM/YYYY'));
                     vm.filterFechaInicio = initialInicio.format('YYYY-MM-DD HH:mm:ss');
-                    vm.filterFechaFin =initialFin.format('YYYY-MM-DD HH:mm:ss');
+                    vm.filterFechaFin = initialFin.format('YYYY-MM-DD HH:mm:ss');
 
                     vm.getTraspasos(true);
                 },
@@ -425,11 +458,11 @@
                 },
                 initFormValidate() {
                     let vm = this;
-                    if(vm.validator) {
+                    if (vm.validator) {
                         vm.validator.destroy();
                         vm.validator = null;
                     }
-                    
+
                     vm.validator = FormValidation.formValidation(
                         document.getElementById('kt_modal_recibir_traspaso_form'), {
                             fields: {
@@ -500,14 +533,14 @@
                             fecha_fin: vm.filterFechaFin,
                             estatus: vm.filterEstatus,
                         }
-                    }).done(function (res) {
+                    }).done(function(res) {
                         let results = res.results ?? [];
                         vm.traspasos = results;
-                    }).fail(function (jqXHR, textStatus) {
+                    }).fail(function(jqXHR, textStatus) {
                         if (textStatus != "abort") {
                             console.log("Request failed getTraspasos: " + textStatus, jqXHR);
                         }
-                    }).always(function () {
+                    }).always(function() {
                         vm.loading = false;
 
                         if (vm.blockUI && vm.blockUI.isBlocked()) {
@@ -520,7 +553,7 @@
                     $.ajax({
                         url: `/api/traspasos/get/${traspaso_id}`,
                         type: 'GET',
-                    }).done(function (res) {
+                    }).done(function(res) {
                         vm.show_traspaso = res.results;
                         vm.recibir_traspaso = {
                             id: res.results.id,
@@ -530,15 +563,15 @@
                             empleado_asignado: res.results.empleado_asignado,
                             tipo: res.results.tipo,
                             productos: res.results.detalle
-                            .flatMap(item => item.fechas
-                                .map(i => ({
-                                    id: i.id,
-                                    nombre: item.nombre,
-                                    sku: item.sku,
-                                    fecha_caducidad: i.fecha_caducidad,
-                                    cantidad: i.cantidad,
-                                }))
-                            ),
+                                .flatMap(item => item.fechas
+                                    .map(i => ({
+                                        id: i.id,
+                                        nombre: item.nombre,
+                                        sku: item.sku,
+                                        fecha_caducidad: i.fecha_caducidad,
+                                        cantidad: i.cantidad,
+                                    }))
+                                ),
                             otros_comentarios: res.results.comentarios,
                             comentarios: null,
                         }
@@ -554,11 +587,11 @@
                                     cantidad_recibida: i.cantidad_recibida,
                                 }))
                             );
-                    }).fail(function (jqXHR, textStatus) {
+                    }).fail(function(jqXHR, textStatus) {
                         if (textStatus != 'abort') {
                             console.log("Request failed getTraspasoDetalle: " + textStatus, jqXHR);
                         }
-                    }).always(function () {
+                    }).always(function() {
                         vm.loading = false;
                     });
                 },
@@ -577,12 +610,12 @@
                                         traspaso_id: vm.recibir_traspaso.id,
                                         comentarios: vm.recibir_traspaso.comentarios,
                                         productos: vm.recibir_traspaso.productos
-                                        .map(i => ({
-                                            id: i.id,
-                                            cantidad_recibida: i.cantidad,
-                                        })),
+                                            .map(i => ({
+                                                id: i.id,
+                                                cantidad_recibida: i.cantidad,
+                                            })),
                                     }
-                                }).done(function (res) {
+                                }).done(function(res) {
                                     Swal.fire(
                                         'Traspaso recibido',
                                         'El traspaso ha sido recibido con éxito',
@@ -590,11 +623,11 @@
                                     );
                                     vm.getTraspasos();
                                     $('#kt_modal_recibir_traspaso').modal('hide');
-                                }).fail(function (jqXHR, textStatus) {
+                                }).fail(function(jqXHR, textStatus) {
                                     if (textStatus != 'abort') {
                                         console.log("Request failed getTraspasoDetalle: " + textStatus, jqXHR);
                                     }
-                                }).always(function () {
+                                }).always(function() {
                                     vm.loading = false;
                                 });
                             }
@@ -621,10 +654,10 @@
                             $.ajax({
                                 method: "POST",
                                 url: `/api/traspasos/cancelar/${idTraspaso}`,
-                            }).done(function (res) {
+                            }).done(function(res) {
                                 if (res.status == false) {
                                     Swal.fire("¡Error!", res.message, "error");
-                                }else{
+                                } else {
                                     Swal.fire(
                                         'Traspaso cancelado',
                                         'El traspaso ha sido cancelado con éxito',
@@ -639,7 +672,7 @@
                                 vm.$nextTick(() => {
                                     vm.getTraspasos();
                                 });
-                            }).fail(function (jqXHR, textStatus) {
+                            }).fail(function(jqXHR, textStatus) {
                                 console.log("Request failed cancelTraspaso: " + textStatus, jqXHR);
                                 Swal.fire("¡Error!", "Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtelo nuevamente.", "error");
 
@@ -647,7 +680,7 @@
                                 if (index >= 0) {
                                     vm.$set(vm.traspasos[index], 'cancelando', false);
                                 }
-                            }).always(function (event, xhr, settings) {
+                            }).always(function(event, xhr, settings) {
                                 vm.loading = false;
                             });
                         }
@@ -671,7 +704,7 @@
                 }
             },
             filters: {
-                fecha: function (value, usrFormat) {
+                fecha: function(value, usrFormat) {
                     if (!value) return '---';
                     format = !usrFormat ? 'DD/MM/Y' : usrFormat;
                     value = value.toString();
