@@ -97,7 +97,7 @@ class ColeccionesController extends Controller
     public function getProductosColeccion($coleccion_id)
     {
         try {
-            $coleccion = Colecciones::with(['productos.categoria', 'productos.subcategoria'])->find($coleccion_id);
+            $coleccion = Colecciones::with(['productos.categoria', 'productos.subcategoria', 'productos.multimedia'])->find($coleccion_id);
             
             return response()->json([
                 'status' => true,
